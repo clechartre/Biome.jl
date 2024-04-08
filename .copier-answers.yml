@@ -1,0 +1,17 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: fc2c571
+_src_path: git@github.com:MeteoSwiss-APN/mch-python-blueprint.git
+email: capucine.lechartre@meteoswiss.ch
+full_name: Capucine Lechartre
+github_username: clechartre
+module_name: cloudai
+project_doc_url: https://github.io/clechartre/cloudai
+project_github: https://github.com/clechartre/cloudai
+project_keywords: cloudAI
+project_name: cloudAI
+project_short_description: 'Hackathon project 2024: cloudAI'
+project_slug: cloudai
+project_ssh_url: git+ssh://git@github.com/clechartre/cloudai.git
+python_version: '3.10'
+version: 0.1.0
+year: '2024'
