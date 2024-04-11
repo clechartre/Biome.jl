@@ -9,11 +9,7 @@
 #SBATCH --time=03:00:00
 #SBATCH --no-requeue
 
-# Initialize Conda
-conda init bash
-
 # Activate Conda environment
-conda activate hackathon
-
+source activate /scratch/clechart/miniconda/envs/clouds
 
 srun -ul python image_download.py
