@@ -8,3 +8,7 @@
 #SBATCH --error=/scratch/clechart/hackathon/logs/model_training_err.log
 #SBATCH --time=03:00:00
 #SBATCH --no-requeue
+
+source activate cloud-ai
+
+srun -ul python src/train_model.py
