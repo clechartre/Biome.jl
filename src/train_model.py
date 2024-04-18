@@ -1,8 +1,6 @@
 import os
 from ultralytics import YOLO
 
-import mlflow
-
 def main():
 
     # mlflow.set_experiment(experiment_name="cloud-ai")
@@ -17,6 +15,10 @@ def main():
     results = model.train(
         model = "yolov8n-cls.pt",
         data='/scratch/clechart/hackathon/data/', 
+        # resume = True,
+        device = 1,
+        workers = 8,
+        name = "testestest",
         epochs=100,
         project="/scratch/clechart/hackathon/runs",
         imgsz = 640,
