@@ -41,5 +41,3 @@ dependencies:
     - sphinx-mdinclude>=0.5
     - pydantic>=1.10,<2.0
     - rstcheck_core>=1.0
-    - thop>=0.1.1
-    - torchvision>=0.9.0

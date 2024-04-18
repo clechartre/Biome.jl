@@ -14,13 +14,13 @@ def main():
     # Train the model
     results = model.train(
         model = "yolov8n-cls.pt",
-        data='/scratch/clechart/hackathon/data/', 
+        data='/users/clechart/cloudai/data', 
         # resume = True,
-        device = 1,
+        device = "0,1,2,3",
         workers = 8,
         name = "testestest",
         epochs=100,
-        project="/scratch/clechart/hackathon/runs",
+        project="/users/clechart/cloudai/run",
         imgsz = 640,
         seed = 42,
         lr0 = 0.01, # Initial learning rate Adjusting this value is crucial for the optimization process, influencing how rapidly model weights are updated.
