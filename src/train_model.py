@@ -4,4 +4,4 @@ from ultralytics import YOLO
 model = YOLO('yolov8n-cls.pt')  # load a pretrained model (recommended for training)
 
 # Train the model
-results = model.train(data='/scratch/clechart/hackathon/data/train', epochs=100, imgsz=640)
+results = model.train(data='/scratch/clechart/hackathon/data/train_1804', epochs=100, imgsz=640)
