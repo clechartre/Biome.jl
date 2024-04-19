@@ -1,43 +1,23 @@
 import os
+import sys
 from ultralytics import YOLO
 
-def main():
-
-    # mlflow.set_experiment(experiment_name="cloud-ai")
-
-    # mlflow.start_run(run_name="getting-started")
-
-
-    # Load a model
-    model = YOLO('yolov8n-cls.pt')  # load a pretrained model (recommended for training)
-
-    # Train the model
+def main(gpu_id):
+    model = YOLO('yolov8n-cls.pt')
     results = model.train(
-        model = "yolov8n-cls.pt",
-        data='/users/clechart/cloudai/data', 
-        # resume = True,
-        device = "0,1,2,3",
-        workers = 8,
-        name = "testestest",
-        epochs=100,
+        data='/users/clechart/cloudai/data/', 
+        device="cpu",  # Use the passed GPU ID
+        workers=1,
+        name="run_cpu_3_with_MCH",
+        epochs=20,
         project="/users/clechart/cloudai/run",
-        imgsz = 640,
-        seed = 42,
-        lr0 = 0.01, # Initial learning rate Adjusting this value is crucial for the optimization process, influencing how rapidly model weights are updated.
-        lrf = 0.01 # Final learning rate as a fraction of lr0
+        imgsz=640,
+        seed=42,
+        lr0=0.01, 
+        lrf=0.01
     )
 
-    print(results)
-
-    # if not os.path.exists("outputs"):
-    #     os.makedirs("outputs") 
-
-    # with open("outputs/test.txt", "w") as f:
-    #     f.write("hello world!")
-
-    # mlflow.log_artifacts("outputs")
-
-    # mlflow.end_run()
-
 if __name__ == "__main__":
-    main()
+    gpu_id = sys.argv[1]  # Expects a single GPU ID, not a list
+    main(gpu_id)
+
