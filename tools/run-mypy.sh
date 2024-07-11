@@ -23,8 +23,8 @@ cd "${SCRIPT_DIR}/.."
 
 # Paths relative to project root
 paths=(
-    src/cloudai
-    tests/test_cloudai
+    src/BIOME4Py
+    tests/test_BIOME4Py
 )
 for path in "${paths[@]}"; do
     ${VERBOSE} && echo "mypy \"${path}\""

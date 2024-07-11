@@ -6,12 +6,12 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cloudai"
+name = "BIOME4Py"
 version = "0.1.0"
-description = "Hackathon project 2024: cloudAI"
+description = "Hackathon project 2024: BIOME4Py"
 readme = "README.md"
 keywords = [
-    "cloudAI",
+    "BIOME4Py",
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -26,12 +26,12 @@ authors = [
 ]
 
 [project.urls]
-source = "https://github.com/clechartre/cloudai"
-documentation = "https://github.io/clechartre/cloudai"
+source = "https://github.com/clechartre/BIOME4Py"
+documentation = "https://github.io/clechartre/BIOME4Py"
 
 [project.scripts]
 # Format: <command> = "<package>.<module>:<function>"
-cloudai = "cloudai.cli:main"
+BIOME4Py = "BIOME4Py.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -40,7 +40,7 @@ addopts = [
     "-ra",
     "--pdbcls=IPython.terminal.debugger:TerminalPdb",
 	"--tb=short",
-    # "--cov=cloudai",
+    # "--cov=BIOME4Py",
     # "--mypy",
 ]
 
@@ -63,7 +63,7 @@ known_third_party = [
 ]
 known_first_party = [
     # Add first-party modules that may be misclassified by isort
-    "cloudai",
+    "BIOME4Py",
 ]
 
 [tool.mypy]

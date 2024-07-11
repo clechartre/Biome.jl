@@ -8,7 +8,7 @@ You can contribute in many ways.
 
 ### Report Bugs
 
-Report bugs as [GitHub issues](https://github.com/MeteoSwiss-APN/cloudai/issues).
+Report bugs as [GitHub issues](https://github.com/MeteoSwiss-APN/BIOME4Py/issues).
 
 If you are reporting a bug, please include
 
@@ -18,19 +18,19 @@ If you are reporting a bug, please include
 
 ### Fix Bugs
 
-Look through the [GitHub issues](https://github.com/MeteoSwiss-APN/cloudai/issues) for bugs. Anything tagged with "bug" and "help wanted" is open to whoever wants to implement it.
+Look through the [GitHub issues](https://github.com/MeteoSwiss-APN/BIOME4Py/issues) for bugs. Anything tagged with "bug" and "help wanted" is open to whoever wants to implement it.
 
 ### Implement Features
 
-Look through the  [GitHub issues](https://github.com/MeteoSwiss-APN/cloudai/issues) for features. Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
+Look through the  [GitHub issues](https://github.com/MeteoSwiss-APN/BIOME4Py/issues) for features. Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
 
 ### Write Documentation
 
-cloudAI could always use more documentation, whether as part of the official cloudAI docs, in docstrings --- or even on the web in blog posts, articles, and such.
+BIOME4Py could always use more documentation, whether as part of the official BIOME4Py docs, in docstrings --- or even on the web in blog posts, articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file a [GitHub issue]( https://github.com/MeteoSwiss-APN/cloudai/issues).
+The best way to send feedback is to file a [GitHub issue]( https://github.com/MeteoSwiss-APN/BIOME4Py/issues).
 
 If you are proposing a feature,
 
@@ -40,28 +40,28 @@ If you are proposing a feature,
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `cloudai` for local development.
+Ready to contribute? Here's how to set up `BIOME4Py` for local development.
 
-1. Fork the [`cloudai` repo](https://github.com/) on GitHub.
+1. Fork the [`BIOME4Py` repo](https://github.com/) on GitHub.
 2. Clone your fork locally:
 
     ```bash
-    git clone git@github.com:your_name_here/cloudai.git
+    git clone git@github.com:your_name_here/BIOME4Py.git
     ```
 
 3. Create a virtual environment and install the dependencies:
 
     ```bash
-    cd cloudai/
+    cd BIOME4Py/
     ./tools/setup_env.sh
     ```
 
-    This will create a conda environment named `cloudai` (change with `-n`) and install the pinned runtime and development dependencies in `requirements/environment.yml`.
+    This will create a conda environment named `BIOME4Py` (change with `-n`) and install the pinned runtime and development dependencies in `requirements/environment.yml`.
 
     Install the package itself in editable mode.
 
     ```bash
-    conda activate cloudai
+    conda activate BIOME4Py
     pip install --editable .
     ```
 
@@ -110,8 +110,8 @@ Before you submit a pull request, check that it meets these guidelines:
 For a subset of tests or a specific test, run:
 
 ```bash
-pytest tests.test_cloudai
-pytest tests.test_cloudai/test_feature::test_edge_case
+pytest tests.test_BIOME4Py
+pytest tests.test_BIOME4Py/test_feature::test_edge_case
 ```
 
 ## Versioning
@@ -132,8 +132,8 @@ Following is a description of the most important files and folders in the projec
 - `requirements/`: Project dependencies and environment
     - `environment.yml`: Full tree of runtime and development dependencies with fully specified ('pinned') version numbers; created with `conda env export`.
     - `requirements.yml`: Top-level runtime and development dependencies with minimal version restrictions (typically a minimum version or a version range); kept manually.
-- `src/cloudai/`: Source code of the project package.
-- `tests/test_cloudai/`: Unit tests of the project package; run with `pytest`.
+- `src/BIOME4Py/`: Source code of the project package.
+- `tests/test_BIOME4Py/`: Unit tests of the project package; run with `pytest`.
 - `tools/`: Scripts primarily for development
     - `run-mypy.sh`: Run script for the static type checker `mypy`.
     - `setup_env.sh`: Script to create new conda environments; see `tools/setup_env.sh -h` for all available options.
@@ -151,7 +151,7 @@ Following is a description of the most important files and folders in the projec
 
 ## Managing dependencies
 
-cloudAI uses [Conda](https://docs.conda.io/en/latest/) to manage dependencies. (Also check out [Mamba](https://mamba.readthedocs.io/en/latest/) if you like your package installations fast.) Dependencies are specified in YAML files, of which there are two:
+BIOME4Py uses [Conda](https://docs.conda.io/en/latest/) to manage dependencies. (Also check out [Mamba](https://mamba.readthedocs.io/en/latest/) if you like your package installations fast.) Dependencies are specified in YAML files, of which there are two:
 
 - `requirements/requirements.yml`: Top-level runtime and development dependencies with minimal version restrictions (typically a minimum version or a version range); kept manually.
 - `requirements/environment.yml`: Full tree of runtime and development dependencies with fully specified ('pinned') version numbers; created with `conda env export`.
@@ -176,8 +176,8 @@ _Note that the separation of unpinned runtime and development dependencies into 
 
 ## How to provide executable scripts
 
-By default, a single executable script called cloudai is provided. It is created when the package is installed. When you call it, the main function (`cli`) in `src/cloudai/cli.py` is called.
+By default, a single executable script called BIOME4Py is provided. It is created when the package is installed. When you call it, the main function (`cli`) in `src/BIOME4Py/cli.py` is called.
 
-When the package is installed, a executable script named `cloudai` is created in the bin folder of the active conda environment. Upon calling this script in the shell, the `main` function in `src/cloudai/cli.py` is executed.
+When the package is installed, a executable script named `BIOME4Py` is created in the bin folder of the active conda environment. Upon calling this script in the shell, the `main` function in `src/BIOME4Py/cli.py` is executed.
 
 The scripts, their names and entry points are specified in `pyproject.toml` in the `[project.scripts]` section. Just add additional entries to provide more scripts to the users of your package.

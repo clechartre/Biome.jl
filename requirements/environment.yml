@@ -1,4 +1,4 @@
-name: cloudai
+name: BIOME4Py
 channels:
   - conda-forge
   - defaults
