@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=BIOME4Py
+set SPHINXPROJ=cloudai
 
 if "%1" == "" goto help
 

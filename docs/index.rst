@@ -1,4 +1,4 @@
-Welcome to BIOME4Py's documentation!
+Welcome to cloudAI's documentation!
 ===========================================================
 
 .. toctree::

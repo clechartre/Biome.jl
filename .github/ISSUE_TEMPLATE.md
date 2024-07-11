@@ -1,4 +1,4 @@
-* BIOME4Py version:
+* cloudAI version:
 * Python version:
 * Operating System:
 

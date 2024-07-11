@@ -2,5 +2,5 @@
 Modules
 =======
 
-.. automodule:: BIOME4Py.mutable_number
+.. automodule:: cloudai.mutable_number
    :members:
