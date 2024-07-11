@@ -5,10 +5,10 @@ from ultralytics import YOLO
 
 def main():
     # Load a model
-    model = YOLO('/users/clechart/cloudai/run/run_cpu_3_with_MCH6/weights/best.pt')  # pretrained YOLOv8n model
+    model = YOLO('/users/clechart/BIOME4Py/run/run_cpu_3_with_MCH6/weights/best.pt')  # pretrained YOLOv8n model
 
     # Run batched inference on a list of images
-    results = model(['/users/clechart/cloudai/data/eval/cirrus/Kaeslin_0068.jpg'], device = "cpu")  # return a list of Results objects
+    results = model(['/users/clechart/BIOME4Py/data/eval/cirrus/Kaeslin_0068.jpg'], device = "cpu")  # return a list of Results objects
 
     # Process results list
     for result in results:

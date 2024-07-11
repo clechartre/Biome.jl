@@ -9,7 +9,7 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 fi
 
 # Default env names
-DEFAULT_ENV_NAME="cloudai"
+DEFAULT_ENV_NAME="BIOME4Py"
 
 # Default options
 ENV_NAME="${DEFAULT_ENV_NAME}"

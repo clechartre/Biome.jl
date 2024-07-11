@@ -1,4 +1,4 @@
-# cloudAI: Hackathon project 2024: cloudAI
+# BIOME4Py: Hackathon project 2024: BIOME4Py
 
 ## Preparation
 

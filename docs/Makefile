@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = cloudai
+SPHINXPROJ    = BIOME4Py
 SOURCEDIR     = .
 BUILDDIR      = _build
 

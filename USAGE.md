@@ -1,13 +1,13 @@
 # Usage
 
-Use cloudAI in a project:
+Use BIOME4Py in a project:
 
 ```python
-import cloudai
+import BIOME4Py
 ```
 
 Before running, make sure to activate your project environment:
 
 ```bash
-conda activate cloudai
+conda activate BIOME4Py
 ```
