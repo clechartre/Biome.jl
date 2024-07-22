@@ -1,4 +1,5 @@
 """Utils for the command line tool."""
+
 # Standard library
 import logging
 

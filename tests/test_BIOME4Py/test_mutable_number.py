@@ -1,4 +1,5 @@
 """Tests for `BIOME4Py` package."""
+
 # First-party
 from BIOME4Py.mutable_number import MutableNumber
 

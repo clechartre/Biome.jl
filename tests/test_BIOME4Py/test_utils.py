@@ -1,4 +1,5 @@
 """Test module ``BIOME4Py/utils.py``."""
+
 # Standard library
 import logging
 
