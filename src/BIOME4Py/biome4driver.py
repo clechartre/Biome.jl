@@ -41,19 +41,17 @@ def main(
         endy = srty + cnty
     else:
         boundingbox = [float(x) for x in coordstring.split("/")]
-        srtx = 0
-        srty = 0
-        cntx = int(4 * boundingbox[1])
-        cnty = int(4 * boundingbox[3])
-        endx = cntx
-        endy = cnty
+        lon_min = boundingbox[0]
+        lon_max = boundingbox[1]
+        lat_min = boundingbox[2]
+        lat_max = boundingbox[3]
 
-    print("Bounding box:", srtx, srty, cntx, cnty, endx, endy)
+        srtx, srty, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max)
 
-    # Initialize default values for scale_factor, offset and missing values
-    scale_factor = 1.0
-    add_offset = 0.0
-    missing = -9999.0
+        endx = srtx + cntx
+        endy = srty + cnty
+
+    print("Bounding box:", srtx, srty, endx, endy)
 
     elv = np.zeros((cntx, cnty), dtype=np.float32)
     tmin = np.zeros((cntx, cnty), dtype=np.float32)
@@ -64,7 +62,7 @@ def main(
 
     # Read elevation data
     if "elv" in dataset.variables:
-        elv = dataset.variables["elv"][srtx:endx, srty:endy].filled(missing)
+        elv = dataset.variables["elv"][srtx:endx, srty:endy].filled(-9999)
     else:
         elv = np.zeros((cntx, cnty), dtype=np.float32)
 
@@ -74,38 +72,39 @@ def main(
         # Find a waz to flip the axes of all of the data and make it conditional
         # so that it can handle multiple data shapes
         ivar = np.swapaxes(dataset.variables["temp"][:], 1, 2)
-        ivar = ivar[srty:endy, srtx:endx].filled(missing)
+        ivar = ivar[:, srtx:endx, srty:endy].filled(-9999)
         scale_factor = (
             dataset.variables["temp"].scale_factor
             if "scale_factor" in dataset.variables["temp"].ncattrs()
-            else scale_factor
+            else 1.0
         )
         add_offset = (
             dataset.variables["temp"].add_offset
             if "add_offset" in dataset.variables["temp"].ncattrs()
-            else add_offset
+            else 0.0
         )
         missing = (
             dataset.variables["temp"].missing_value
             if "missing_value" in dataset.variables["temp"].ncattrs()
-            else missing
+            else -9999
         )
-        # If value is not missing, scale and offset. Else replace with matching value from original temp (0)
+        # If value is not missing, scale and offset. 
+        # Else replace with matching value from original temp (0)
         temp = np.where(ivar != missing, ivar * scale_factor + add_offset, temp)
 
     # Read precipitation data
     if "prec" in dataset.variables:
         ivar = np.swapaxes(dataset.variables["prec"][:], 1, 2)
-        ivar = ivar[srty:endy, srtx:endx].filled(missing)
+        ivar = ivar[:, srtx:endx, srty:endy].filled(-9999)
         scale_factor = (
             dataset.variables["prec"].scale_factor
             if "scale_factor" in dataset.variables["prec"].ncattrs()
-            else scale_factor
+            else 1.0
         )
         add_offset = (
             dataset.variables["prec"].add_offset
             if "add_offset" in dataset.variables["prec"].ncattrs()
-            else add_offset
+            else 0.0
         )
         missing = (
             dataset.variables["prec"].missing_value
@@ -117,42 +116,42 @@ def main(
     # Read cloud percent data
     if "sun" in dataset.variables:
         ivar = np.swapaxes(dataset.variables["sun"][:], 1, 2)
-        ivar = ivar[srty:endy, srtx:endx].filled(missing)
+        ivar = ivar[:, srtx:endx, srty:endy].filled(-9999)
         scale_factor = (
             dataset.variables["sun"].scale_factor
             if "scale_factor" in dataset.variables["sun"].ncattrs()
-            else scale_factor
+            else 1.0
         )
         add_offset = (
             dataset.variables["sun"].add_offset
             if "add_offset" in dataset.variables["sun"].ncattrs()
-            else add_offset
+            else 0.0
         )
         missing = (
             dataset.variables["sun"].missing_value
             if "missing_value" in dataset.variables["sun"].ncattrs()
-            else missing
+            else -9999
         )
         cldp = np.where(ivar != missing, ivar * scale_factor + add_offset, cldp)
 
     # Read minimum temperature data or estimate it
     if "tmin" in dataset.variables:
         ivar = np.swapaxes(dataset.variables["tmin"][:], 0, 1)
-        ivar = ivar[srtx:endx, srty:endy].filled(missing)
+        ivar = ivar[srtx:endx, srty:endy].filled(-9999)
         scale_factor = (
             dataset.variables["tmin"].scale_factor
             if "scale_factor" in dataset.variables["tmin"].ncattrs()
-            else scale_factor
+            else 1.0
         )
         add_offset = (
             dataset.variables["tmin"].add_offset
             if "add_offset" in dataset.variables["tmin"].ncattrs()
-            else add_offset
+            else 0.0
         )
         missing = (
             dataset.variables["tmin"].missing_value
             if "missing_value" in dataset.variables["tmin"].ncattrs()
-            else missing
+            else -9999
         )
         tmin = np.where(ivar != missing, ivar * scale_factor + add_offset, tmin)
     else:
@@ -165,15 +164,15 @@ def main(
     dataset = nc.Dataset(soilfile, "r")
     llen = len(dataset.dimensions["soil_layer"])
 
-    whc = np.zeros((cntx, cnty, llen), dtype=np.float32)
-    ksat = np.zeros((cntx, cnty, llen), dtype=np.float32)
+    whc = np.zeros((endx, endy, llen), dtype=np.float32)
+    ksat = np.zeros((endx, endy, llen), dtype=np.float32)
 
     if "whc" in dataset.variables:
-        whc = dataset.variables["whc"][srtx:endx, srty:endy, :].filled(missing)
+        whc = dataset.variables["whc"][srtx:endx, srty:endy, :].filled(-9999)
         whc = np.moveaxis(whc, 2, 1)
 
     if "perc" in dataset.variables:
-        ksat = dataset.variables["perc"][srtx:endx, srty:endy, :].filled(missing)
+        ksat = dataset.variables["perc"][srtx:endx, srty:endy, :].filled(-9999)
         ksat = np.moveaxis(ksat, 2, 1)
 
     dataset.close()
@@ -338,6 +337,43 @@ def process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, 
     print(f"row {y} processed")
 
     return y, biome_row, wdom_row, gdom_row, npp_row
+
+
+def get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5):
+    """
+    Get array indices for a given bounding box with specified resolution.
+
+    Parameters:
+    - lon_min: Minimum longitude
+    - lon_max: Maximum longitude
+    - lat_min: Minimum latitude
+    - lat_max: Maximum latitude
+    - resolution: Resolution of the array (default is 0.5 degrees)
+
+    Returns:
+    - strx, srty: Start coordinates in the array
+    - cntx, cnty: Count of tiles in the array
+    """
+    # Define the array dimensions based on resolution
+    # Right now we define these values based on the input data but
+    # we could change them if we want to increase the resolution
+    lon_range = 360  # Longitude range from -180 to 180
+    lat_range = 180  # Latitude range from -90 to 90
+
+    array_height = int(lon_range / resolution)
+    array_width = int(lat_range / resolution)
+
+    # Calculate the indices
+    strx = int((lon_min + 180) / resolution)
+    srty = int((90 - lat_max) / resolution)
+    endx = int((lon_max + 180) / resolution)
+    endy = int((90 - lat_min) / resolution)
+
+    # Calculate the counts
+    cntx = endx - strx + 1
+    cnty = endy - srty + 1
+
+    return strx, srty, cntx, cnty
 
 
 def handle_err(status):
