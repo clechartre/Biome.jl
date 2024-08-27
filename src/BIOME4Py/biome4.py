@@ -199,7 +199,7 @@ def biome4(vars_in, output):
             )
 
     # Select dominant plant type/s on the basis of modelled optimal NPP & LAI:
-    biome, optdata = competition2(
+    biome, output = competition2(
         optnpp,
         optlai,
         wetness,
