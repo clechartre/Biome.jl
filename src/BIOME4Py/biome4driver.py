@@ -33,12 +33,12 @@ def main(
     tlen = len(dataset.variables["time"][:])
 
     if coordstring == "alldata":
-        srtx = 0
-        srty = 0
+        strx = 0
+        stry = 0
         cntx = xlen
         cnty = ylen
-        endx = srtx + cntx
-        endy = srty + cnty
+        endx = strx + cntx
+        endy = stry + cnty
     else:
         boundingbox = [float(x) for x in coordstring.split("/")]
         lon_min = boundingbox[0]
@@ -46,12 +46,12 @@ def main(
         lat_min = boundingbox[2]
         lat_max = boundingbox[3]
 
-        srtx, srty, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max)
+        strx, stry, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max)
 
-        endx = srtx + cntx
-        endy = srty + cnty
+        endx = strx + cntx
+        endy = stry + cnty
 
-    print("Bounding box:", srtx, srty, endx, endy)
+    print("Bounding box:", strx, stry, endx, endy)
 
     elv = np.zeros((cntx, cnty), dtype=np.float32)
     tmin = np.zeros((cntx, cnty), dtype=np.float32)
@@ -62,7 +62,7 @@ def main(
 
     # Read elevation data
     if "elv" in dataset.variables:
-        elv = dataset.variables["elv"][srtx:endx, srty:endy].filled(-9999)
+        elv = dataset.variables["elv"][strx:endx, stry:endy].filled(-9999)
     else:
         elv = np.zeros((cntx, cnty), dtype=np.float32)
 
@@ -72,7 +72,7 @@ def main(
         # Find a waz to flip the axes of all of the data and make it conditional
         # so that it can handle multiple data shapes
         ivar = np.swapaxes(dataset.variables["temp"][:], 1, 2)
-        ivar = ivar[:, srtx:endx, srty:endy].filled(-9999)
+        ivar = ivar[:, strx:endx, stry:endy].filled(-9999)
         scale_factor = (
             dataset.variables["temp"].scale_factor
             if "scale_factor" in dataset.variables["temp"].ncattrs()
@@ -95,7 +95,7 @@ def main(
     # Read precipitation data
     if "prec" in dataset.variables:
         ivar = np.swapaxes(dataset.variables["prec"][:], 1, 2)
-        ivar = ivar[:, srtx:endx, srty:endy].filled(-9999)
+        ivar = ivar[:, strx:endx, stry:endy].filled(-9999)
         scale_factor = (
             dataset.variables["prec"].scale_factor
             if "scale_factor" in dataset.variables["prec"].ncattrs()
@@ -116,7 +116,7 @@ def main(
     # Read cloud percent data
     if "sun" in dataset.variables:
         ivar = np.swapaxes(dataset.variables["sun"][:], 1, 2)
-        ivar = ivar[:, srtx:endx, srty:endy].filled(-9999)
+        ivar = ivar[:, strx:endx, stry:endy].filled(-9999)
         scale_factor = (
             dataset.variables["sun"].scale_factor
             if "scale_factor" in dataset.variables["sun"].ncattrs()
@@ -137,7 +137,7 @@ def main(
     # Read minimum temperature data or estimate it
     if "tmin" in dataset.variables:
         ivar = np.swapaxes(dataset.variables["tmin"][:], 0, 1)
-        ivar = ivar[srtx:endx, srty:endy].filled(-9999)
+        ivar = ivar[strx:endx, stry:endy].filled(-9999)
         scale_factor = (
             dataset.variables["tmin"].scale_factor
             if "scale_factor" in dataset.variables["tmin"].ncattrs()
@@ -168,11 +168,11 @@ def main(
     ksat = np.zeros((endx, endy, llen), dtype=np.float32)
 
     if "whc" in dataset.variables:
-        whc = dataset.variables["whc"][srtx:endx, srty:endy, :].filled(-9999)
+        whc = dataset.variables["whc"][strx:endx, stry:endy, :].filled(-9999)
         whc = np.moveaxis(whc, 2, 1)
 
     if "perc" in dataset.variables:
-        ksat = dataset.variables["perc"][srtx:endx, srty:endy, :].filled(-9999)
+        ksat = dataset.variables["perc"][strx:endx, stry:endy, :].filled(-9999)
         ksat = np.moveaxis(ksat, 2, 1)
 
     dataset.close()
@@ -211,8 +211,8 @@ def main(
     npp_var = output_dataset.createVariable("npp", np.float32, ("lon", "lat", "months"))
 
     # Write variables to the output file
-    lon_var[:] = lon[srtx:endx]
-    lat_var[:] = lat[srty:endy]
+    lon_var[:] = lon[strx:endx]
+    lat_var[:] = lat[stry:endy]
     biome_var[:, :] = biome
     wdom_var[:, :] = wdom
     gdom_var[:, :] = gdom
@@ -351,7 +351,7 @@ def get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5):
     - resolution: Resolution of the array (default is 0.5 degrees)
 
     Returns:
-    - strx, srty: Start coordinates in the array
+    - strx, stry: Start coordinates in the array
     - cntx, cnty: Count of tiles in the array
     """
     # Define the array dimensions based on resolution
@@ -365,15 +365,15 @@ def get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5):
 
     # Calculate the indices
     strx = int((lon_min + 180) / resolution)
-    srty = int((90 - lat_max) / resolution)
+    stry = int((90 - lat_max) / resolution)
     endx = int((lon_max + 180) / resolution)
     endy = int((90 - lat_min) / resolution)
 
     # Calculate the counts
     cntx = endx - strx + 1
-    cnty = endy - srty + 1
+    cnty = endy - stry + 1
 
-    return strx, srty, cntx, cnty
+    return strx, stry, cntx, cnty
 
 
 def handle_err(status):
