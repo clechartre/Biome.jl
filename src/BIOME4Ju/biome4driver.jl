@@ -138,7 +138,7 @@ function main(
     close(whc_ds)
 
     # Run the prediction
-    biome, wdom, gdom, npp, tcm, gdd0, gdd5, subpft, wetness = serial_process(
+    biome, wdom, gdom, npp, tcm, gdd0, gdd5, subpft, wetness = parallel_process(
         cntx,
         cnty,
         temp,
@@ -203,7 +203,7 @@ function main(
     # Get the current date and time
     current_datetime = Dates.format(now(), "yyyy-mm-dd_HHMM")
     # Dynamically create the output filename
-    outfile = "/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/output_$(current_datetime).nc"    
+    outfile = "/home/lechartr/BIOME4Py/output_$(current_datetime).nc"    
     # Prepare output file (creating a new NetCDF file)
     output_dataset = NCDataset(outfile, "c")  # "c" for create
 
@@ -279,6 +279,11 @@ function parallel_process(
     wdom = fill(-9999, cntx, cnty)
     gdom = fill(-9999, cntx, cnty)
     npp = fill(-9999.0f0, cntx, cnty, 13)
+    tcm = fill(-9999.0f0, cntx, cnty)
+    gdd0 = fill(-9999.0f0, cntx, cnty)
+    gdd5 = fill(-9999.0f0, cntx, cnty)
+    subpft = fill(-9999.0f0, cntx, cnty)
+    wetness = fill(-9999.0f0, cntx, cnty)
 
     futures = []
     for y in 1:cnty
@@ -287,14 +292,19 @@ function parallel_process(
     end
 
     for future in futures
-        y, biome_row, wdom_row, gdom_row, npp_row = fetch(future)
+        y, biome_row, wdom_row, gdom_row, npp_row, tcm_row, gdd0_row, gdd5_row, subpft_row, wetness_row = fetch(future)
         biome[:, y] = biome_row
         wdom[:, y] = wdom_row
         gdom[:, y] = gdom_row
         npp[:, y, :] = npp_row
+        tcm[:, y] = tcm_row
+        gdd0[:, y] = gdd0_row
+        gdd5[:, y] = gdd5_row
+        subpft[:, y] = subpft_row
+        wetness[:, y] = wetness_row
     end
 
-    return biome, wdom, gdom, npp
+    return biome, wdom, gdom, npp, tcm, gdd0, gdd5, subpft, wetness
 end
 
 function serial_process(
@@ -509,18 +519,5 @@ function parse_command_line()
     end
     return parse_args(s)
 end
-
-
-main(
-"alldata", #africa: -20/40/-35/40
-324.0, 
-false, 
-"/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/data/generated_data/temp_2013_05.nc",
- "/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/data/generated_data/tmin_2013_05.nc",
- "/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/data/generated_data/prec_2013_05.nc",
- "/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/data/generated_data/sun_2013_05.nc",
- "/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/data/generated_data/ksat_layers.nc",
- "/Users/capucine/Documents/PhD/models/BIOME4/code/BIOME4Py/data/generated_data/whc_layers.nc")
-
 
 end # End of module
