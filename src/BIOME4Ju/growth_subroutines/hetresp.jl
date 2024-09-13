@@ -128,17 +128,3 @@ function hetresp(
 end
 
 end # module
-
-using .HeterotrophicRespiration
-
-# # Example run
-# pft = 1
-# nppann = 1200.0
-# tair = [15.0 for _ in 1:12]
-# tsoil = [10.0 for _ in 1:12]
-# aet = [50.0 for _ in 1:12]
-# moist = [0.5 for _ in 1:12]
-# isoveg = -25.0
-
-# result = HeterotrophicRespiration.hetresp(pft, nppann, tair, tsoil, aet, moist, isoveg)
-# println(result)

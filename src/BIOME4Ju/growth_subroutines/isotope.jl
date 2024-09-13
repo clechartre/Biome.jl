@@ -108,18 +108,3 @@ function isotope(
 end
 
 end # module
-
-using .Isotopes
-
-# Example run
-Cratio = [0.1 for _ in 1:12]
-Ca = 400.0
-temp = [20.0 for _ in 1:12]
-Rd = [0.5 for _ in 1:12]
-c4month = [false, false, false, false, false, false, true, true, true, false, false, false]
-mgpp = [100.0 for _ in 1:12]
-phi = 0.8
-gpp = 1200.0
-
-result = Isotopes.isotope(Cratio, Ca, temp, Rd, c4month, mgpp, phi, gpp)
-println(result)

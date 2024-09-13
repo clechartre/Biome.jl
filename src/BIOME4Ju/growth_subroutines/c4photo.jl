@@ -124,19 +124,3 @@ function c4photo(
 end
 
 end # module
-
-using .C4Photosynthesis
-
-# # Example run
-# ratio = 0.8
-# dsun = 5.0
-# daytime = 12.0
-# temp = 30.0
-# age = 6.0
-# fpar = 0.5
-# p = 101.3
-# ca = 400.0
-# pft = 8
-
-# result = C4Photosynthesis.c4photo(ratio, dsun, daytime, temp, age, fpar, p, ca, pft)
-# println(result)

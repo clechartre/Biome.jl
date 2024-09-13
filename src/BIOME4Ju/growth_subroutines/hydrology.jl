@@ -265,26 +265,3 @@ function hydrology(
 end
 
 end # module
-
-using .Hydrology
-
-# Example run
-dprec = [rand() for _ in 1:365]
-dmelt = [rand() for _ in 1:365]
-deq = [rand() for _ in 1:365]
-root = 0.5
-k = [0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 1.0]
-maxfvc = 0.8
-pft = 1
-phentype = 1
-wst = 0.3
-gcopt = [0.1 for _ in 1:365]
-mgmin = 0.05
-dphen = rand(365, 2)
-dtemp = [15.0 for _ in 1:365]
-grass = 1
-emax = 0.9
-pftpar = rand(2, 5)
-
-result = Hydrology.hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtemp, grass, emax, pftpar)
-println(result)

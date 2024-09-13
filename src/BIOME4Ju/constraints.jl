@@ -61,20 +61,3 @@ function constraints(
 end
 
 end # module
-
-using .Constraints
-
-# Example run
-tcm = -5.0
-twm = 15.0
-tminin = -20.0
-gdd5 = 1200.0
-rad0 = 200.0
-gdd0 = 1500.0
-maxdepth = 2.0
-
-tmin, ts, clindex, pfts = Constraints.constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth)
-println("tmin: ", tmin)
-println("ts: ", ts)
-println("clindex: ", clindex)
-println("pfts: ", pfts)

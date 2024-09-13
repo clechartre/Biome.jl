@@ -45,11 +45,3 @@ end
 
 end # module
 
-using .SoilTemperature
-
-# Example run
-tair = [0.0, 1.0, 5.0, 10.0, 15.0, 20.0, 25.0, 25.0, 20.0, 15.0, 10.0, 5.0]
-soiltext = [1.0, 0.5, 0.2, 0.3, 0.4, 0.1, 0.6, 0.8, 0.9]
-
-result = SoilTemperature.soiltemp(tair, soiltext)
-println(result)

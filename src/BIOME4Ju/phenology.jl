@@ -106,18 +106,3 @@ function phenology(
 end
 
 end # module
-
-using .Phenology
-
-# Example run
-dtemp = [rand() * 20.0 for _ in 1:365]
-temp = [10.0 for _ in 1:12]
-tcm = -5.0
-tdif = 0.0
-tmin = -15.0
-pft = 1
-ddayl = [10.0 for _ in 1:365]
-pftpar = rand(10, 10)
-
-result = Phenology.phenology(dtemp, temp, tcm, tdif, tmin, pft, ddayl, pftpar)
-println(result)

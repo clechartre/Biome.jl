@@ -34,7 +34,7 @@ function biome4(vars_in, output)
     numofpfts = 13
 
     # Initialize variables
-    optdata = zeros(Int, numofpfts + 1, 500)
+    optdata = zeros(AbstractFloat, numofpfts + 1, 500)
     pfts = zeros(Int, numofpfts)
 
     temp = zeros(12)
@@ -148,13 +148,13 @@ function biome4(vars_in, output)
 
     #If you want to bypass the environmental constraints for your model
     # set all pfts to present (1). You can turn them off by setting to 0
-    # pfts[1] = 1
+    pfts[1] = 0
     # pfts[2] = 1
     # pfts[3] = 1
     # pfts[4] = 1
     # pfts[5] = 1
     # pfts[6] = 1
-    # pfts[7] = 1
+    # pfts[7] = 1 
     # pfts[8] = 1
     # pfts[9] = 1
     # pfts[10] = 1
@@ -168,8 +168,6 @@ function biome4(vars_in, output)
 
     # Calculate optimal LAI and NPP for the selected PFTs
     for pft in 1:numofpfts
-        optlai[pft+1] = 0
-        optnpp[pft+1] = 0
         if pfts[pft] != 0
             if pftpar[pft][1] >= 2
                 # Initialize the generic summergreen phenology
@@ -177,7 +175,7 @@ function biome4(vars_in, output)
             end
 
             # Assumed that annp = annual precipitation and subbed by tprec (total precipitation)
-            optdata, optlai[pft+1], optnpp[pft+1], realout = FindNPP.findnpp(
+            optdata[pft+1, :], optlai[pft+1], optnpp[pft+1], realout = FindNPP.findnpp(
                 pfts,
                 pft,
                 optlai[pft+1],
@@ -192,7 +190,7 @@ function biome4(vars_in, output)
                 ppeett_results.dayl,
                 k,
                 pftpar,
-                optdata,
+                optdata[pft+1, :],
                 dphen,
                 co2,
                 p,
@@ -282,16 +280,16 @@ function diagnostic_output(biome, biomename, optdata)
 
     # First loop: Calculate sumagnpp
     for i in 2:7
-        if optdata[9, 36 + i] > 0
-            sumagnpp += optdata[9, 36 + i] / 10.0
+        if optdata[9+1, 36 + i] > 0
+            sumagnpp += optdata[9+1, 36 + i] / 10.0
         end
     end
 
     # Second loop: Calculate delag
     for i in 2:7
-        if optdata[9, 36 + i] > 0
-            wtagnpp = optdata[9, 36 + i] / (sumagnpp * 10.0)
-            delag += (optdata[9, 79 + i] * wtagnpp) / 100.0
+        if optdata[9+1, 36 + i] > 0
+            wtagnpp = optdata[9+1, 36 + i] / (sumagnpp * 10.0)
+            delag += (optdata[9+1, 79 + i] * wtagnpp) / 100.0
         end
     end
 

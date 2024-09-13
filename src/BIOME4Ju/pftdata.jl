@@ -35,8 +35,3 @@ end
 
 end # module
 
-using .PFTData
-
-# Example run
-pftpar = PFTData.pftdata()
-println(pftpar)

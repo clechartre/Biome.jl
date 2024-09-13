@@ -53,12 +53,3 @@ end
 
 end # module
 
-using .ClimateData
-
-# Example run
-temp = [0.0, 1.0, 5.0, 10.0, 15.0, 20.0, 25.0, 25.0, 20.0, 15.0, 10.0, 5.0]
-prec = [30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0]
-dtemp = [rand() * 30.0 - 10.0 for _ in 1:365]
-
-result = ClimateData.climdata(temp, prec, dtemp)
-println(result)

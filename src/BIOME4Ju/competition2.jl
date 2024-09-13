@@ -44,7 +44,6 @@ function competition2(
     pftmaxlai = 0
     dom = 0
     wdom = 0
-    woodpft = 0
 
     maxnpp = 0.0
     maxlai = 0.0
@@ -54,15 +53,25 @@ function competition2(
 
     # Choose the dominant woody PFT on the basis of NPP
     for pft in 1:numofpfts
-        if grass[pft+1]
+        if grass[pft+1] == true
             if optnpp[pft+1] > grassnpp
                 grassnpp = optnpp[pft+1]
                 grasspft = pft
             end
         else
-            pftmaxnpp, maxnpp, pftmaxlai, maxlai, woodpft = choose_woody_npp_lai(
-                pft, optnpp, optlai, pftmaxnpp, maxnpp, pftmaxlai, maxlai
-            )
+            if optnpp[pft+1] > maxnpp
+                maxnpp = optnpp[pft+1]
+                pftmaxnpp = pft
+            end
+        
+            if optlai[pft+1] > maxlai
+                maxlai = optlai[pft+1]
+                pftmaxlai = pft
+            elseif optlai[pft+1] == maxlai
+                maxlai = optlai[pftmaxnpp+1]
+                pftmaxlai = pftmaxnpp
+            end
+        
         end
     end
 
@@ -115,7 +124,7 @@ function competition2(
     # Call the newassignbiome function
     biome = BiomeAssignment.newassignbiome(
         optpft,
-        woodpft,
+        wdom,
         grasspft,
         subpft,
         npp,
@@ -178,31 +187,7 @@ function initialize_presence(numofpfts::Int, optnpp::AbstractArray{Float64})::Tu
     return grass, present
 end
 
-function choose_woody_npp_lai(
-    pft::Int,
-    optnpp::AbstractArray{Float64},
-    optlai::AbstractArray{Float64},
-    pftmaxnpp::Int,
-    maxnpp::Float64,
-    pftmaxlai::Int,
-    maxlai::Float64
-)::Tuple{Int, Float64, Int, Float64, Int}
 
-    if optnpp[pft+1] > maxnpp
-        maxnpp = optnpp[pft+1]
-        pftmaxnpp = pft
-    end
-
-    if optlai[pft+1] > maxlai
-        maxlai = optlai[pft+1]
-        pftmaxlai = pft
-    elseif optlai[pft+1] == maxlai
-        maxlai = optlai[pftmaxnpp+1]
-        pftmaxlai = pftmaxnpp
-    end
-
-    return pftmaxnpp, maxnpp, pftmaxlai, maxlai, pft
-end
 
 function calculate_soil_moisture(numofpfts::Int, optdata::AbstractArray{})::Tuple{AbstractArray{Float64}, Vector{Int}, AbstractArray{Float64}, AbstractArray{Float64}, AbstractArray{Float64}}
     wetlayer = zeros(Float64, numofpfts+1, 2)
@@ -273,6 +258,15 @@ function determine_optimal_pft(
 )::Tuple{Int, Float64, Float64, Int, Float64,Float64}
     flop = false
     nppdif = 0
+
+    # Initialize, else I get an error
+    woodylai = optlai[wdom+1]
+    woodnpp = optnpp[wdom+1]
+    grasslai = optlai[grasspft+1]
+    
+    firedays = optdata[wdom+1, 199]
+    subfiredays = optdata[subpft+1, 199]
+    greendays = optdata[wdom+1, 200] 
 
     while true
         woodylai = optlai[wdom+1]
@@ -452,7 +446,7 @@ function output_diagnostics(
     grassnpp::Float64,
     subpft::Int
 )::Nothing
-    for pft in 1:numofpfts
+    for pft in 1:numofpfts+1
         if pfts[pft] != 0
             println(@sprintf("%5d%5d%6.2f%6.2f%5d%5d",
                 pft, drymonth[pft+1], driest[pft+1], wetness[pft+1], optdata[pft+1, 199], optdata[pft+1, 200]
@@ -460,8 +454,8 @@ function output_diagnostics(
         end
     end
 
-    woodylai = optlai[wdom]
-    woodnpp = optnpp[wdom]
+    woodylai = optlai[wdom+1]
+    woodnpp = optnpp[wdom+1]
 
     println(" wpft  woodynpp   woodylai gpft grassnpp subpft phi")
     println(@sprintf("%5d%10.2f%10.2f%5d%10.2f%5d%8.2f",
@@ -480,7 +474,7 @@ function format_values_for_output(
 )::Tuple{Int, Float64, Float64, Float64}
 
     dom = optpft
-
+    
     if optpft == 14
         woodnpp = optnpp[wdom+1]
         woodylai = optlai[wdom+1]
@@ -525,9 +519,11 @@ function format_values_for_output(
         optpft = 0
     end
 
-    npp = optnpp[dom+1]
-    lai = optlai[dom+1]
-    grasslai = optlai[grasspft+1]
+    if optpft != 14
+        npp = optnpp[dom+1]
+        lai = optlai[dom+1]
+        grasslai = optlai[grasspft+1]
+    end
 
     return dom, npp, lai, grasslai
 end
@@ -582,7 +578,7 @@ function assign_output_values(
     output[14] = optdata[dom+1, 7]
 
     # lairatio is estimated, the original code does not say where it is from
-    output[15] = optlai[dom+1] != 0 ? round(100.0 * (lai / optlai[dom+1])) : 0
+    output[15] = 0.0 # optlai[dom+1] != 0 ? round(100.0 * (lai / optlai[dom+1])) : 0
     output[16] = nppdif
 
     if lai < 2.0
@@ -605,8 +601,8 @@ function assign_output_values(
     output[52] = optdata[8, 52]
 
     # Optimized NPP for all PFTs
-    for i in 1:11
-        output[59 + i] = optnpp[i+1]
+    for i in 1:13
+        output[59 + i] = optnpp[i]
     end
 
     # monthly discrimination for one pft
@@ -688,7 +684,7 @@ function assign_output_values(
 
     output[425] = round(wetlayer[dom+1, 1])
     output[426] = round(wetlayer[dom+1, 2])
-    output[427] = wetlayer[dom+1, 2] != 0 ? round((wetlayer[dom+1, 1] / wetlayer[dom+1, 2]) * 100.0) : 0
+    output[427] = 0.0 # wetlayer[dom+1, 2] != 0 ? round((wetlayer[dom+1, 1] / wetlayer[dom+1, 2]) * 100.0) : 0
 
     output[450] = optdata[dom+1, 450]
     output[451] = optdata[dom+1, 451]
@@ -701,26 +697,3 @@ function assign_output_values(
 end
 
 end # module Competition
-
-# using .Competition
-
-# # Define input values
-# optnpp = rand(13, 13)
-# optlai = rand(13, 13)
-# wetness = rand(13, 13)
-# tmin = 25.0
-# tprec = 100.0
-# pfts = collect(1:13)
-# optdata = rand(13, 500)
-# output = zeros(Float64, 500)
-# diagmode = true
-# numofpfts = 13
-# gdd0 = 1200.0
-# gdd5 = 1000.0
-# tcm = 10.0
-# pftpar = rand(13, 13)
-# soil = rand(13, 13)
-
-# # Call the competition2 function
-# result = Competition.competition2(optnpp, optlai, wetness, tmin, tprec, pfts, optdata, output, diagmode, numofpfts, gdd0, gdd5, tcm, pftpar, soil)
-# println(result.output[60:72])

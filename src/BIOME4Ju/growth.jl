@@ -94,6 +94,7 @@ function growth(
     grass = round(Int, pftpar[pft, 10])
     emax = pftpar[pft,3]
     maxfvc = 1.0 - exp(-kk[pft] * maxlai)
+    fpar = 1.0 - exp(-kk[pft] * maxlai)
     phi = 0.0
     doptgc = [0.0 for _ in 1:12]
 
@@ -114,7 +115,7 @@ function growth(
     for m in 1:12
         tsecs = 3600.0 * dayl[m]
         fpar = 1.0 - exp(-kk[pft] * maxlai)
-
+        
         if c4
             photosynthesis_results_list[m] = C4Photosynthesis.c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
         else

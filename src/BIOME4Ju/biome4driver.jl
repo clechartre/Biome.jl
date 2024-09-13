@@ -10,8 +10,11 @@ using ArgParse
 using NCDatasets
 using DataStructures: OrderedDict
 using Statistics
-using Plots  
+ENV["GKSwstype"] = "100"  # Offscreen (no display required)
+using Plots
+gr()   
 using Dates 
+using Missings
 
 
 # First-party
@@ -48,7 +51,7 @@ function main(
 
     prec_ds = NCDataset(precfile, "a")
     prec_ds = uniform_fill_value(prec_ds)
-
+    
     sun_ds = NCDataset(sunfile, "a")
     sun_ds = uniform_fill_value(sun_ds)
     
@@ -102,33 +105,36 @@ function main(
     # Keep lon and lat as they are, cut according to bbox
     lon = lon[strx:endx]
     lat = lat[stry:endy]
+
     # Flip the data arrays along the latitude axis
     temp = temp_ds["temp"][strx:endx, stry:endy, :][:, end:-1:1, :]
     tmin = tmin_ds["tmin"][strx:endx, stry:endy][:, end:-1:1]
     prec = prec_ds["prec"][strx:endx, stry:endy, :][:, end:-1:1, :]
     cldp = sun_ds["sun"][strx:endx, stry:endy, :][:, end:-1:1, :]
-    ksat = ksat_ds["ksat"][strx:endx, stry:endy, :][:, end:-1:1, :]
-    whc = whc_ds["whc"][strx:endx, stry:endy, :][:, end:-1:1, :]
+    ksat = ksat_ds["ksat"][strx:endx, stry:endy, :]
+    whc = whc_ds["whc"][strx:endx, stry:endy, :]
+
+    # Verify value range
+    println("max temp: ", maximum(temp), ", min temp: ", minimum(temp))
+    println("max tmin: ", maximum(tmin), ", min tmin: ", minimum(tmin))
+    println("max prec: ", maximum(prec), ", min prec: ", minimum(prec))
+    println("max cldp: ", maximum(cldp), ", min cldp: ", minimum(cldp))
+    println("max ksat: ", maximum(ksat), ", min ksat: ", minimum(ksat))
+    println("max whc: ", maximum(whc), ", min whc: ", minimum(whc))
 
     # Plot variables
-    display(heatmap(lon, lat, temp[:,:, 1]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        clims = (-60, 60)))
-    display(heatmap(lon, lat, tmin[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        clims = (-60, 60)))
-    display(heatmap(lon, lat, prec[:,:, 1]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        clims = (0, 100)))
-    display(heatmap(lon, lat, cldp[:,:, 1]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        clims = (0, 100)))
-    display(heatmap(lon, lat, ksat[:,:, 1]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        clims = (0, 50)))
-    display(heatmap(lon, lat, whc[:,:, 1]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        clims = (0, 5000)))
+    plot_folder = "/home/lechartr/BIOME4Py/variable_plots"
+    if !isdir(plot_folder)
+        mkdir(plot_folder)
+    end
+    year = "2005"
+    # # Plot input variables
+    save_plot("temperature", lon, lat, temp[:, :, 1], "Temperature", (-60, 60), plot_folder, year)
+    save_plot("tmin", lon, lat, tmin[:, :], "Min Temperature", (-60, 10), plot_folder, year)
+    save_plot("precipitation", lon, lat, prec[:, :, 1], "Precipitation", (0, 400), plot_folder, year)
+    save_plot("cloud_cover", lon, lat, cldp[:, :, 1], "Cloud Cover", (0, 100), plot_folder, year)
+    save_plot("ksat", lon, lat, ksat[:, :, 1], "Saturated Conductivity", (0, 50), plot_folder, year)
+    save_plot("whc", lon, lat, whc[:, :, 1], "Water Holding Capacity", (0, 5000), plot_folder, year)
 
     close(temp_ds)
     close(tmin_ds)
@@ -153,51 +159,6 @@ function main(
         lon,
         diagnosticmode,
     )
-
-    display(heatmap(lon, lat, biome[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "Biome",
-        clims = (0, 27)))
-    display(heatmap(lon, lat, wdom[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "wdom/optpft",
-        clims = (0,14)))
-    display(heatmap(lon, lat, gdom[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "gdom"))
-    # Plot NPP for all PFTs on separate tiles
-    num_pfts = size(npp, 3)
-    plot_layout = @layout [grid(ceil(Int, sqrt(num_pfts)), ceil(Int, sqrt(num_pfts)))]
-    plot_list = []
-
-    for pft_idx in 1:num_pfts
-        push!(plot_list, heatmap(lon, lat, npp[:, :, pft_idx]', 
-            xlabel = "Longitude", ylabel = "Latitude",
-            title = "PFT $pft_idx",
-            clims = (0, 3000)))
-    end
-    # Display all the plots in a grid layout
-    display(plot(plot_list..., layout = plot_layout, size=(1200, 1200)))
-
-    display(heatmap(lon, lat, tcm[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "tcm",
-        clims = (-60, 50)))
-    display(heatmap(lon, lat, gdd0[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "gdd0",
-        clims = (0, 12000)))
-    display(heatmap(lon, lat, gdd5[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "gdd5"))
-    display(heatmap(lon, lat, subpft[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "subpft",
-        clims = (0,10)))
-    display(heatmap(lon, lat, wetness[:,:]', 
-        xlabel = "Longitude", ylabel = "Latitude",
-        plot_title = "wetness",
-        clims = (0, 1000)))
 
 
     # Get the current date and time
@@ -445,6 +406,23 @@ function handle_err(status)
         exit(1)
     end
 end
+
+function save_plot(plot_name::String, lon, lat, data, title::String, clims::Tuple, plot_folder::String, year::String)
+    # Close any previous plot windows
+    closeall()  # Clears any previous plots to avoid duplication
+    
+    # Create the plot
+    p = heatmap(lon, lat, data, xlabel = "Longitude", ylabel = "Latitude", title = title, clims = clims)
+    
+    # Define the output file path
+    filepath = joinpath(plot_folder, @sprintf("%s_%s.png", plot_name, year))
+    
+    # Save the plot
+    println("Saving plot to $filepath")
+    savefig(p, filepath)
+    
+end
+
 
 function uniform_fill_value(ds::NCDataset; fill_value=-9999)
     for varname in keys(ds)  # Iterate through all variable names in the dataset

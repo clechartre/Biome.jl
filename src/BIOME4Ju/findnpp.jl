@@ -23,14 +23,14 @@ function findnpp(
     dayl::Array{Float64,1},
     k::AbstractArray,
     pftpar::AbstractArray{Float64, 2},
-    optdata::AbstractArray{},
+    optdata,
     dphen::AbstractArray{Float64},
     co2::AbstractFloat,
     p::AbstractFloat,
     tsoil::Array{Float64,1},
     realout::Array{Float64,2},
     numofpfts::Real,
-) :: Tuple{Array{Float64,2}, Float64, Float64, Array{Float64,2}}
+) 
     """Run NPP optimization model for one pft"""
 
     # Initialize variables
@@ -77,7 +77,7 @@ function findnpp(
         if npp >= optnpp
             optlai = alai[1]
             optnpp = npp
-            optdata[pft+1, 1:500] = inv[1:500]
+            optdata[1:500] = inv[1:500]
         end
 
         growth_results = Growth.growth(
@@ -106,7 +106,7 @@ function findnpp(
         if npp >= optnpp
             optlai = alai[2]
             optnpp = npp
-            optdata[pft+1, 1:500] = inv[1:500]
+            optdata[1:500] = inv[1:500]
             realout[pft+1, 1:500] = realin[1:500]
         end
 
@@ -116,6 +116,7 @@ function findnpp(
             lowbound = 0.01
         end
     end
+    
     return optdata, optlai, optnpp, realout
 end
 

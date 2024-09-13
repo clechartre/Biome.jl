@@ -173,29 +173,3 @@ function newassignbiome(
 end
 
 end # module
-
-using .BiomeAssignment
-
-# Example run
-optpft = 6
-woodpft = 3
-grasspft = 2
-subpft = 5
-optnpp = 150
-woodnpp = 100
-grassnpp = 50
-subnpp = 80
-greendays = 200
-gdd0 = 500.0
-gdd5 = 300.0
-tcm = -10.0
-present = [false, false, true, true, false, false, false]
-woodylai = 2.0
-grasslai = 1.5
-tmin = 0.0
-
-biome = BiomeAssignment.newassignbiome(
-    optpft, woodpft, grasspft, subpft, optnpp, woodnpp, grassnpp, subnpp,
-    greendays, gdd0, gdd5, tcm, present, woodylai, grasslai, tmin
-)
-println("Assigned biome: ", biome)

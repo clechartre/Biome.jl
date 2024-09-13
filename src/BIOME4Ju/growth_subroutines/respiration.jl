@@ -91,17 +91,3 @@ function respiration(
 end
 
 end # module
-
-using .Respiration
-
-# Example run
-gpp = 1000.0
-alresp = 50.0
-temp = [10.0 for _ in 1:12]
-grass = 1
-lai = 3.0
-fpar = 0.5
-pft = 2
-
-result = Respiration.respiration(gpp, alresp, temp, grass, lai, fpar, pft)
-println(result)
