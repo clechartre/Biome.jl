@@ -30,7 +30,8 @@ function main(
     precfile::String,
     sunfile::String,
     ksatfile::String,
-    whcfile::String
+    whcfile::String, 
+    year::String
 )
 
     println("Temperature file: $tempfile")
@@ -114,6 +115,7 @@ function main(
     ksat = ksat_ds["ksat"][strx:endx, stry:endy, :]
     whc = whc_ds["whc"][strx:endx, stry:endy, :]
 
+
     # Verify value range
     println("max temp: ", maximum(temp), ", min temp: ", minimum(temp))
     println("max tmin: ", maximum(tmin), ", min tmin: ", minimum(tmin))
@@ -134,7 +136,7 @@ function main(
     save_plot("precipitation", lon, lat, prec[:, :, 1], "Precipitation", (0, 400), plot_folder, year)
     save_plot("cloud_cover", lon, lat, cldp[:, :, 1], "Cloud Cover", (0, 100), plot_folder, year)
     save_plot("ksat", lon, lat, ksat[:, :, 1], "Saturated Conductivity", (0, 50), plot_folder, year)
-    save_plot("whc", lon, lat, whc[:, :, 1], "Water Holding Capacity", (0, 5000), plot_folder, year)
+    save_plot("whc", lon, lat, whc[:, :, 1], "Water Holding Capacity", (0, 500), plot_folder, year)
 
     close(temp_ds)
     close(tmin_ds)
@@ -336,8 +338,8 @@ function process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, 
         input[29:40] = cldp[x, y, :]
         input[41] = coalesce(mean(ksat[x, y, 1:2]), -9999.0f0)
         input[42] = coalesce(mean(ksat[x, y, 1:2]), -9999.0f0)
-        input[43] = coalesce(sum(whc[x, y, 1:2]), -9999.0f0)
-        input[44] = coalesce(sum(whc[x, y, 1:2]), -9999.0f0)
+        input[43] = coalesce(whc[x, y, 1], -9999.0f0)
+        input[44] = coalesce(whc[x, y, 2], -9999.0f0)
         input[49] = lon[x]
 
         input[46] = diag ? 1.0 : 0.0  # diagnostic mode

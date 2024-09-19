@@ -156,17 +156,17 @@ if __name__ == "__main__":
         shapefile_path=shapefile_path
     )
     wc_files = {
-        # We're using 10 and 150 as intermediate values in mm to use 
+        # We're using 1 and 15 as values in mm to use 
         # in our multiplication with depth to calculate WHC
-        '10': (
+        '1': (
             "data/downloaded_data/sol_watercontent_10KPa_0-5cm_mean.tif",
-            "data/downloaded_data/sol_watercontent_33Kpa_0-5cm_mean.tif",
-            "data/downloaded_data/sol_watercontent_1500Kpa_0-5cm_mean.tif"
+            "data/downloaded_data/sol_watercontent_33KPa_0-5cm_mean.tif",
+            "data/downloaded_data/sol_watercontent_1500KPa_0-5cm_mean.tif"
         ),
-        '150': (
-            "data/downloaded_data/sol_watercontent_10Kpa_15-30cm_mean.tif",
-            "data/downloaded_data/sol_watercontent_33Kpa_15-30cm_mean.tif",
-            "data/downloaded_data/sol_watercontent_1500Kpa_15-30cm_mean.tif"
+        '15': (
+            "data/downloaded_data/sol_watercontent_10KPa_15-30cm_mean.tif",
+            "data/downloaded_data/sol_watercontent_33KPa_15-30cm_mean.tif",
+            "data/downloaded_data/sol_watercontent_1500KPa_15-30cm_mean.tif"
         ),
         # Add more depth layers as needed
         # Depth here are expressed in mm with one reference
