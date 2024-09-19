@@ -7,7 +7,7 @@ conductivity of the soil and a time lag between soil and air
 temperatures. Based on work by S. Sitch.
 """
 
-function soiltemp(tair::AbstractArray{Float64}, soiltext::AbstractArray{Float64})::AbstractArray{Float64}
+function soiltemp(tair::AbstractArray{Float64})::AbstractArray{Float64}
     pie = 4.0 * atan(1.0)
 
     therm = [8.0, 4.5, 1.0, 5.25, 4.5, 2.75, 1.0, 1.0, 8.0]

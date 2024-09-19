@@ -121,7 +121,7 @@ function biome4(vars_in, output)
 
     # Initialize parameters derived from climate data:
     climate_results = ClimateData.climdata(temp, prec, dtemp)
-    tsoil = SoilTemperature.soiltemp(temp, soil)
+    tsoil = SoilTemperature.soiltemp(temp)
 
     # Calculate mid-month values for pet, sun & dayl from temp, cloud & lat:
     ppeett_results = Ppeett.ppeett(lat, dtemp, dclou, radanom, temp)
