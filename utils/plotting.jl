@@ -72,7 +72,7 @@ function plot_biome_distribution(filename::String, output_file::String)
     A = Raster(filename, name="biome")
 
     # Convert the raster data to integers
-    int_data = Int.(A[:])
+    int_data = Int.(A[:, :])
 
     # Replace 0 with -9999 (to represent "Nothing")
     int_data[int_data .== -9999] .= 0
@@ -104,6 +104,6 @@ function plot_biome_distribution(filename::String, output_file::String)
 end
 
 # Example usage:
-filename = "/home/lechartr/BIOME4Py/output_2024-08-28_1603.nc"
-output_file = "/home/lechartr/biome_distribution.png"
+filename = ""
+output_file = ""
 plot_biome_distribution(filename, output_file)

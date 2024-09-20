@@ -12,8 +12,8 @@ using DataStructures: OrderedDict
 using Statistics
 ENV["GKSwstype"] = "100"  # Offscreen (no display required)
 using Plots
-gr()   
-using Dates 
+gr()
+using Dates
 using Missings
 
 
@@ -30,7 +30,7 @@ function main(
     precfile::String,
     sunfile::String,
     ksatfile::String,
-    whcfile::String, 
+    whcfile::String,
     year::String
 )
 
@@ -46,19 +46,19 @@ function main(
     temp_ds = uniform_fill_value(temp_ds)
     lon = temp_ds["lon"][:]
     lat = temp_ds["lat"][:]
-    
+
     tmin_ds = NCDataset(tminfile, "a")
     tmin_ds = uniform_fill_value(tmin_ds)
 
     prec_ds = NCDataset(precfile, "a")
     prec_ds = uniform_fill_value(prec_ds)
-    
+
     sun_ds = NCDataset(sunfile, "a")
     sun_ds = uniform_fill_value(sun_ds)
-    
+
     ksat_ds = NCDataset(ksatfile, "a")
     ksat_ds = uniform_fill_value(ksat_ds)
-    
+
     whc_ds = NCDataset(whcfile, "a")
     whc_ds = uniform_fill_value(whc_ds)
     layers = whc_ds["soil_layer"][:]
@@ -81,9 +81,9 @@ function main(
         lon_max = boundingbox[2]
         lat_min = boundingbox[3]
         lat_max = boundingbox[4]
-    
+
         strx, stry, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max)
-    
+
         endx = strx + cntx - 1
         endy = stry + cnty - 1
     end
@@ -98,7 +98,7 @@ function main(
 
     # Read elevation data if available
     if @isdefined(elv_ds) && elv_ds !== nothing
-        elv = getindex.(elv_ds["elv"][strx:endx, stry:endy], :) 
+        elv = getindex.(elv_ds["elv"][strx:endx, stry:endy], :)
     else
         elv = zeros(Float32, (cntx, cnty))
     end
@@ -112,8 +112,8 @@ function main(
     tmin = tmin_ds["tmin"][strx:endx, stry:endy][:, end:-1:1]
     prec = prec_ds["prec"][strx:endx, stry:endy, :][:, end:-1:1, :]
     cldp = sun_ds["sun"][strx:endx, stry:endy, :][:, end:-1:1, :]
-    ksat = ksat_ds["ksat"][strx:endx, stry:endy, :]
-    whc = whc_ds["whc"][strx:endx, stry:endy, :]
+    ksat = ksat_ds["ksat"][strx:endx, stry:endy, :][:, end:-1:1, :]
+    whc = whc_ds["whc"][strx:endx, stry:endy, :][:, end:-1:1, :]
 
 
     # Verify value range
@@ -125,12 +125,12 @@ function main(
     println("max whc: ", maximum(whc), ", min whc: ", minimum(whc))
 
     # Plot variables
-    plot_folder = "/home/lechartr/BIOME4Py/variable_plots"
+    plot_folder = "./variable_plots"
     if !isdir(plot_folder)
         mkdir(plot_folder)
     end
-    year = "2005"
-    # # Plot input variables
+
+    # Plot input variables
     save_plot("temperature", lon, lat, temp[:, :, 1], "Temperature", (-60, 60), plot_folder, year)
     save_plot("tmin", lon, lat, tmin[:, :], "Min Temperature", (-60, 10), plot_folder, year)
     save_plot("precipitation", lon, lat, prec[:, :, 1], "Precipitation", (0, 400), plot_folder, year)
@@ -145,8 +145,81 @@ function main(
     close(ksat_ds)
     close(whc_ds)
 
+    # Set up the output
+
+    # Dynamically create the output filename
+    outfile = "./output_$(year).nc"
+    outfile = "./output_$(year).nc"
+    if isfile(outfile)
+        println("File $outfile already exists. Resuming from last processed row.")
+        output_dataset = NCDataset(outfile, "a")  # Open in append mode
+
+        # Extract existing variables
+        biome_var = output_dataset["biome"]      # Extract the biome variable
+        wdom_var = output_dataset["wdom"]        # Extract the woody dominance variable
+        gdom_var = output_dataset["gdom"]        # Extract the grass dominance variable
+        npp_var = output_dataset["npp"]          # Extract the NPP variable
+        tcm_var = output_dataset["tcm"]          # Extract the TCM variable
+        gdd0_var = output_dataset["gdd0"]        # Extract GDD0 variable
+        gdd5_var = output_dataset["gdd5"]        # Extract GDD5 variable
+        subpft_var = output_dataset["subpft"]    # Extract the subpft variable
+        wetness_var = output_dataset["wetness"]  # Extract the wetness variable
+
+    else
+        println("File $outfile does not exist. Creating a new file.")
+        output_dataset = NCDataset(outfile, "c")  # Create a new file
+            # Define dimensions and variables here if creating the file
+        defDim(output_dataset, "lon", size(lon, 1))
+        defDim(output_dataset, "lat", size(lat, 1))
+        defDim(output_dataset, "time", llen)
+        defDim(output_dataset, "months", tlen)
+        defDim(output_dataset, "pft", 13)
+
+        # Define variables with appropriate types and dimensions
+        lon_var = defVar(output_dataset, "lon", Float64, ("lon",), attrib = OrderedDict("units" => "degrees_east"))
+        lat_var = defVar(output_dataset, "lat", Float64, ("lat",), attrib = OrderedDict("units" => "degrees_north"))
+        biome_var = defVar(output_dataset, "biome", Int16, ("lon", "lat"), attrib = OrderedDict("description" => "Biome classification"))
+        wdom_var = defVar(output_dataset, "wdom", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "Dominant woody vegetation"))
+        gdom_var = defVar(output_dataset, "gdom", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "Dominant grass vegetation"))
+        npp_var = defVar(output_dataset, "npp", Float32, ("lon", "lat", "pft"), attrib = OrderedDict("units" => "gC/m^2/month","description" => "Net primary productivity"))
+        tcm_var = defVar(output_dataset, "tcm", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "tcm"))
+        gdd0_var = defVar(output_dataset, "gdd0", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "gdd0"))
+        gdd5_var = defVar(output_dataset, "gdd5", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "gdd5"))
+        subpft_var = defVar(output_dataset, "subpft", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "subpft"))
+        wetness_var = defVar(output_dataset, "wetness", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "wetness"))
+
+        # Add global attributes to the dataset
+        output_dataset.attrib["title"] = "Biome prediction output"
+        output_dataset.attrib["institution"] = "WSL"
+        output_dataset.attrib["source"] = "BIOME4 Model"
+
+        # Fill with placeholder values initially
+        lon_var[:] = lon
+        lat_var[:] = lat
+        biome_var[:, :] = fill(-9999, cntx, cnty)
+        wdom_var[:, :] = fill(-9999, cntx, cnty)
+        gdom_var[:, :] = fill(-9999, cntx, cnty)
+        npp_var[:, :, :] = fill(-9999.0f0, cntx, cnty, 13)
+        tcm_var[:, :] = fill(-9999.0f0, cntx, cnty)
+        gdd0_var[:, :] = fill(-9999.0f0, cntx, cnty)
+        gdd5_var[:, :] = fill(-9999.0f0, cntx, cnty)
+        subpft_var[:, :] = fill(-9999.0f0, cntx, cnty)
+        wetness_var[:, :] = fill(-9999.0f0, cntx, cnty)
+    end
+
+    # Find the last processed row
+    last_processed_row = 1
+    for y in 1:cnty
+        if all(biome_var[:, y] .== -9999)
+            last_processed_row = y
+            break
+        end
+    end
+    println("Resuming from row $last_processed_row.")
+
+    # Write to the dataset
     # Run the prediction
-    biome, wdom, gdom, npp, tcm, gdd0, gdd5, subpft, wetness = parallel_process(
+    serial_process(
         cntx,
         cnty,
         temp,
@@ -160,75 +233,18 @@ function main(
         whc,
         lon,
         diagnosticmode,
+        biome_var,
+        wdom_var,
+        gdom_var,
+        npp_var,
+        tcm_var,
+        gdd0_var,
+        gdd5_var,
+        subpft_var,
+        wetness_var,
+        output_dataset,
+        last_processed_row
     )
-
-
-    # Get the current date and time
-    current_datetime = Dates.format(now(), "yyyy-mm-dd_HHMM")
-    # Dynamically create the output filename
-    outfile = "/home/lechartr/BIOME4Py/output_$(current_datetime).nc"    
-    # Prepare output file (creating a new NetCDF file)
-    output_dataset = NCDataset(outfile, "c")  # "c" for create
-
-    # Define the dimensions of the dataset based on the biome matrix size
-    defDim(output_dataset, "lon", size(biome, 1))
-    defDim(output_dataset, "lat", size(biome, 2))
-    defDim(output_dataset, "time", llen)
-    defDim(output_dataset, "months", size(npp, 3))
-
-    # Define variables with appropriate types and dimensions
-    lon_var = defVar(output_dataset, "lon", Float64, ("lon",), attrib = OrderedDict(
-        "units" => "degrees_east"
-    ))
-    lat_var = defVar(output_dataset, "lat", Float64, ("lat",), attrib = OrderedDict(
-        "units" => "degrees_north"
-    ))
-    biome_var = defVar(output_dataset, "biome", Int16, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "Biome classification"
-    ))
-    wdom_var = defVar(output_dataset, "wdom", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "Dominant woody vegetation"
-    ))
-    gdom_var = defVar(output_dataset, "gdom", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "Dominant grass vegetation"
-    ))
-    npp_var = defVar(output_dataset, "npp", Float32, ("lon", "lat", "months"), attrib = OrderedDict(
-        "units" => "gC/m^2/month",
-        "description" => "Net primary productivity"
-    ))
-    tcm_var = defVar(output_dataset, "tcm", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "tcm"
-    ))
-    gdd0_var = defVar(output_dataset, "gdd0", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "gdd0"
-    ))
-    gdd5_var = defVar(output_dataset, "gdd5", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "gdd5"
-    ))
-    subpft_var = defVar(output_dataset, "subpft", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "subpft"
-    ))
-    wetness_var = defVar(output_dataset, "wetness", Float64, ("lon", "lat"), attrib = OrderedDict(
-        "description" => "wetness"
-    ))
-
-    # Write data to variables
-    lon_var[:] = lon
-    lat_var[:] = lat
-    biome_var[:, :] = biome
-    wdom_var[:, :] = wdom
-    gdom_var[:, :] = gdom
-    npp_var[:, :, :] = npp
-    tcm_var[:, :] = tcm
-    gdd0_var[:, :] = gdd0
-    gdd5_var[:, :] = gdd5
-    subpft_var[:, :] = subpft
-    wetness_var[:, :] = wetness
-
-    # Add global attributes to the dataset
-    output_dataset.attrib["title"] = "Biome prediction output"
-    output_dataset.attrib["institution"] = "WSL"
-    output_dataset.attrib["source"] = "BIOME4 Model"
 
     # Close the NetCDF file
     close(output_dataset)
@@ -236,71 +252,39 @@ end
 
 
 function parallel_process(
-    cntx, cnty, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag
+    cntx, cnty, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
+    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset, last_processed_row
 )
-    biome = fill(-9999, cntx, cnty)
-    wdom = fill(-9999, cntx, cnty)
-    gdom = fill(-9999, cntx, cnty)
-    npp = fill(-9999.0f0, cntx, cnty, 13)
-    tcm = fill(-9999.0f0, cntx, cnty)
-    gdd0 = fill(-9999.0f0, cntx, cnty)
-    gdd5 = fill(-9999.0f0, cntx, cnty)
-    subpft = fill(-9999.0f0, cntx, cnty)
-    wetness = fill(-9999.0f0, cntx, cnty)
 
     futures = []
-    for y in 1:cnty
+    for y in last_processed_row:cnty
         println("on row $y")
-        push!(futures, Threads.@spawn process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag))
+        push!(futures, Threads.@spawn process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
+                                                biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset))
     end
 
     for future in futures
-        y, biome_row, wdom_row, gdom_row, npp_row, tcm_row, gdd0_row, gdd5_row, subpft_row, wetness_row = fetch(future)
-        biome[:, y] = biome_row
-        wdom[:, y] = wdom_row
-        gdom[:, y] = gdom_row
-        npp[:, y, :] = npp_row
-        tcm[:, y] = tcm_row
-        gdd0[:, y] = gdd0_row
-        gdd5[:, y] = gdd5_row
-        subpft[:, y] = subpft_row
-        wetness[:, y] = wetness_row
+        fetch(future)
+
     end
 
-    return biome, wdom, gdom, npp, tcm, gdd0, gdd5, subpft, wetness
 end
 
 function serial_process(
-    cntx, cnty, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag
+    cntx, cnty, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
+    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset, last_processed_row
 )
-    biome = fill(-9999, cntx, cnty)
-    wdom = fill(-9999, cntx, cnty)
-    gdom = fill(-9999, cntx, cnty)
-    npp = fill(-9999.0f0, cntx, cnty, 13)
-    tcm = fill(-9999.0f0, cntx, cnty)
-    gdd0 = fill(-9999.0f0, cntx, cnty)
-    gdd5 = fill(-9999.0f0, cntx, cnty)
-    subpft = fill(-9999.0f0, cntx, cnty)
-    wetness = fill(-9999.0f0, cntx, cnty)
-
-    for y in 1:cnty
+    for y in last_processed_row:cnty
         println("on row $y")
-        y, biome_row, wdom_row, gdom_row, npp_row, tcm_row, gdd0_row, gdd5_row, subpft_row, wetness_row = process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag)
-        biome[:, y] = biome_row
-        wdom[:, y] = wdom_row
-        gdom[:, y] = gdom_row
-        npp[:, y, :] = npp_row
-        tcm[:, y] = tcm_row
-        gdd0[:, y] = gdd0_row
-        gdd5[:, y] = gdd5_row
-        subpft[:, y] = subpft_row
-        wetness[:, y] = wetness_row
+        process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
+                    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset)
+
     end
 
-    return biome, wdom, gdom, npp, tcm, gdd0, gdd5, subpft, wetness
 end
 
-function process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag)
+function process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
+                    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset)
     # Constants
     p0 = 101325.0  # sea level standard atmospheric pressure (Pa)
     cp = 1004.68506  # constant-pressure specific heat (J kg-1 K-1)
@@ -309,17 +293,13 @@ function process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, 
     M = 0.02896968  # molar mass of dry air (kg mol-1)
     R0 = 8.314462618  # universal gas constant (J mol-1 K-1)
 
-    biome_row = fill(-9999, cntx)
-    wdom_row = fill(-9999, cntx)
-    gdom_row = fill(-9999, cntx)
-    npp_row = fill(-9999.0f0, cntx, 13)
-    tcm_row = fill(-9999.0f0, cntx)
-    gdd0_row = fill(-9999.0f0, cntx)
-    gdd5_row = fill(-9999.0f0, cntx)
-    subpft_row = fill(-9999.0f0, cntx)
-    wetness_row = fill(-9999.0f0, cntx)
-
     for x in 1:cntx
+
+        if biome_var[x, y] != -9999
+            println("Row $y already processed, skipping.")
+            continue
+        end
+
         input = zeros(Float32, 50)
         output = zeros(Float32, 500)
 
@@ -338,28 +318,32 @@ function process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, 
         input[29:40] = cldp[x, y, :]
         input[41] = coalesce(mean(ksat[x, y, 1:2]), -9999.0f0)
         input[42] = coalesce(mean(ksat[x, y, 1:2]), -9999.0f0)
-        input[43] = coalesce(whc[x, y, 1], -9999.0f0)
-        input[44] = coalesce(whc[x, y, 2], -9999.0f0)
+        input[43] = coalesce(whc[x, y, 1]/10, -9999.0f0)
+        input[44] = coalesce(whc[x, y, 2]/10, -9999.0f0)
         input[49] = lon[x]
 
         input[46] = diag ? 1.0 : 0.0  # diagnostic mode
 
         output = BIOME4.biome4(input, output)
 
-        biome_row[x] = output[1]
-        wdom_row[x] = output[12]
-        gdom_row[x] = output[13]
-        npp_row[x, :] = output[60:72]
-        tcm_row[x] = output[452]
-        gdd0_row[x] = output[453]
-        gdd5_row[x] = output[454]
-        subpft_row[x] = output[455]
-        wetness_row[x] = output[10]
+        biome_var[x, y] = output[1]
+        wdom_var[x, y] = output[12]
+        gdom_var[x, y] = output[13]
+        npp_var[x, y, :] = output[60:72]
+        tcm_var[x, y] = output[452]
+        gdd0_var[x, y] = output[453]
+        gdd5_var[x, y] = output[454]
+        subpft_var[x, y] = output[455]
+        wetness_var[x, y] = output[10]
     end
 
-    println("row $y processed")
+    # Only sync every 10 rows for performance
+    if y % 10 == 0
+        sync(output_dataset)
+    end
 
-    return y, biome_row, wdom_row, gdom_row, npp_row, tcm_row, gdd0_row, gdd5_row, subpft_row, wetness_row
+    println("Row $y processed and written.")
+
 end
 
 function nearest(value, array)
@@ -412,17 +396,17 @@ end
 function save_plot(plot_name::String, lon, lat, data, title::String, clims::Tuple, plot_folder::String, year::String)
     # Close any previous plot windows
     closeall()  # Clears any previous plots to avoid duplication
-    
+
     # Create the plot
     p = heatmap(lon, lat, data, xlabel = "Longitude", ylabel = "Latitude", title = title, clims = clims)
-    
+
     # Define the output file path
     filepath = joinpath(plot_folder, @sprintf("%s_%s.png", plot_name, year))
-    
+
     # Save the plot
     println("Saving plot to $filepath")
     savefig(p, filepath)
-    
+
 end
 
 
@@ -496,8 +480,36 @@ function parse_command_line()
         "--whcfile"
         help = "Path to the water holding capacity file"
         arg_type = String
+
+        "--year"
+        help = "Year of prediction from the climatology files"
+        arg_type = String
+
     end
     return parse_args(s)
+end
+
+# Call the main function with parsed arguments
+function main()
+    args = parse_command_line()
+
+    Biome4Driver.main(
+        args["coordstring"],
+        args["co2"],
+        args["diagnosticmode"],
+        args["tempfile"],
+        args["tminfile"],
+        args["precfile"],
+        args["sunfile"],
+        args["ksatfile"],
+        args["whcfile"],
+        args["year"]
+    )
+end
+
+# Make sure main is called
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
 end
 
 end # End of module

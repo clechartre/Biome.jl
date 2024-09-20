@@ -66,11 +66,3 @@ function table(tc::Float64)::Tuple{Float64, Float64}
 end
 
 end # module
-
-using .Table
-
-# Example run
-tc = 10.0
-gamma, lambda_val = Table.table(tc)
-println("gamma: ", gamma)
-println("lambda: ", lambda_val)

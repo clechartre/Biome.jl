@@ -59,14 +59,3 @@ function snow(dtemp::AbstractArray{Float64}, dprecin::AbstractArray{Float64})::S
 end
 
 end # module
-
-using .Snow
-
-# Example run
-dtemp = [rand() * 20.0 - 10.0 for _ in 1:365]
-dprecin = [rand() * 10.0 for _ in 1:365]
-
-result = Snow.snow(dtemp, dprecin)
-println("dprec: ", result.dprec)
-println("dmelt: ", result.dmelt)
-println("maxdepth: ", result.maxdepth)
