@@ -57,7 +57,7 @@ function c4photo(
     # Temperature stress calculation
     mintemp = t0[pft]
     maxtemp = 55.0
-    tstress = if mintemp + 0.1 < temp < maxtemp
+    tstress = if mintemp + 1 < temp < maxtemp
         exp(-10.0 / (temp - mintemp))
     else
         0.0

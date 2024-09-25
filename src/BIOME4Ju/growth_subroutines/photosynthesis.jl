@@ -71,7 +71,7 @@ function photosynthesis(
 
     # Temperature stress calculation
     mintemp = t0[pft]
-    tstress = if temp > mintemp + 0.1
+    tstress = if temp > mintemp + 1
         tcurve[pft] * (2.71828 ^ (-10.0 / (temp - mintemp)))
     else
         0.0

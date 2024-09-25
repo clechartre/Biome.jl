@@ -521,9 +521,9 @@ function output_results(
     outv[199] = safe_round_to_int(firedays)
     outv[200] = greendays
 
-    for i in 1:40 # if debugging used to be 37
-        outv[200 + i + 1] = safe_round_to_int(tendaylai[i] * 100)
-    end
+    # for i in 1:40 # if debugging used to be 37
+    #     outv[200 + i + 1] = safe_round_to_int(tendaylai[i] * 100)
+    # end
 
     outv[450] = safe_round_to_int(meanKlit * 100)
     outv[451] = safe_round_to_int(meanKsoil * 100)
