@@ -31,7 +31,8 @@ function main(
     sunfile::String,
     ksatfile::String,
     whcfile::String,
-    year::String
+    year::String,
+    resolution::String
 )
 
     println("Temperature file: $tempfile")
@@ -67,6 +68,8 @@ function main(
     ylen = length(lat)
     llen = length(layers)
     tlen = 12
+    # Set the resolution value based on the flag
+    res_value = resolution == "low" ? 0.5 : 0.009
 
     if coordstring == "alldata"
         strx = 1
@@ -82,7 +85,7 @@ function main(
         lat_min = boundingbox[3]
         lat_max = boundingbox[4]
 
-        strx, stry, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max)
+        strx, stry, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max, res_value)
 
         endx = strx + cntx - 1
         endy = stry + cnty - 1
@@ -485,6 +488,11 @@ function parse_command_line()
         help = "Year of prediction from the climatology files"
         arg_type = String
 
+        "--resolution"
+        help = "Resolution: 'low' or 'high'"
+        arg_type = String
+        default = "low"
+
     end
     return parse_args(s)
 end
@@ -503,7 +511,8 @@ function main()
         args["sunfile"],
         args["ksatfile"],
         args["whcfile"],
-        args["year"]
+        args["year"],
+        args["resolution"] 
     )
 end
 
