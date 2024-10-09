@@ -111,10 +111,10 @@ function main(
     lat = lat[stry:endy]
 
     # Flip the data arrays along the latitude axis
-    temp = temp_ds["temp"][strx:endx, stry:endy, :][:, end:-1:1, :]
-    tmin = tmin_ds["tmin"][strx:endx, stry:endy][:, end:-1:1]
-    prec = prec_ds["prec"][strx:endx, stry:endy, :][:, end:-1:1, :]
-    cldp = sun_ds["sun"][strx:endx, stry:endy, :][:, end:-1:1, :]
+    temp = temp_ds["temp"][strx:endx, stry:endy, :][:, :, :]
+    tmin = tmin_ds["tmin"][strx:endx, stry:endy][:, :]
+    prec = prec_ds["prec"][strx:endx, stry:endy, :][:, :, :]
+    cldp = sun_ds["sun"][strx:endx, stry:endy, :][:, :, :]
     ksat = ksat_ds["ksat"][strx:endx, stry:endy, :][:, end:-1:1, :]
     whc = whc_ds["whc"][strx:endx, stry:endy, :][:, end:-1:1, :]
 
@@ -360,10 +360,10 @@ function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
     """
     Get array indices for a given bounding box with specified resolution.
     Parameters:
-    - lon_min: Minimum longitude
-    - lon_max: Maximum longitude
-    - lat_min: Minimum latitude
-    - lat_max: Maximum latitude
+    - lon_min: Minimum longitude (-180 to 180)
+    - lon_max: Maximum longitude (-180 to 180)
+    - lat_min: Minimum latitude (-90 to 90)
+    - lat_max: Maximum latitude (-90 to 90)
     - resolution: Resolution of the array (default is 0.5 degrees)
     Returns:
     - strx, stry: Start coordinates in the array
@@ -373,14 +373,31 @@ function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
     lon_range = 360  # Longitude range from -180 to 180
     lat_range = 180  # Latitude range from -90 to 90
 
-    array_height = Int(lon_range / resolution)
-    array_width = Int(lat_range / resolution)
+    array_width = Int(lon_range / resolution)  # Number of longitude points
+    array_height = Int(lat_range / resolution)  # Number of latitude points
 
     # Calculate the indices
     strx = Int((lon_min + 180) / resolution)
-    stry = Int((90 - lat_max) / resolution)
     endx = Int((lon_max + 180) / resolution)
-    endy = Int((90 - lat_min) / resolution)
+    stry = Int((lat_min + 90) / resolution)
+    endy = Int((lat_max + 90) / resolution)
+
+    # Handle edge cases
+    if lon_min == -180
+        strx = 1
+    end
+
+    if lon_max == 180
+        endx = array_width
+    end
+
+    if lat_min == -90
+        stry = 1
+    end
+
+    if lat_max == 90
+        endy = array_height
+    end
 
     # Calculate the counts
     cntx = endx - strx + 1
@@ -388,6 +405,7 @@ function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
 
     return strx, stry, cntx, cnty
 end
+
 
 function handle_err(status)
     if status != 0
