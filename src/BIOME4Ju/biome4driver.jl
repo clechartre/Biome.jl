@@ -47,6 +47,18 @@ function main(
     # Set the resolution value based on the flag
     res_value = resolution == "low" ? 0.5 : 0.009
 
+    # Open the first dataset just to get the dimensions for the output, then close again
+    temp_ds = NCDataset(tempfile, "a")
+    lon = temp_ds["lon"][:]  # Keep lon and lat as they are, cut according to bbox
+    lat = temp_ds["lat"][:]
+    # Now hardcoded will be determined by whc 
+    xlen = length(lon)
+    ylen = length(lat)
+    llen = 2
+    tlen = 12
+    close(temp_ds)
+    
+
     if coordstring == "alldata"
         strx = 1
         stry = 1
@@ -69,17 +81,8 @@ function main(
 
     println("Bounding box: $strx $stry $endx $endy $cntx, $cnty")
 
-    # Open the first dataset just to get the dimensions for the output, then close again
-    temp_ds = NCDataset(tempfile, "a")
-    lon = temp_ds["lon"][:]  # Keep lon and lat as they are, cut according to bbox
     lon = lon[strx:endx]
-    lat = temp_ds["lat"][:]
     lat = lat[stry:endy]
-  
-    # Now hardcoded will be determined by whc 
-    llen = 2
-    tlen = 12
-    close(temp_ds)
 
     # Dynamically create the output filename
     outfile = "./output_$(year).nc"
