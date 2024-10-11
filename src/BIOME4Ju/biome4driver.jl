@@ -16,7 +16,6 @@ gr()
 using Dates
 using Missings
 
-
 # First-party
 include("./biome4.jl")
 using .BIOME4
@@ -32,8 +31,11 @@ function main(
     ksatfile::String,
     whcfile::String,
     year::String,
-    resolution::String
+    resolution::String,
+    checkpoint_file::String
 )
+    # Chunk and checkpoint parameters
+    chunk_size = 1000 # For functioning on node/debug, 100 works
 
     println("Temperature file: $tempfile")
     println("Temperature minimum file: $tminfile")
@@ -42,32 +44,6 @@ function main(
     println("Saturated conductivity file: $ksatfile")
     println("Water holding capacity file $whcfile")
 
-    # Open datasets
-    temp_ds = NCDataset(tempfile, "a")
-    temp_ds = uniform_fill_value(temp_ds)
-    lon = temp_ds["lon"][:]
-    lat = temp_ds["lat"][:]
-
-    tmin_ds = NCDataset(tminfile, "a")
-    tmin_ds = uniform_fill_value(tmin_ds)
-
-    prec_ds = NCDataset(precfile, "a")
-    prec_ds = uniform_fill_value(prec_ds)
-
-    sun_ds = NCDataset(sunfile, "a")
-    sun_ds = uniform_fill_value(sun_ds)
-
-    ksat_ds = NCDataset(ksatfile, "a")
-    ksat_ds = uniform_fill_value(ksat_ds)
-
-    whc_ds = NCDataset(whcfile, "a")
-    whc_ds = uniform_fill_value(whc_ds)
-    layers = whc_ds["soil_layer"][:]
-
-    xlen = length(lon)
-    ylen = length(lat)
-    llen = length(layers)
-    tlen = 12
     # Set the resolution value based on the flag
     res_value = resolution == "low" ? 0.5 : 0.009
 
@@ -93,65 +69,19 @@ function main(
 
     println("Bounding box: $strx $stry $endx $endy $cntx, $cnty")
 
-    elv = zeros(Float32, (cntx, cnty))
-    tmin = zeros(Float32, (cntx, cnty))
-    temp = zeros(Float32, (cntx, cnty, tlen))
-    prec = zeros(Float32, (cntx, cnty, tlen))
-    cldp = zeros(Float32, (cntx, cnty, tlen))
-
-    # Read elevation data if available
-    if @isdefined(elv_ds) && elv_ds !== nothing
-        elv = getindex.(elv_ds["elv"][strx:endx, stry:endy], :)
-    else
-        elv = zeros(Float32, (cntx, cnty))
-    end
-
-    # Keep lon and lat as they are, cut according to bbox
+    # Open the first dataset just to get the dimensions for the output, then close again
+    temp_ds = NCDataset(tempfile, "a")
+    lon = temp_ds["lon"][:]  # Keep lon and lat as they are, cut according to bbox
     lon = lon[strx:endx]
+    lat = temp_ds["lat"][:]
     lat = lat[stry:endy]
-
-    # Flip the data arrays along the latitude axis
-    temp = temp_ds["temp"][strx:endx, stry:endy, :][:, :, :]
-    tmin = tmin_ds["tmin"][strx:endx, stry:endy][:, :]
-    prec = prec_ds["prec"][strx:endx, stry:endy, :][:, :, :]
-    cldp = sun_ds["sun"][strx:endx, stry:endy, :][:, :, :]
-    ksat = ksat_ds["ksat"][strx:endx, stry:endy, :][:, end:-1:1, :]
-    whc = whc_ds["whc"][strx:endx, stry:endy, :][:, end:-1:1, :]
-
-
-    # Verify value range
-    println("max temp: ", maximum(temp), ", min temp: ", minimum(temp))
-    println("max tmin: ", maximum(tmin), ", min tmin: ", minimum(tmin))
-    println("max prec: ", maximum(prec), ", min prec: ", minimum(prec))
-    println("max cldp: ", maximum(cldp), ", min cldp: ", minimum(cldp))
-    println("max ksat: ", maximum(ksat), ", min ksat: ", minimum(ksat))
-    println("max whc: ", maximum(whc), ", min whc: ", minimum(whc))
-
-    # Plot variables
-    plot_folder = "./variable_plots"
-    if !isdir(plot_folder)
-        mkdir(plot_folder)
-    end
-
-    # Plot input variables
-    save_plot("temperature", lon, lat, temp[:, :, 1], "Temperature", (-60, 60), plot_folder, year)
-    save_plot("tmin", lon, lat, tmin[:, :], "Min Temperature", (-60, 10), plot_folder, year)
-    save_plot("precipitation", lon, lat, prec[:, :, 1], "Precipitation", (0, 400), plot_folder, year)
-    save_plot("cloud_cover", lon, lat, cldp[:, :, 1], "Cloud Cover", (0, 100), plot_folder, year)
-    save_plot("ksat", lon, lat, ksat[:, :, 1], "Saturated Conductivity", (0, 50), plot_folder, year)
-    save_plot("whc", lon, lat, whc[:, :, 1], "Water Holding Capacity", (0, 500), plot_folder, year)
-
+  
+    # Now hardcoded will be determined by whc 
+    llen = 2
+    tlen = 12
     close(temp_ds)
-    close(tmin_ds)
-    close(prec_ds)
-    close(sun_ds)
-    close(ksat_ds)
-    close(whc_ds)
-
-    # Set up the output
 
     # Dynamically create the output filename
-    outfile = "./output_$(year).nc"
     outfile = "./output_$(year).nc"
     if isfile(outfile)
         println("File $outfile already exists. Resuming from last processed row.")
@@ -170,8 +100,9 @@ function main(
 
     else
         println("File $outfile does not exist. Creating a new file.")
-        output_dataset = NCDataset(outfile, "c")  # Create a new file
-            # Define dimensions and variables here if creating the file
+        output_dataset = NCDataset(outfile, "c")
+
+        # Define dimensions and variables if creating the file
         defDim(output_dataset, "lon", size(lon, 1))
         defDim(output_dataset, "lat", size(lat, 1))
         defDim(output_dataset, "time", llen)
@@ -184,7 +115,7 @@ function main(
         biome_var = defVar(output_dataset, "biome", Int16, ("lon", "lat"), attrib = OrderedDict("description" => "Biome classification"))
         wdom_var = defVar(output_dataset, "wdom", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "Dominant woody vegetation"))
         gdom_var = defVar(output_dataset, "gdom", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "Dominant grass vegetation"))
-        npp_var = defVar(output_dataset, "npp", Float32, ("lon", "lat", "pft"), attrib = OrderedDict("units" => "gC/m^2/month","description" => "Net primary productivity"))
+        npp_var = defVar(output_dataset, "npp", Float32, ("lon", "lat", "pft"), attrib = OrderedDict("units" => "gC/m^2/month", "description" => "Net primary productivity"))
         tcm_var = defVar(output_dataset, "tcm", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "tcm"))
         gdd0_var = defVar(output_dataset, "gdd0", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "gdd0"))
         gdd5_var = defVar(output_dataset, "gdd5", Float64, ("lon", "lat"), attrib = OrderedDict("description" => "gdd5"))
@@ -210,143 +141,296 @@ function main(
         wetness_var[:, :] = fill(-9999.0f0, cntx, cnty)
     end
 
-    # Find the last processed row
-    last_processed_row = 1
-    for y in 1:cnty
-        if all(biome_var[:, y] .== -9999)
-            last_processed_row = y
-            break
-        end
-    end
-    println("Resuming from row $last_processed_row.")
+    # Load checkpoint
+    x_chunk_start = load_checkpoint(checkpoint_file, strx)
+    println("Resuming from x_chunk_start: $x_chunk_start")
 
-    # Write to the dataset
-    # Run the prediction
-    serial_process(
-        cntx,
-        cnty,
-        temp,
-        elv,
-        lat,
-        co2,
-        tmin,
-        prec,
-        cldp,
-        ksat,
-        whc,
-        lon,
-        diagnosticmode,
-        biome_var,
-        wdom_var,
-        gdom_var,
-        npp_var,
-        tcm_var,
-        gdd0_var,
-        gdd5_var,
-        subpft_var,
-        wetness_var,
-        output_dataset,
-        last_processed_row
-    )
+    # Set up chunking variables
+    x_chunk_size = chunk_size
+    lat_chunk = nothing
+
+    for x_chunk_start in x_chunk_start:chunk_size:endx
+        x_chunk_end = min(x_chunk_start + x_chunk_size - 1, endx)
+        current_chunk_size = x_chunk_end - x_chunk_start + 1
+
+        println("Processing x indices from $x_chunk_start to $x_chunk_end")
+
+        # Initialize variables for this chunk
+        temp_chunk = zeros(Float32, (current_chunk_size, cnty, 12))
+        tmin_chunk = zeros(Float32, (current_chunk_size, cnty))
+        prec_chunk = zeros(Float32, (current_chunk_size, cnty, 12))
+        cldp_chunk = zeros(Float32, (current_chunk_size, cnty, 12))
+        ksat_chunk = zeros(Float32, (current_chunk_size, cnty, 2))
+        whc_chunk = zeros(Float32, (current_chunk_size, cnty, 2))
+        elv_chunk = zeros(Float32, (current_chunk_size, cnty))
+
+        # Read longitude for this chunk
+        lon_chunk = nothing
+        Dataset(tempfile) do ds
+            lon_chunk = ds["lon"][x_chunk_start:x_chunk_end]
+        end
+
+        # Read latitude (only once since it's the same for all x chunks)
+        if x_chunk_start == strx
+            Dataset(tempfile) do ds
+                lat_chunk = ds["lat"][stry:endy]
+            end
+        end
+
+        Dataset(tempfile) do ds
+            temp_chunk = ds["temp"][x_chunk_start:x_chunk_end, stry:endy, :]
+            temp_chunk = uniform_fill_value(temp_chunk)
+        end
+
+        Dataset(tminfile) do ds
+            tmin_chunk = ds["tmin"][x_chunk_start:x_chunk_end, stry:endy]
+            tmin_chunk = uniform_fill_value(tmin_chunk)
+        end
+
+        Dataset(precfile) do ds
+            prec_chunk = ds["prec"][x_chunk_start:x_chunk_end, stry:endy, :]
+            prec_chunk = uniform_fill_value(prec_chunk)
+        end
+
+        Dataset(sunfile) do ds
+            cldp_chunk = ds["sun"][x_chunk_start:x_chunk_end, stry:endy, :]
+            cldp_chunk = uniform_fill_value(cldp_chunk)
+        end
+
+        Dataset(ksatfile) do ds
+            ksat_chunk = ds["ksat"][x_chunk_start:x_chunk_end, stry:endy, :]
+            ksat_chunk = uniform_fill_value(ksat_chunk)
+        end
+
+        Dataset(whcfile) do ds
+            whc_chunk = ds["whc"][x_chunk_start:x_chunk_end, stry:endy, :]
+            whc_chunk = uniform_fill_value(whc_chunk)
+        end
+
+        # Read elevation data if available
+        if @isdefined(elvfile) && isfile(elvfile)
+            Dataset(elvfile) do ds
+                elv_chunk = ds["elv"][x_chunk_start:x_chunk_end, stry:endy]
+                elv_chunk = uniform_fill_value(elv_chunk)
+            end
+        else
+            elv_chunk = zeros(Float32, (current_chunk_size, cnty))
+        end
+
+        # Flip the data arrays along the latitude axis - change this if data is not generated from CHELSA
+        temp_chunk = temp_chunk[:, end:-1:1, :]
+        tmin_chunk = tmin_chunk[:, end:-1:1]
+        prec_chunk = prec_chunk[:, end:-1:1, :]
+        cldp_chunk = cldp_chunk[:, end:-1:1, :]
+        ksat_chunk = ksat_chunk[:, end:-1:1, :]
+        whc_chunk = whc_chunk[:, end:-1:1, :]
+        elv_chunk = elv_chunk[:, end:-1:1]
+
+        println("max temp: ", maximum(temp_chunk), ", min temp: ", minimum(temp_chunk))
+        println("max tmin: ", maximum(tmin_chunk), ", min tmin: ", minimum(tmin_chunk))
+        println("max prec: ", maximum(prec_chunk), ", min prec: ", minimum(prec_chunk))
+        println("max cldp: ", maximum(cldp_chunk), ", min cldp: ", minimum(cldp_chunk))
+        println("max ksat: ", maximum(ksat_chunk), ", min ksat: ", minimum(ksat_chunk))
+        println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
+
+        # Process the data in this chunk
+        parallel_process_chunk(
+            current_chunk_size,
+            cnty,
+            temp_chunk,
+            elv_chunk,
+            lat_chunk,
+            co2,
+            tmin_chunk,
+            prec_chunk,
+            cldp_chunk,
+            ksat_chunk,
+            whc_chunk,
+            lon_chunk,
+            diagnosticmode,
+            biome_var,
+            wdom_var,
+            gdom_var,
+            npp_var,
+            tcm_var,
+            gdd0_var,
+            gdd5_var,
+            subpft_var,
+            wetness_var,
+            output_dataset,
+            x_chunk_start,
+            strx,
+            stry,
+            endy
+        )
+
+        # Save the checkpoint after processing the chunk
+        save_checkpoint(checkpoint_file, x_chunk_start)
+    end
 
     # Close the NetCDF file
     close(output_dataset)
 end
 
 
-function parallel_process(
-    cntx, cnty, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
-    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset, last_processed_row
+function parallel_process_chunk(
+    current_chunk_size, cnty,
+    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,
+    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+    output_dataset,
+    x_chunk_start, strx, stry, endy
 )
-
+    # Container to hold the spawned tasks (futures)
     futures = []
-    for y in last_processed_row:cnty
-        println("on row $y")
-        push!(futures, Threads.@spawn process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
-                                                biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset))
+
+    for y in 1:cnty
+        println("Parallel processing y index $y")
+
+        # Skip already processed rows
+        if all(biome_var[:, y] .!= -9999)
+            println("Skipping already processed row: $y")
+            continue
+        end
+
+        # Spawn a single task to process all x indices at once for this y
+        push!(futures, Threads.@spawn begin
+            for x in 1:current_chunk_size
+                process_cell(
+                    x, y, strx,
+                    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,
+                    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+                    output_dataset,
+                    x_chunk_start
+                )
+            end
+        end)
     end
 
+    # Wait for all futures to complete
     for future in futures
         fetch(future)
-
     end
 
+    sync(output_dataset)
 end
 
-function serial_process(
-    cntx, cnty, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
-    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset, last_processed_row
+
+function serial_process_chunk(
+    current_chunk_size, cnty,
+    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,
+    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+    output_dataset,
+    x_chunk_start, strx, stry, endy
 )
-    for y in last_processed_row:cnty
-        println("on row $y")
-        process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
-                    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset)
+    for y in 1:cnty
+        println("Processing y index $y")
 
+        # Here, check if the row is already processed. If yes, skipped
+        if all(biome_var[:, y] .!= -9999) && all(biome_var[:, y-1] .!= -9999)
+            println("Skipping already processed row: $y")
+            continue
+        end
+
+        for x in 1:current_chunk_size
+            process_cell(
+                x, y, strx,
+                temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,
+                biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+                output_dataset,
+                x_chunk_start
+            )
+        end
+
+        if y % 10 == 0
+            sync(output_dataset)
+        end
     end
-
 end
 
-function process_row(y, cntx, temp, elv, lat, co2, tmin, prec, cldp, ksat, whc, lon, diag,
-                    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset)
+function process_cell(
+    x, y, strx,
+    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,
+    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+    output_dataset,
+    x_chunk_start
+)
     # Constants
     p0 = 101325.0  # sea level standard atmospheric pressure (Pa)
     cp = 1004.68506  # constant-pressure specific heat (J kg-1 K-1)
-    T0 = 288.16  # sea level standard temperature (K)
-    g = 9.80665  # earth surface gravitational acceleration (m s-1)
-    M = 0.02896968  # molar mass of dry air (kg mol-1)
+    T0 = 288.16    # sea level standard temperature (K)
+    g = 9.80665    # earth surface gravitational acceleration (m s-1)
+    M = 0.02896968 # molar mass of dry air (kg mol-1)
     R0 = 8.314462618  # universal gas constant (J mol-1 K-1)
 
-    for x in 1:cntx
+    # Convert local indices to global indices
+    x_global_index = x_chunk_start + x - strx
+    y_global_index = y
 
-        if biome_var[x, y] != -9999
-            println("Row $y already processed, skipping.")
-            continue
-        end
-
-        input = zeros(Float32, 50)
-        output = zeros(Float32, 500)
-
-        if temp[x, y, 1] == -9999.0
-            continue
-        end
-
-        p = p0 * (1.0 - (g * elv[x, y]) / (cp * T0))^(cp * M / R0)
-
-        input[1] = lat[y]
-        input[2] = co2
-        input[3] = p
-        input[4] = tmin[x, y]
-        input[5:16] = temp[x, y, :]
-        input[17:28] = prec[x, y, :]
-        input[29:40] = cldp[x, y, :]
-        input[41] = coalesce(mean(ksat[x, y, 1:2]), -9999.0f0)
-        input[42] = coalesce(mean(ksat[x, y, 1:2]), -9999.0f0)
-        input[43] = coalesce(whc[x, y, 1]/10, -9999.0f0)
-        input[44] = coalesce(whc[x, y, 2]/10, -9999.0f0)
-        input[49] = lon[x]
-
-        input[46] = diag ? 1.0 : 0.0  # diagnostic mode
-
-        output = BIOME4.biome4(input, output)
-
-        biome_var[x, y] = output[1]
-        wdom_var[x, y] = output[12]
-        gdom_var[x, y] = output[13]
-        npp_var[x, y, :] = output[60:72]
-        tcm_var[x, y] = output[452]
-        gdd0_var[x, y] = output[453]
-        gdd5_var[x, y] = output[454]
-        subpft_var[x, y] = output[455]
-        wetness_var[x, y] = output[10]
+    if biome_var[x_global_index, y_global_index] != -9999
+        println("Cell ($x_global_index, $y_global_index) already processed, skipping.")
+        return
     end
 
-    # Only sync every 10 rows for performance
-    if y % 10 == 0
-        sync(output_dataset)
+    if temp_chunk[x, y, 1] == -9999.0
+        return
     end
 
-    println("Row $y processed and written.")
+    input = zeros(Float32, 50)
+    output = zeros(Float32, 500)
 
+    elv = elv_chunk[x, y]
+    p = p0 * (1.0 - (g * elv) / (cp * T0))^(cp * M / R0)
+
+    input[1] = lat_chunk[y]
+    input[2] = co2
+    input[3] = p
+    input[4] = tmin_chunk[x, y]
+    input[5:16] = temp_chunk[x, y, :]
+    input[17:28] = prec_chunk[x, y, :]
+    input[29:40] = cldp_chunk[x, y, :]
+    input[41] = coalesce(mean(ksat_chunk[x, y, 1:2]), -9999.0f0)
+    input[42] = coalesce(mean(ksat_chunk[x, y, 1:2]), -9999.0f0)
+    input[43] = coalesce(whc_chunk[x, y, 1]/10, -9999.0f0)
+    input[44] = coalesce(whc_chunk[x, y, 2]/10, -9999.0f0)
+    input[49] = lon_chunk[x]
+
+    input[46] = diag ? 1.0 : 0.0  # diagnostic mode
+
+    output = BIOME4.biome4(input, output)
+
+    # Write results to the output variables
+    biome_var[x_global_index, y_global_index] = output[1]
+    wdom_var[x_global_index, y_global_index] = output[12]
+    gdom_var[x_global_index, y_global_index] = output[13]
+    npp_var[x_global_index, y_global_index, :] = output[60:72]
+    tcm_var[x_global_index, y_global_index] = output[452]
+    gdd0_var[x_global_index, y_global_index] = output[453]
+    gdd5_var[x_global_index, y_global_index] = output[454]
+    subpft_var[x_global_index, y_global_index] = output[455]
+    wetness_var[x_global_index, y_global_index] = output[10]
+
+    println("Processed cell ($x_global_index, $y_global_index)")
+end
+
+# Function to load checkpoint
+function load_checkpoint(checkpoint_file::String, strx::Int64)
+    if isfile(checkpoint_file)
+        # Read the checkpoint file to get the last processed chunk
+        open(checkpoint_file, "r") do file
+            checkpoint_data = readline(file)
+            return parse(Int, checkpoint_data)
+        end
+    else
+        # If no checkpoint file exists, start from the beginning
+        return strx
+    end
+end
+
+# Function to save checkpoint
+function save_checkpoint(checkpoint_file::String, x_chunk_start::Int)
+    open(checkpoint_file, "w") do file
+        write(file, "$x_chunk_start\n")
+    end
 end
 
 function nearest(value, array)
@@ -377,10 +461,10 @@ function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
     array_height = Int(lat_range / resolution)  # Number of latitude points
 
     # Calculate the indices
-    strx = Int((lon_min + 180) / resolution)
-    endx = Int((lon_max + 180) / resolution)
-    stry = Int((lat_min + 90) / resolution)
-    endy = Int((lat_max + 90) / resolution)
+    strx = Int(round((lon_min + 180) / resolution))
+    endx = Int(round((lon_max + 180) / resolution))
+    stry = Int(round((lat_min + 90) / resolution))
+    endy = Int(round((lat_max + 90) / resolution))
 
     # Handle edge cases
     if lon_min == -180
@@ -416,7 +500,7 @@ end
 
 function save_plot(plot_name::String, lon, lat, data, title::String, clims::Tuple, plot_folder::String, year::String)
     # Close any previous plot windows
-    closeall()  # Clears any previous plots to avoid duplication
+    closeall()
 
     # Create the plot
     p = heatmap(lon, lat, data, xlabel = "Longitude", ylabel = "Latitude", title = title, clims = clims)
@@ -431,27 +515,21 @@ function save_plot(plot_name::String, lon, lat, data, title::String, clims::Tupl
 end
 
 
-function uniform_fill_value(ds::NCDataset; fill_value=-9999)
-    for varname in keys(ds)  # Iterate through all variable names in the dataset
-        var = ds[varname]  # Access the variable by its name
-
-        # Check if the variable has a _FillValue attribute
-        if haskey(var.attrib, "_FillValue")
-            original_fill_value = var.attrib["_FillValue"]
-            data = Array(var)  # Convert the variable to a regular Julia array
-
-            # Replace _FillValue and Missing with the specified fill value
-            data[(data .== original_fill_value) .| ismissing.(data)] .= fill_value
-
-            # Ensure the data type matches the variable's expected type
-            try
-                var[:] = data  # Write the modified data back to the variable
-            catch e
-                println("Error writing data back to variable $varname: ", e)
-            end
-        end
-    end
-    return ds
+function uniform_fill_value(data::Array{T, N}; fill_value=-9999) where {T, N}
+    """
+    This function processes an array to replace `_FillValue` and `Missing` values with `fill_value`.
+    It operates on a provided chunk of data instead of the entire dataset for efficiency.
+    
+    Parameters:
+    - data: The data array to process.
+    - fill_value: The value to replace _FillValue and Missing entries with (default is -9999).
+    
+    Returns:
+    - Modified data array with _FillValue and Missing replaced.
+    """
+    # Replace Missing and _FillValue with the specified fill value
+    data .= coalesce.(data, fill_value)
+    return data
 end
 
 
@@ -511,6 +589,11 @@ function parse_command_line()
         arg_type = String
         default = "low"
 
+        "--checkpoint_file"
+        help = "Path to the checkpoint file'"
+        arg_type = String
+        default = "biome_checkpoint.txt"
+
     end
     return parse_args(s)
 end
@@ -530,7 +613,8 @@ function main()
         args["ksatfile"],
         args["whcfile"],
         args["year"],
-        args["resolution"] 
+        args["resolution"],
+        args["checkpoint_file"]
     )
 end
 
