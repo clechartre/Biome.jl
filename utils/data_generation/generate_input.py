@@ -143,21 +143,20 @@ def resample_to_mean(input_cog_path: str, lon_pixels: int, lat_pixels: int) -> x
     lat_size = reprojected_array.shape[0]
 
 
-    land_mask = load_land_mask(
-        mask_shape=(lat_size, lon_size)
-    )
+    land_mask = load_land_mask(mask_shape=(lat_size, lon_size))
 
     # Ensure that mask and data array align in terms of dimensions
     if reprojected_array.shape != land_mask.shape:
         raise ValueError(f"Data array shape {reprojected_array.shape} and mask shape {land_mask.shape} do not match.")
 
-    # Apply the land mask
-    # Force the land mask coordinates to match reprojected_array coordinates
-    land_mask = land_mask.assign_coords(lat=reprojected_array.lat, lon=reprojected_array.lon)
+    # Check if coordinates are aligned, if not, ensure re-alignment (reproject if needed, here just ensure matching coordinates)
+    if not np.array_equal(land_mask.lat, reprojected_array.lat) or not np.array_equal(land_mask.lon, reprojected_array.lon):
+        # Assign the coordinates of reprojected_array to land_mask only if they do not match
+        land_mask = land_mask.assign_coords(lat=reprojected_array.lat, lon=reprojected_array.lon)
 
-
-    masked_array = xr.where(land_mask == 0, -9999, reprojected_array)
-    # reprojected_array_masked =  xr.DataArray(masked_array, dims=("lat", "lon"), coords={"lat": lat, "lon": lon})
+    # Apply the land mask and handle NaNs in the reprojected array
+    # Mask where land_mask is 0 (False) or reprojected_array has NaNs
+    masked_array = xr.where((land_mask == 0) | np.isnan(reprojected_array), -9999, reprojected_array)
 
 
     return masked_array
@@ -229,7 +228,7 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
         da.attrs.update({
             "long_name": long_name,
             "units": units,
-            "missing_value": -9999,
+            "_FillValue": -9999,
             "scale_factor": scale_factor,
             "add_offset": add_offset
         })
@@ -243,22 +242,22 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
         ds.time.attrs = {
             "long_name": "time",
             "units": "month",
-            "missing_value": -9999
+            "_FillValue": -9999
         }
 
     ds.lon.attrs = {
         "long_name": "longitude",
         "units": "degrees_east",
-        "missing_value": -9999
+        "_FillValue": -9999
     }
 
     ds.lat.attrs = {
         "long_name": "latitude",
         "units": "degrees_north",
-        "missing_value": -9999
+        "_FillValue": -9999
     }
 
-    output_nc_path = f"/home/lechartr/BIOME4Py/data/generated_data/{var_name}_{year}.nc"
+    output_nc_path = f"/home/lechartr/BIOME4Py/data/generated_data/55k/{var_name}_{year}.nc"
     ds.to_netcdf(output_nc_path)
     print(f"Aggregated data for {var_name} saved to {output_nc_path}")
 
