@@ -335,6 +335,11 @@ function serial_process_chunk(
         end
 
         for x in 1:current_chunk_size
+
+            if temp[x, y, 1] == -9999.0
+                continue
+            end
+            
             process_cell(
                 x, y, strx,
                 temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,

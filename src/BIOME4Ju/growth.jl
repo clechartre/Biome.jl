@@ -36,7 +36,9 @@ function safe_exp(x::Float64)::Float64
 end
 
 function safe_round_to_int(x::Float64)::Int64
-    if x > typemax(Int64)
+    if isnan(x)
+        return 0
+    elseif x > typemax(Int64)
         return typemax(Int64)
     elseif x < typemin(Int64)
         return typemin(Int64)
