@@ -49,15 +49,14 @@ function main(
 
     # Open the first dataset just to get the dimensions for the output, then close again
     temp_ds = NCDataset(tempfile, "a")
-    lon = temp_ds["lon"][:]  # Keep lon and lat as they are, cut according to bbox
-    lat = temp_ds["lat"][:]
-    # Now hardcoded will be determined by whc 
-    xlen = length(lon)
-    ylen = length(lat)
+    lon_full = temp_ds["lon"][:]  # Keep lon and lat as they are, cut according to bbox
+    lat_full = temp_ds["lat"][:]
+    # Now hardcoded will be determined by whc
+    xlen = length(lon_full)
+    ylen = length(lat_full)
     llen = 2
     tlen = 12
     close(temp_ds)
-    
 
     if coordstring == "alldata"
         strx = 1
@@ -81,8 +80,8 @@ function main(
 
     println("Bounding box: $strx $stry $endx $endy $cntx, $cnty")
 
-    lon = lon[strx:endx]
-    lat = lat[stry:endy]
+    lon = lon_full[strx:endx]
+    lat = lat_full[stry:endy]
 
     # Dynamically create the output filename
     outfile = "./output_$(year).nc"
@@ -146,11 +145,18 @@ function main(
 
     # Load checkpoint
     x_chunk_start = load_checkpoint(checkpoint_file, strx)
+    # Ensure x_chunk_start is at least strx
+    x_chunk_start = max(x_chunk_start, strx)
     println("Resuming from x_chunk_start: $x_chunk_start")
 
     # Set up chunking variables
     x_chunk_size = chunk_size
     lat_chunk = nothing
+
+    # Read latitude (only once since it's the same for all x chunks)
+    Dataset(tempfile) do ds
+        lat_chunk = ds["lat"][stry:endy]
+    end
 
     for x_chunk_start in x_chunk_start:chunk_size:endx
         x_chunk_end = min(x_chunk_start + x_chunk_size - 1, endx)
@@ -171,13 +177,6 @@ function main(
         lon_chunk = nothing
         Dataset(tempfile) do ds
             lon_chunk = ds["lon"][x_chunk_start:x_chunk_end]
-        end
-
-        # Read latitude (only once since it's the same for all x chunks)
-        if x_chunk_start == strx
-            Dataset(tempfile) do ds
-                lat_chunk = ds["lat"][stry:endy]
-            end
         end
 
         Dataset(tempfile) do ds
@@ -220,7 +219,8 @@ function main(
             elv_chunk = zeros(Float32, (current_chunk_size, cnty))
         end
 
-        # Flip the data arrays along the latitude axis - change this if data is not generated from CHELSA
+        # Flip the data arrays along the latitude axis if necessary
+        # Adjust this section based on your data's orientation
         temp_chunk = temp_chunk[:, :, :]
         tmin_chunk = tmin_chunk[:, :]
         prec_chunk = prec_chunk[:, :, :]
@@ -290,7 +290,8 @@ function parallel_process_chunk(
         println("Parallel processing y index $y")
 
         # Skip already processed rows
-        if all(biome_var[:, y] .!= -9999)
+        y_global_index = y
+        if all(biome_var[:, y_global_index] .!= -9999)
             println("Skipping already processed row: $y")
             continue
         end
@@ -328,18 +329,21 @@ function serial_process_chunk(
     for y in 1:cnty
         println("Processing y index $y")
 
-        # Here, check if the row is already processed. If yes, skipped
-        if all(biome_var[:, y] .!= -9999) && all(biome_var[:, y-1] .!= -9999)
+        y_global_index = y
+
+        # Check if the row is already processed. If yes, skip
+        if all(biome_var[:, y_global_index] .!= -9999)
             println("Skipping already processed row: $y")
             continue
         end
 
         for x in 1:current_chunk_size
+            x_global_index = x_chunk_start - strx + x
 
-            if temp[x, y, 1] == -9999.0
+            if temp_chunk[x, y, 1] == -9999.0
                 continue
             end
-            
+
             process_cell(
                 x, y, strx,
                 temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, lon_chunk, diag,
@@ -371,7 +375,7 @@ function process_cell(
     R0 = 8.314462618  # universal gas constant (J mol-1 K-1)
 
     # Convert local indices to global indices
-    x_global_index = x_chunk_start + x - strx
+    x_global_index = x_chunk_start - strx + x
     y_global_index = y
 
     if biome_var[x_global_index, y_global_index] != -9999
@@ -447,7 +451,6 @@ function nearest(value, array)
     return idx
 end
 
-
 function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
     """
     Get array indices for a given bounding box with specified resolution.
@@ -465,14 +468,14 @@ function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
     lon_range = 360  # Longitude range from -180 to 180
     lat_range = 180  # Latitude range from -90 to 90
 
-    array_width = Int(lon_range / resolution)  # Number of longitude points
-    array_height = Int(lat_range / resolution)  # Number of latitude points
+    array_width = Int(round(lon_range / resolution))  # Number of longitude points
+    array_height = Int(round(lat_range / resolution))  # Number of latitude points
 
     # Calculate the indices
-    strx = Int(round((lon_min + 180) / resolution))
-    endx = Int(round((lon_max + 180) / resolution))
-    stry = Int(round((lat_min + 90) / resolution))
-    endy = Int(round((lat_max + 90) / resolution))
+    strx = Int(round((lon_min + 180) / resolution)) + 1
+    endx = Int(round((lon_max + 180) / resolution)) + 1
+    stry = Int(round((lat_min + 90) / resolution)) + 1
+    endy = Int(round((lat_max + 90) / resolution)) + 1
 
     # Handle edge cases
     if lon_min == -180
@@ -498,7 +501,6 @@ function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
     return strx, stry, cntx, cnty
 end
 
-
 function handle_err(status)
     if status != 0
         println("NetCDF Error: $status")
@@ -519,19 +521,17 @@ function save_plot(plot_name::String, lon, lat, data, title::String, clims::Tupl
     # Save the plot
     println("Saving plot to $filepath")
     savefig(p, filepath)
-
 end
-
 
 function uniform_fill_value(data::Array{T, N}; fill_value=-9999) where {T, N}
     """
     This function processes an array to replace `_FillValue` and `Missing` values with `fill_value`.
     It operates on a provided chunk of data instead of the entire dataset for efficiency.
-    
+
     Parameters:
     - data: The data array to process.
     - fill_value: The value to replace _FillValue and Missing entries with (default is -9999).
-    
+
     Returns:
     - Modified data array with _FillValue and Missing replaced.
     """
@@ -539,7 +539,6 @@ function uniform_fill_value(data::Array{T, N}; fill_value=-9999) where {T, N}
     data .= coalesce.(data, fill_value)
     return data
 end
-
 
 function parse_command_line()
     s = ArgParseSettings()
@@ -581,7 +580,7 @@ function parse_command_line()
         arg_type = String
 
         "--ksatfile"
-        help = "Path to the  saturated conductivity file"
+        help = "Path to the saturated conductivity file"
         arg_type = String
 
         "--whcfile"
@@ -598,7 +597,7 @@ function parse_command_line()
         default = "low"
 
         "--checkpoint_file"
-        help = "Path to the checkpoint file'"
+        help = "Path to the checkpoint file"
         arg_type = String
         default = "biome_checkpoint.txt"
 
