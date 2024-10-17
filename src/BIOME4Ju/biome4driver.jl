@@ -221,10 +221,10 @@ function main(
         end
 
         # Flip the data arrays along the latitude axis - change this if data is not generated from CHELSA
-        temp_chunk = temp_chunk[:, end:-1:1, :]
-        tmin_chunk = tmin_chunk[:, end:-1:1]
-        prec_chunk = prec_chunk[:, end:-1:1, :]
-        cldp_chunk = cldp_chunk[:, end:-1:1, :]
+        temp_chunk = temp_chunk[:, :, :]
+        tmin_chunk = tmin_chunk[:, :]
+        prec_chunk = prec_chunk[:, :, :]
+        cldp_chunk = cldp_chunk[:, :, :]
         ksat_chunk = ksat_chunk[:, end:-1:1, :]
         whc_chunk = whc_chunk[:, end:-1:1, :]
         elv_chunk = elv_chunk[:, end:-1:1]
