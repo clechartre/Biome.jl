@@ -72,13 +72,14 @@ function main(
         lat_min = boundingbox[3]
         lat_max = boundingbox[4]
 
-        strx, stry, cntx, cnty = get_array_indices(lon_min, lon_max, lat_min, lat_max, res_value)
+        strx, stry, cntx, cnty = get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
 
         endx = strx + cntx - 1
         endy = stry + cnty - 1
     end
 
-    println("Bounding box: $strx $stry $endx $endy $cntx, $cnty")
+    println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
+    println("Bounding box counts: cntx=$cntx, cnty=$cnty")
 
     lon = lon_full[strx:endx]
     lat = lat_full[stry:endy]
@@ -174,10 +175,7 @@ function main(
         elv_chunk = zeros(Float32, (current_chunk_size, cnty))
 
         # Read longitude for this chunk
-        lon_chunk = nothing
-        Dataset(tempfile) do ds
-            lon_chunk = ds["lon"][x_chunk_start:x_chunk_end]
-        end
+        lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
         Dataset(tempfile) do ds
             temp_chunk = ds["temp"][x_chunk_start:x_chunk_end, stry:endy, :]
@@ -445,82 +443,43 @@ function save_checkpoint(checkpoint_file::String, x_chunk_start::Int)
     end
 end
 
-function nearest(value, array)
-    # This function returns the index of the closest value in `array` to `value`
-    idx = argmin(abs.(array .- value))
-    return idx
-end
-
-function get_array_indices(lon_min, lon_max, lat_min, lat_max, resolution=0.5)
-    """
-    Get array indices for a given bounding box with specified resolution.
-    Parameters:
-    - lon_min: Minimum longitude (-180 to 180)
-    - lon_max: Maximum longitude (-180 to 180)
-    - lat_min: Minimum latitude (-90 to 90)
-    - lat_max: Maximum latitude (-90 to 90)
-    - resolution: Resolution of the array (default is 0.5 degrees)
-    Returns:
-    - strx, stry: Start coordinates in the array
-    - cntx, cnty: Count of tiles in the array
-    """
-    # Define the array dimensions based on resolution
-    lon_range = 360  # Longitude range from -180 to 180
-    lat_range = 180  # Latitude range from -90 to 90
-
-    array_width = Int(round(lon_range / resolution))  # Number of longitude points
-    array_height = Int(round(lat_range / resolution))  # Number of latitude points
-
-    # Calculate the indices
-    strx = Int(round((lon_min + 180) / resolution)) + 1
-    endx = Int(round((lon_max + 180) / resolution)) + 1
-    stry = Int(round((lat_min + 90) / resolution)) + 1
-    endy = Int(round((lat_max + 90) / resolution)) + 1
-
-    # Handle edge cases
-    if lon_min == -180
-        strx = 1
+function get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
+    # Ensure longitude and latitude arrays are sorted
+    lon_sorted = issorted(lon_full)
+    lat_sorted = issorted(lat_full) || issorted(lat_full, rev=true)
+    if !lon_sorted || !lat_sorted
+        error("Longitude and latitude arrays must be sorted")
     end
 
-    if lon_max == 180
-        endx = array_width
+    # Check if longitude wraps around
+    if lon_min > lon_max
+        error("Bounding box longitude min is greater than max, wrapping not supported")
     end
 
-    if lat_min == -90
-        stry = 1
+    # Find indices for longitude
+    strx = findfirst(x -> x >= lon_min, lon_full)
+    endx = findlast(x -> x <= lon_max, lon_full)
+
+    # Find indices for latitude
+    if lat_full[1] > lat_full[end]
+        # Latitude array is in descending order
+        stry = findfirst(y -> y <= lat_max, lat_full)
+        endy = findlast(y -> y >= lat_min, lat_full)
+    else
+        # Latitude array is in ascending order
+        stry = findfirst(y -> y >= lat_min, lat_full)
+        endy = findlast(y -> y <= lat_max, lat_full)
     end
 
-    if lat_max == 90
-        endy = array_height
+    # Handle cases where indices are not found
+    if isnothing(strx) || isnothing(endx) || isnothing(stry) || isnothing(endy)
+        error("Bounding box coordinates are outside the range of the data")
     end
 
-    # Calculate the counts
     cntx = endx - strx + 1
     cnty = endy - stry + 1
 
     return strx, stry, cntx, cnty
-end
-
-function handle_err(status)
-    if status != 0
-        println("NetCDF Error: $status")
-        exit(1)
-    end
-end
-
-function save_plot(plot_name::String, lon, lat, data, title::String, clims::Tuple, plot_folder::String, year::String)
-    # Close any previous plot windows
-    closeall()
-
-    # Create the plot
-    p = heatmap(lon, lat, data, xlabel = "Longitude", ylabel = "Latitude", title = title, clims = clims)
-
-    # Define the output file path
-    filepath = joinpath(plot_folder, @sprintf("%s_%s.png", plot_name, year))
-
-    # Save the plot
-    println("Saving plot to $filepath")
-    savefig(p, filepath)
 end
 
 function uniform_fill_value(data::Array{T, N}; fill_value=-9999) where {T, N}
