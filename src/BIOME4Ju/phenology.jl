@@ -21,7 +21,7 @@ function phenology(
 )::AbstractArray{Float64}
     daysinmonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     dphen = zeros(Float64, 365, 2)
-    ramp = [0.0, pftpar[pft, 8], pftpar[pft, 9]]
+    ramp = [pftpar[pft, 8], pftpar[pft, 9]]
 
     ont = pft == 7 ? 0.0 : 5.0
 
@@ -59,7 +59,7 @@ function phenology(
                 for dayofmonth in 1:daysinmonth[m]
                     day += 1
                     if dtemp[day] > ont
-                        if m ∉ coldm
+                        if m != coldm[1] && m != coldm[2] && m != coldm[3]
                             today = max(dtemp[day], 0.0)
                             gdd += today
                             dphen[day, phencase] = if gdd == 0.0
@@ -84,7 +84,7 @@ function phenology(
                         end
                     end
 
-                    if phencase == 2
+                    if phencase == 1
                         if m >= hotm
                             if dtemp[day] < -10.0 || ddayl[day] < 10.0
                                 dphen[day, phencase] = 0.0
@@ -92,7 +92,7 @@ function phenology(
                         elseif m == coldm[1]
                             dphen[day, phencase] = 0.0
                         end
-                    elseif phencase == 3
+                    elseif phencase == 2
                         if dtemp[day] < -5.0
                             dphen[day, phencase] = 0.0
                         end

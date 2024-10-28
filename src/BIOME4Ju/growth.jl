@@ -202,7 +202,6 @@ function growth(
                 end
             end
 
-            # leafresp = photosynthesis_results_list[m].leafresp * (hydrology_results.meanfvc[m] / maxfvc)
         end
 
         # Calculate monthly PAR values

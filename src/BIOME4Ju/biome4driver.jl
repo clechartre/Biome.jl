@@ -310,7 +310,7 @@ function parallel_process_chunk(
 
     # Wait for all futures to complete
     for future in futures
-        fetch(future)
+         fetch(future)
     end
 
     sync(output_dataset)
@@ -419,7 +419,6 @@ function process_cell(
     subpft_var[x_global_index, y_global_index] = output[455]
     wetness_var[x_global_index, y_global_index] = output[10]
 
-    println("Processed cell ($x_global_index, $y_global_index)")
 end
 
 # Function to load checkpoint
