@@ -39,26 +39,26 @@ function plot_biome_distribution(filename::String, output_file::String)
     # Define the color map with a transparent color for -9999
     cmap = [
         RGBA(0, 0, 0, 0),          # Transparent for -9999
-        RGB(0.0, 0.5, 0.0),        # Tropical evergreen forest - Green
-        RGB(0.2, 0.7, 0.3),        # Tropical semi-deciduous forest - Light Green
+        RGB(0.0, 0.3, 0.0),        # Tropical evergreen forest - Rich Dark Green
+        RGB(0.2, 0.8, 0.2),        # Tropical semi-deciduous forest - Vivid Light Green
         RGB(0.9, 0.3, 0.1),        # Tropical deciduous forest/woodland - Orange-Red
-        RGB(0.1, 0.6, 0.1),        # Temperate deciduous forest - Dark Green
-        RGB(0.0, 0.4, 0.2),        # Temperate conifer forest - Dark Cyan
-        RGB(0.6, 0.7, 0.2),        # Warm mixed forest - Olive
-        RGB(0.0, 0.5, 0.9),        # Cool mixed forest - Blue
-        RGB(0.1, 0.3, 0.5),        # Cool conifer forest - Dark Blue
-        RGB(0.4, 0.8, 0.8),        # Cold mixed forest - Light Cyan
-        RGB(0.1, 0.8, 0.7),        # Evergreen taiga/montane forest - Turquoise
-        RGB(0.2, 0.4, 0.7),        # Deciduous taiga/montane forest - Dark Blue
+        RGB(0.1, 0.5, 0.1),        # Temperate deciduous forest - Forest Green
+        RGB(0.0, 0.4, 0.3),        # Temperate conifer forest - Muted Teal
+        RGB(0.5, 0.6, 0.2),        # Warm mixed forest - Olive Green
+        RGB(0.0, 0.5, 0.9),        # Cool mixed forest - Bright Blue
+        RGB(0.1, 0.3, 0.6),        # Cool conifer forest - Darker Blue
+        RGB(0.3, 0.8, 0.8),        # Cold mixed forest - Soft Cyan
+        RGB(0.0, 0.7, 0.5),        # Evergreen taiga/montane forest - Medium Turquoise
+        RGB(0.1, 0.4, 0.7),        # Deciduous taiga/montane forest - Slate Blue
         RGB(1.0, 0.8, 0.1),        # Tropical savanna - Bright Yellow
         RGB(0.9, 0.6, 0.3),        # Tropical xerophytic shrubland - Tan
         RGB(0.8, 0.6, 0.6),        # Temperate xerophytic shrubland - Pale Pink
         RGB(0.7, 0.5, 0.3),        # Temperate sclerophyll woodland - Brown
-        RGB(0.4, 0.9, 0.2),        # Temperate broadleaved savanna - Lime Green
+        RGB(0.3, 0.9, 0.3),        # Temperate broadleaved savanna - Fresh Green
         RGB(0.9, 0.7, 0.1),        # Open conifer woodland - Gold
         RGB(0.6, 0.6, 0.3),        # Boreal parkland - Khaki
         RGB(0.9, 0.9, 0.5),        # Tropical grassland - Light Yellow
-        RGB(0.7, 0.7, 0.4),        # Temperate grassland - Pale Yellow-Green
+        RGB(0.6, 0.8, 0.5),        # Temperate grassland - Light Mint Green
         RGB(1.0, 0.7, 0.5),        # Desert - Sand
         RGB(0.5, 0.6, 0.8),        # Steppe tundra - Light Purple
         RGB(0.7, 0.5, 0.9),        # Shrub tundra - Violet
@@ -105,6 +105,6 @@ function plot_biome_distribution(filename::String, output_file::String)
 end
 
 # Example usage:
-filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_with_pft1.nc"
-output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_with_pft1.png"
+filename = ""
+output_file = ""
 plot_biome_distribution(filename, output_file)

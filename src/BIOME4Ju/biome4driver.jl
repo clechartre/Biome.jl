@@ -25,7 +25,6 @@ function main(
     co2::Float64,
     diagnosticmode::Bool,
     tempfile::String,
-    tminfile::String,
     precfile::String,
     sunfile::String,
     ksatfile::String,
@@ -36,13 +35,6 @@ function main(
 )
     # Chunk and checkpoint parameters
     chunk_size = 1000 # For functioning on node/debug, 100 works
-
-    println("Temperature file: $tempfile")
-    println("Temperature minimum file: $tminfile")
-    println("Precipitation file: $precfile")
-    println("Cloud percent file: $sunfile")
-    println("Saturated conductivity file: $ksatfile")
-    println("Water holding capacity file $whcfile")
 
     # Set the resolution value based on the flag
     res_value = resolution == "low" ? 0.5 : 0.009
@@ -110,7 +102,7 @@ function main(
         defDim(output_dataset, "lat", size(lat, 1))
         defDim(output_dataset, "time", llen)
         defDim(output_dataset, "months", tlen)
-        defDim(output_dataset, "pft", 13)
+        defDim(output_dataset, "pft", 14)
 
         # Define variables with appropriate types and dimensions
         lon_var = defVar(output_dataset, "lon", Float64, ("lon",), attrib = OrderedDict("units" => "degrees_east"))
@@ -136,7 +128,7 @@ function main(
         biome_var[:, :] = fill(-9999, cntx, cnty)
         wdom_var[:, :] = fill(-9999, cntx, cnty)
         gdom_var[:, :] = fill(-9999, cntx, cnty)
-        npp_var[:, :, :] = fill(-9999.0f0, cntx, cnty, 13)
+        npp_var[:, :, :] = fill(-9999.0f0, cntx, cnty, 14)
         tcm_var[:, :] = fill(-9999.0f0, cntx, cnty)
         gdd0_var[:, :] = fill(-9999.0f0, cntx, cnty)
         gdd5_var[:, :] = fill(-9999.0f0, cntx, cnty)
@@ -182,10 +174,15 @@ function main(
             temp_chunk = uniform_fill_value(temp_chunk)
         end
 
-        Dataset(tminfile) do ds
-            tmin_chunk = ds["tmin"][x_chunk_start:x_chunk_end, stry:endy]
-            tmin_chunk = uniform_fill_value(tmin_chunk)
-        end
+        # Compute tcm_chunk as the minimum of temp_chunk over months
+        tcm_chunk = minimum(temp_chunk, dims=3)
+
+        # Define missing value
+        missval_sp = -9999
+
+        # Ensure the calculation is applied element-wise, skipping -9999
+        tmin_chunk = ifelse.(tcm_chunk .!= missval_sp, 0.006 .* tcm_chunk.^2 .+ 1.316 .* tcm_chunk .- 21.9, missval_sp)
+
 
         Dataset(precfile) do ds
             prec_chunk = ds["prec"][x_chunk_start:x_chunk_end, stry:endy, :]
@@ -412,7 +409,7 @@ function process_cell(
     biome_var[x_global_index, y_global_index] = output[1]
     wdom_var[x_global_index, y_global_index] = output[12]
     gdom_var[x_global_index, y_global_index] = output[13]
-    npp_var[x_global_index, y_global_index, :] = output[60:72]
+    npp_var[x_global_index, y_global_index, :] = output[61:74]
     tcm_var[x_global_index, y_global_index] = output[452]
     gdd0_var[x_global_index, y_global_index] = output[453]
     gdd5_var[x_global_index, y_global_index] = output[454]
@@ -525,10 +522,6 @@ function parse_command_line()
         help = "Path to the temperature file"
         arg_type = String
 
-        "--tminfile"
-        help = "Path to the minimum temperature file"
-        arg_type = String
-
         "--precfile"
         help = "Path to the precipitation file"
         arg_type = String
@@ -572,7 +565,6 @@ function main()
         args["co2"],
         args["diagnosticmode"],
         args["tempfile"],
-        args["tminfile"],
         args["precfile"],
         args["sunfile"],
         args["ksatfile"],

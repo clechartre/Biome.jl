@@ -34,7 +34,7 @@ Arguments:
 - `mgmin`: Minimum canopy conductance modifier (scalar).
 - `dphen`: Phenology data (365x2 matrix).
 - `dtemp`: Daily temperature (365-element vector).
-- `grass`: Grass type indicator (scalar).
+- `grass`: Presence of sapwood respiration.
 - `emax`: Maximum evapotranspiration efficiency (scalar).
 - `pftpar`: PFT parameters (2x5 matrix).
 
@@ -77,6 +77,7 @@ function hydrology(
     onnw = pftpar[pft, 4]
     offw = pftpar[pft, 4]
 
+    # fvc is folicar vegetation cover, normal to be 0 for grasses
     meanfvc = zeros(Float64, 12)
     meangc = zeros(Float64, 12)
     meanwr = [zeros(Float64, 3) for _ in 1:12]

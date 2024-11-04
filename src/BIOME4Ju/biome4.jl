@@ -148,19 +148,19 @@ function biome4(vars_in, output)
 
     #If you want to bypass the environmental constraints for your model
     # set all pfts to present (1). You can turn them off by setting to 0
-    pfts[1] = 0
-    # pfts[2] = 1
-    # pfts[3] = 1
-    # pfts[4] = 1
-    # pfts[5] = 1
-    # pfts[6] = 1
-    # pfts[7] = 1 
-    # pfts[8] = 1
-    # pfts[9] = 1
+    # pfts[1] = 0
+    # pfts[2] = 0
+    # pfts[3] = 0
+    # pfts[4] = 0
+    # pfts[5] = 0
+    # pfts[6] = 0
+    # pfts[7] = 0 
+    # pfts[8] = 0
+    # pfts[9] = 0
     # pfts[10] = 1
-    # pfts[11] = 1
-    # pfts[12] = 1
-    # pfts[13] = 1
+    # pfts[11] = 0
+    # pfts[12] = 0
+    # pfts[13] = 0
 
     if diagmode
         diag_mode(lon, lat, climate_results.cold, tmin, climate_results.gdd5, tprec, snow_results.maxdepth, soil, k)

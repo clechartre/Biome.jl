@@ -46,9 +46,10 @@ function findnpp(
     # Calculate NPP at a range of different leaf areas by iteration
     lowbound = 0.01
     range_val = 8.0
+    alai = zeros(Float64, 2)
 
     for iterate in 1:8
-        alai = zeros(Float64, 2)
+
         alai[1] = lowbound + (1.0 / 4.0) * range_val
         alai[2] = lowbound + (3.0 / 4.0) * range_val
 

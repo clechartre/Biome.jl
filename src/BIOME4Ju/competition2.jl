@@ -118,7 +118,7 @@ function competition2(
 
     # Format values for output
     dom, npp, lai, grasslai = format_values_for_output(
-        optpft, wdom, grasspft, optnpp, optlai, grassnpp, optdata
+        optpft, wdom, grasspft, optnpp, optlai, grassnpp, optdata, woodnpp, woodylai, grasslai
     )
 
     # Call the newassignbiome function
@@ -269,10 +269,6 @@ function determine_optimal_pft(
     greendays = optdata[wdom+1, 200] 
 
     while true
-        woodylai = optlai[wdom+1]
-        woodnpp = optnpp[wdom+1]
-        grasslai = optlai[grasspft+1]
-
         if wdom != 0
             firedays = optdata[wdom+1, 199]
             subfiredays = optdata[subpft+1, 199]
@@ -449,8 +445,7 @@ function output_diagnostics(
     for pft in 1:numofpfts+1
         if pfts[pft] != 0
             println(@sprintf("%5d%5d%6.2f%6.2f%5d%5d",
-                pft, drymonth[pft+1], driest[pft+1], wetness[pft+1], optdata[pft+1, 199], optdata[pft+1, 200]
-            ))
+                pft, drymonth[pft+1], driest[pft+1], wetness[pft+1], optdata[pft+1, 199], optdata[pft+1, 200]))
         end
     end
 
@@ -459,7 +454,7 @@ function output_diagnostics(
 
     println(" wpft  woodynpp   woodylai gpft grassnpp subpft phi")
     println(@sprintf("%5d%10.2f%10.2f%5d%10.2f%5d%8.2f",
-        wdom, woodnpp, woodylai, grasspft, grassnpp, subpft, optdata[8, 52] / 100
+    wdom, woodnpp, woodylai, grasspft, grassnpp, subpft, optdata[8, 52] / 100
     ))
 end
 
@@ -470,15 +465,18 @@ function format_values_for_output(
     optnpp::AbstractArray{Float64},
     optlai::AbstractArray{Float64},
     grassnpp::Float64,
-    optdata::AbstractArray{}
+    optdata::AbstractArray{},
+    woodnpp,
+    woodylai,
+    grasslai,
 )::Tuple{Int, Float64, Float64, Float64}
 
     dom = optpft
     
     if optpft == 14
-        woodnpp = optnpp[wdom+1]
-        woodylai = optlai[wdom+1]
-        grasslai = optlai[grasspft+1]
+        # woodnpp = optnpp[wdom+1]
+        # woodylai = optlai[wdom+1]
+        # grasslai = optlai[grasspft+1]
 
         npprat = woodnpp / grassnpp
         treepct = ((8.0 / 5.0) * npprat) - 0.54
@@ -486,12 +484,13 @@ function format_values_for_output(
         if treepct < 0.0
             treepct = 0.0
         end
-        if treepct > 1.0
+        if treepct >= 1.0
             treepct = 1.0
         end
 
         grasspct = 1.0 - treepct
         dom = wdom
+
         lai = (woodylai + (2.0 * grasslai)) / 3.0
         npp = (woodnpp + (2.0 * grassnpp)) / 3.0
 
@@ -519,11 +518,11 @@ function format_values_for_output(
         optpft = 0
     end
 
-    if optpft != 14
-        npp = optnpp[dom+1]
-        lai = optlai[dom+1]
-        grasslai = optlai[grasspft+1]
-    end
+    
+    npp = optnpp[dom+1]
+    lai = optlai[dom+1]
+    grasslai = optlai[grasspft+1]
+
 
     return dom, npp, lai, grasslai
 end
@@ -601,7 +600,7 @@ function assign_output_values(
     output[52] = optdata[8, 52]
 
     # Optimized NPP for all PFTs
-    for i in 1:13
+    for i in 1:14
         output[59 + i] = optnpp[i]
     end
 
