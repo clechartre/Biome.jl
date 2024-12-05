@@ -6,19 +6,23 @@ Calculate GDDs, TCM, wrin, and total precipitation.
 
 using Dates
 
-struct ClimateResults
-    cold::Float64
-    warm::Float64
-    gdd5::Float64
-    gdd0::Float64
-    rain::Float64
-    alttmin::Float64
+struct ClimateResults{T <: Real}
+    cold::T
+    warm::T
+    gdd5::T
+    gdd0::T
+    rain::T
+    alttmin::T
 end
 
-function climdata(temp::AbstractArray{Float64}, prec::AbstractArray{Float64}, dtemp::AbstractArray{Float64})::ClimateResults
-    cold = 100.0
-    warm = -100.0
-    rain = 0.0
+function climdata(temp::AbstractArray{T},
+    prec::AbstractArray{T},
+    dtemp::AbstractArray{T}
+)::ClimateResults where {T <: Real}
+
+    cold = T(100.0)
+    warm = T(-100.0)
+    rain = T(0.0)
 
     for m in 1:12
         if temp[m] < cold
@@ -30,23 +34,23 @@ function climdata(temp::AbstractArray{Float64}, prec::AbstractArray{Float64}, dt
         rain += prec[m]
     end
 
-    gdd10 = 0.0
-    gdd5 = 0.0
-    gdd0 = 0.0
+    gdd10 = T(0.0)
+    gdd5 = T(0.0)
+    gdd0 = T(0.0)
 
     for day in 1:365
-        minus10 = dtemp[day] - 10.0
-        minus5 = dtemp[day] - 5.0
+        minus10 = dtemp[day] - T(10.0)
+        minus5 = dtemp[day] - T(5.0)
         minus0 = dtemp[day]
-        minus10 = max(minus10, 0.0)
-        minus5 = max(minus5, 0.0)
-        minus0 = max(minus0, 0.0)
+        minus10 = max(minus10, T(0.0))
+        minus5 = max(minus5, T(0.0))
+        minus0 = max(minus0, T(0.0))
         gdd10 += minus10
         gdd5 += minus5
         gdd0 += minus0
     end
 
-    alttmin = (0.006 * cold^2) + (1.316 * cold) - 21.9
+    alttmin = (T(0.006) * cold^2) + (T(1.316) * cold) - T(21.9)
 
     return ClimateResults(cold, warm, gdd5, gdd0, rain, alttmin)
 end

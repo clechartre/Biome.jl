@@ -1,15 +1,15 @@
 module HeterotrophicRespiration
 
-struct HetRespResults
-    Rlit::AbstractVector{Float64}
-    Rfst::AbstractVector{Float64}
-    Rslo::AbstractVector{Float64}
-    Rtot::AbstractVector{Float64}
-    isoR::AbstractVector{Float64}
-    isoflux::AbstractVector{Float64}
-    Rmean::Float64
-    meanKlit::Float64
-    meanKsoil::Float64
+struct HetRespResults{T <: Real}
+    Rlit::Vector{T}
+    Rfst::Vector{T}
+    Rslo::Vector{T}
+    Rtot::Vector{T}
+    isoR::Vector{T}
+    isoflux::Vector{T}
+    Rmean::T
+    meanKlit::T
+    meanKsoil::T
 end
 
 """
@@ -18,7 +18,7 @@ end
 Model heterotrophic respiration of litter and soil organic carbon
 in both a fast and a slow pool. It assumes equilibrium and so decays
 all of a given year's NPP. The 13C composition of respired CO2 is also
-modeled. Models are based on the work of Foley, Lloyd and Taylor, and Sitch.
+modeled.
 
 Arguments:
 - `pft`: Plant Functional Type.
@@ -33,90 +33,87 @@ Returns:
 - A `HetRespResults` struct containing respiration and isotope-related results.
 """
 function hetresp(
-    pft::Int,
-    nppann::Float64,
-    tair::AbstractVector{Float64},
-    tsoil::AbstractVector{Float64},
-    aet::AbstractVector{Float64},
-    moist::AbstractVector{Float64},
-    isoveg::Float64
-)::HetRespResults
+    pft::U,
+    nppann::T,
+    tair::AbstractArray{T},
+    tsoil::AbstractArray{T},
+    aet::AbstractArray{T},
+    moist::AbstractArray{T},
+    isoveg::T,
+    Rlit::Vector{T},
+    Rfst::Vector{T},
+    Rslo::Vector{T},
+    Rtot::Vector{T},
+    isoR::Vector{T},
+    isoflux::Vector{T},
+    Rmean::T,
+    meanKlit::T,
+    meanKsoil::T,
+)::HetRespResults{T} where {T <: Real, U <: Int}
 
     # Constants and initializations
-    isoatm = -8.0  # Atmospheric 13C composition
-    Plit, Pfst, Pslo = 0.0, 0.0, 0.0
-    Rten = 1.0
-    Rlit = zeros(Float64, 12)
-    Rfst = zeros(Float64, 12)
-    Rslo = zeros(Float64, 12)
-    Rtot = zeros(Float64, 12)
-    Klit = zeros(Float64, 12)
-    Kfst = zeros(Float64, 12)
-    Kslo = zeros(Float64, 12)
-    isolit = zeros(Float64, 12)
-    isofst = zeros(Float64, 12)
-    isoslo = zeros(Float64, 12)
-    isoflux = zeros(Float64, 12)
-    isoR = zeros(Float64, 12)
+    isoatm = T(-8.0)
+    Plit, Pfst, Pslo = T(0.0), T(0.0), T(0.0)
+    Rten = T(1.0)
+    Klit = zeros(T, 12)
+    Kfst = zeros(T, 12)
+    Kslo = zeros(T, 12)
+    isolit = zeros(T, 12)
+    isofst = zeros(T, 12)
+    isoslo = zeros(T, 12)
 
-    if nppann <= 0.0
+    if nppann <= T(0.0)
         # If NPP is zero or less, all respiration values should be zero
         return HetRespResults(
-            Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0
+            Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
         )
     else
         # Partition annual NPP into pools according to Foley strategy
         if pft == 1 || pft == 2
-            Plit = 0.650 * nppann
-            Pfst = 0.980 * 0.350 * nppann
-            Pslo = 0.020 * 0.350 * nppann
+            Plit = T(0.650) * nppann
+            Pfst = T(0.980) * T(0.350) * nppann
+            Pslo = T(0.020) * T(0.350) * nppann
         else
-            Plit = 0.700 * nppann
-            Pfst = 0.985 * 0.300 * nppann
-            Pslo = 0.015 * 0.300 * nppann
+            Plit = T(0.700) * nppann
+            Pfst = T(0.985) * T(0.300) * nppann
+            Pslo = T(0.015) * T(0.300) * nppann
         end
 
-        # Calculate respiration for each pool with an R10 base respiration.
-        # Litter decay follows a temperature and moisture function.
-        # Soil decay is calculated based on soil temperature and moisture.
-
-        Klitsum, Kfstsum, Kslosum = 0.0, 0.0, 0.0
+        Klitsum, Kfstsum, Kslosum = T(0.0), T(0.0), T(0.0)
 
         for m in 1:12
             # Moisture factor
-            mfact = 0.25 + 0.75 * moist[m]
+            mfact = T(0.25) + T(0.75) * moist[m]
 
             # Litter decay
-            Klit[m] = 1.0 * 10.0 ^ (-1.4553 + 0.0014175 * aet[m])
+            Klit[m] = T(10.0) ^ (-T(1.4553) + T(0.0014175) * aet[m])
             Klitsum += Klit[m]
 
             # Fast and slow soil pool decay
-            Kfst[m] = mfact * Rten * exp(308.56 * ((1 / 56.02) - (1 / (tsoil[m] + 273.0 - 227.13))))
+            Kfst[m] = mfact * Rten * exp(T(308.56) * ((T(1.0) / T(56.02)) - (T(1.0) / (tsoil[m] + T(273.0) - T(227.13)))))
             Kfstsum += Kfst[m]
 
-            Kslo[m] = mfact * Rten * exp(308.56 * ((1 / 56.02) - (1 / (tsoil[m] + 273.0 - 227.13))))
+            Kslo[m] = mfact * Rten * exp(T(308.56) * ((T(1.0) / T(56.02)) - (T(1.0) / (tsoil[m] + T(273.0) - T(227.13)))))
             Kslosum += Kslo[m]
         end
 
-        meanKlit = Klitsum / 12.0
-        meanKsoil = Kfstsum / 12.0
+        meanKlit = Klitsum / T(12.0)
+        meanKsoil = Kfstsum / T(12.0)
 
-        Rmean = 0.0
+        Rmean = T(0.0)
 
         for m in 1:12
-            # Calculate monthly respiration for each pool
             Rlit[m] = Plit * (Klit[m] / Klitsum)
             Rfst[m] = Pfst * (Kfst[m] / Kfstsum)
             Rslo[m] = Pslo * (Kslo[m] / Kslosum)
             Rtot[m] = Rlit[m] + Rfst[m] + Rslo[m]
-            Rmean += Rtot[m] / 12.0
+            Rmean += Rtot[m] / T(12.0)
         end
 
         for m in 1:12
-            # Calculate the isotope ratio of respired CO2 based on NPP weighted mean 13C
-            isolit[m] = isoveg - 0.75  # 13C enrichment factors
-            isofst[m] = isoveg - 1.5
-            isoslo[m] = isoveg - 2.25
+            isolit[m] = isoveg - T(0.75)
+            isofst[m] = isoveg - T(1.5)
+            isoslo[m] = isoveg - T(2.25)
             isoR[m] = ((Plit / nppann) * isolit[m]) + ((Pfst / nppann) * isofst[m]) + ((Pslo / nppann) * isoslo[m])
             isoflux[m] = (isoatm - isoR[m]) * Rtot[m]
         end

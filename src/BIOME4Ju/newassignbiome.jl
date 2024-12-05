@@ -4,23 +4,20 @@ Jed Kaplan 3/1998"""
 module BiomeAssignment
 
 function newassignbiome(
-    optpft::Int,
-    woodpft::Int,
-    grasspft::Int,
-    subpft::Int,
-    optnpp::Union{Int, Float64},
-    woodnpp::Union{Int, Float64},
-    grassnpp::Union{Int, Float64},
-    subnpp::Union{Int, Float64},
-    greendays::Int,
-    gdd0::Float64,
-    gdd5::Float64,
-    tcm::Float64,
+    optpft::U,
+    woodpft::U,
+    subpft::U,
+    optnpp::Union{U, T},
+    subnpp::Union{U, T},
+    greendays::U,
+    gdd0::T,
+    gdd5::T,
+    tcm::T,
     present::Vector{Bool},
-    woodylai::Float64,
-    grasslai::Float64,
-    tmin::Float64
-)::Int
+    woodylai::T,
+    grasslai::T,
+    tmin::T
+)::U where {T <: Real, U <: Int}
     nppdif = optnpp - subnpp
 
     # Barren
@@ -54,7 +51,7 @@ function newassignbiome(
                 return 14
             end
         else
-            return 21 # this is the issue, I am plotting this as tundra??
+            return 21
         end
     elseif optnpp <= 100.0
         if optpft <= 5 || optpft in [9, 10]
@@ -69,13 +66,13 @@ function newassignbiome(
     # Boreal Biomes
     if optpft == 6
         if gdd5 > 900.0 && tcm > -19.0
-            if present[4+1]
+            if present[4]
                 return 7
             else
                 return 8
             end
         else
-            if present[4+1]
+            if present[4]
                 return 9
             else
                 return 10
@@ -106,20 +103,20 @@ function newassignbiome(
         return 6
     end
     if optpft == 4
-        if present[6+1]
+        if present[6]
             if tcm < -15.0
                 return 9
             else
                 return 7
             end
-        elseif present[3+1] || (present[5+1] && gdd5 > 3000.0 && tcm > 3.0)
+        elseif present[3] || (present[5] && gdd5 > 3000.0 && tcm > 3.0)
             return 6
         else
             return 4
         end
     end
     if optpft == 5
-        if present[3+1]
+        if present[3]
             return 6
         elseif subpft == 4 && nppdif < 50.0
             return 5

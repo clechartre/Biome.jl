@@ -10,13 +10,13 @@ N-7055 Dragvoll, Norway.
 Latest revisions 14/2-1991
 
 Args:
-    tc (Float64): Temperature for which gamma and lambda are looked up.
+    tc (T): Temperature for which gamma and lambda are looked up.
 
 Returns:
-    Tuple{Float64, Float64}: gamma and lambda values based on the provided temperature.
+    Tuple{T, T}: gamma and lambda values based on the provided temperature.
 """
 
-function table(tc::Float64)::Tuple{Float64, Float64}
+function table(tc::T)::Tuple{T, T} where {T <: Real}
     gbase = [
         (-5.0, 64.6),
         (0.0, 64.9),
@@ -47,16 +47,16 @@ function table(tc::Float64)::Tuple{Float64, Float64}
 
     # Temperature above highest value - set highest gamma and lambda and return
     if tc > gbase[end][1]
-        gamma = gbase[end][2]
-        lambda_val = lbase[end][2]
+        gamma = T(gbase[end][2])
+        lambda_val = T(lbase[end][2])
         return gamma, lambda_val
     end
 
     # Temperature at or below value - set gamma and lambda
     for (gb, lb) in zip(gbase, lbase)
         if tc <= gb[1]
-            gamma = gb[2]
-            lambda_val = lb[2]
+            gamma = T(gb[2])
+            lambda_val = T(lb[2])
             return gamma, lambda_val
         end
     end

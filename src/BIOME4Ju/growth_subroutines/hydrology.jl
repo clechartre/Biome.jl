@@ -1,17 +1,17 @@
 module Hydrology
 
-struct HydrologyResults
-    meanfvc::AbstractArray{Float64}
-    meangc::AbstractArray{Float64}
-    meanwr::Vector{AbstractArray{Float64}}
-    meanaet::AbstractArray{Float64}
-    runoffmonth::AbstractArray{Float64}
-    wet::AbstractArray{Float64}
-    dayfvc::AbstractArray{Float64}
-    annaet::Float64
-    sumoff::Float64
+struct HydrologyResults{T <: Real}
+    meanfvc::AbstractArray{T}
+    meangc::AbstractArray{T}
+    meanwr::Vector{Vector{T}}
+    meanaet::AbstractArray{T}
+    runoffmonth::AbstractArray{T}
+    wet::AbstractArray{T}
+    dayfvc::AbstractArray{T}
+    annaet::T
+    sumoff::T
     greendays::Int
-    runnoff::Float64
+    runnoff::T
     wilt::Bool
 end
 
@@ -54,178 +54,188 @@ Returns:
   - `wilt`: Boolean indicating whether wilting occurred.
 """
 function hydrology(
-    dprec::AbstractArray{Float64},
-    dmelt::AbstractArray{Float64},
-    deq::AbstractArray{Float64},
-    root::Float64,
-    k::AbstractArray{Float64},
-    maxfvc::Float64,
-    pft::Int,
-    phentype::Int,
-    wst::Float64,
-    gcopt::AbstractArray{Float64},
-    mgmin::Float64,
-    dphen::AbstractArray{Float64},
-    dtemp::AbstractArray{Float64},
-    grass::Int,
-    emax::Float64,
-    pftpar::AbstractArray{Float64, 2}
-)::HydrologyResults
-    days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    alfam = 1.4
-    gm = 5.0
+    dprec::AbstractArray{T},
+    dmelt::AbstractArray{T},
+    deq::AbstractArray{T},
+    root::T,
+    k::AbstractArray{T},
+    maxfvc::T,
+    pft::U,
+    phentype::U,
+    wst::T,
+    gcopt::AbstractArray{T},
+    mgmin::T,
+    dphen::AbstractArray{T},
+    dtemp::AbstractArray{T},
+    grass::U,
+    emax::T,
+    pftpar
+
+)::HydrologyResults where {T <: Real, U <: Int}
+    days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    alfam = T(1.4)
+    gm = T(5.0)
     onnw = pftpar[pft, 4]
     offw = pftpar[pft, 4]
 
     # fvc is folicar vegetation cover, normal to be 0 for grasses
-    meanfvc = zeros(Float64, 12)
-    meangc = zeros(Float64, 12)
-    meanwr = [zeros(Float64, 3) for _ in 1:12]
-    meanaet = zeros(Float64, 12)
-    runoffmonth = zeros(Float64, 12)
-    wet = zeros(Float64, 365)
-    dayfvc = zeros(Float64, 365)
-    runnoff = 0.0
-    drainage = 0.0
-    gc = 0.0
-    fvc = 0.0
-    annaet = 0.0
-    sumoff = 0.0
-    greendays = 0
+    runoffmonth = zeros(T, 12)
+    meanfvc = zeros(T, 12)
+    meangc = zeros(T, 12)
+    meanwr = [zeros(T, 3) for _ in 1:12]  # Vector of 12 vectors, each of length 3
+    meanaet = zeros(T, 12)
+    wet = zeros(T, 365)
+    dayfvc = zeros(T, 365)
+    runnoff = T(0.0)
+    drainage = T(0.0)
+    aet = T(0.0)
+    annaet = T(0.0)
+    sumoff = T(0.0)
+    greendays = U(0)
     wilt = false
+    gc = T(0.0)
+    fvc = T(0.0)
+    gmin = T(0.0)
+    gsurf = T(0.0)
 
-    w = zeros(Float64, 2)
+    wr = T(0.0)
+    w = zeros(T, 2)
     w[1] = wst
     w[2] = wst
 
     for _ in 1:2
         # Reset them for the second iteration
         d = 0
-        annaet = 0.0
-        sumoff = 0.0
-        greendays = 0
+        annaet = T(0.0)
+        sumoff = T(0.0)
+        greendays = U(0)
         wilt = false
 
         for month in 1:12
-            meanfvc[month] = 0.0
-            meangc[month] = 0.0
-            meanwr[month] = [0.0, 0.0, 0.0]
-            meanaet[month] = 0.0
-            runoffmonth[month] = 0.0
+            meanfvc[month] = T(0.0)
+            meangc[month] = T(0.0)
+            meanwr[month][1] = T(0.0)
+            meanwr[month][2] = T(0.0)
+            meanwr[month][3] = T(0.0)
+            meanaet[month] = T(0.0)
+            runoffmonth[month] = T(0.0)
 
-            for dayofmonth in 1:days[month]
-                d = d + 1
-                wr = root * w[1] + (1.0 - root) * w[2]
+            for _ in 1:days[month]
+                d += 1
+                wr = root * w[1] + (T(1.0) - root) * w[2]
 
                 # Vegetation Phenology Calculation
                 if phentype == 1  # Evergreen
                     fvc = maxfvc
 
-                elseif phentype == 2 || grass == 2  # Cold deciduous
+                elseif phentype == 2  # Cold deciduous
                     fvc = maxfvc * dphen[d, grass]
-                    if fvc > 0.01 && wr > offw
+
+                elseif grass == 2  # Grass cold deciduous
+                    fvc = maxfvc * dphen[d, grass]
+                    if fvc > T(0.01) && wr > offw
                         fvc = fvc
-                    elseif fvc < 0.01 && wr > onnw
+                    elseif fvc < T(0.01) && wr > onnw
                         fvc = fvc
                     else
-                        fvc = 0.0
+                        fvc = T(0.0)
                     end
 
-                elseif fvc > 0.01 && wr > offw  # Drought deciduous
+                elseif fvc > T(0.01) && wr > offw  # Drought deciduous
                     fvc = maxfvc
 
-                elseif fvc < 0.01 && wr > onnw
+                elseif fvc < T(0.01) && wr > onnw
                     fvc = maxfvc
 
                 else
-                    fvc = 0.0
+                    fvc = T(0.0)
                 end
 
-                if fvc > 0.0
+                if fvc > T(0.0)
                     greendays += 1
                 end
 
-                if dtemp[d] <= -10.0
-                    gc = 0.0
-                    aet = 0.0
-                    perc = 0.0
-                    gmin = mgmin * fvc
-                    gsurf = gc + gmin
+                if dtemp[d] <= T(-10.0)
+                    gc = T(0.0)
+                    aet = T(0.0)
+                    perc = T(0.0)
+
                 else
-                    gmin = mgmin * fvc
-                    gc = gcopt[month] * (fvc / maxfvc)
-                    gsurf = gc + gmin
-                    if fvc == 0.0
-                        aet = 0.25 * deq[d]
+                    if fvc == T(0.0)
+                        aet = T(0.25) * deq[d]
                     else
+                        gmin = mgmin * fvc
+                        gc = gcopt[d] * (fvc / maxfvc)
+                        gsurf = gc + gmin
                         if gsurf > 0.0
-                            alfa = min(1.0, alfam * (1.0 - exp(-gsurf / gm)))
+                            alfa = min(T(1.0), alfam * (T(1.0) - exp(-gsurf / gm)))
                             aet = alfa * deq[d]
                         else
-                            alfa = 0.0
-                            aet = 0.0
+                            alfa = T(0.0)
+                            aet = T(0.0)
                         end
                     end
 
-                    wetphytomass = 0.01 * aet
-                    waste = 0.01 * aet
+                    wetphytomass = T(0.01) * aet
+                    waste = T(0.01) * aet
                     demand = aet + wetphytomass + waste
                     supply = emax * wr
 
                     if demand > supply
-                        a = 1.0 - supply / (deq[d] * alfam)
-                        a = max(a, 0.0)
+                        a = T(1.0) - supply / (deq[d] * alfam)
+                        a = max(a, T(0.0))
                         gsurf = -gm * log(a)
                         gc = gsurf - gmin
                         aet = supply
-                        if gc <= 0.0
-                          gc = 0.0
-                          wilt = true
+                        if gc <= T(0.0)
+                        gc = T(0.0)
+                        wilt = true
                         end
-                      end                      
-                end
+                    end                      
 
-                perc = k[1] * w[1] ^ 4.0
-                evap = 0.0
+                    perc = k[1] * w[1] ^ T(4.0)
+                    evap = T(0.0)
 
-                if wr > 0.0
-                    r1 = [root * (w[1] / wr), (1.0 - root) * (w[2] / wr)]
-                else
-                    r1 = [0.0, 0.0]
-                end
+                    if wr > T(0.0)
+                        r1 = [root * (w[1] / wr), (T(1.0) - root) * (w[2] / wr)]
+                    else
+                        r1 = T[0.0, 0.0]
+                    end
 
-                if k[5] != 0.0
-                    w[1] = w[1] + (dprec[d] + dmelt[d] - perc - evap - r1[1] * aet) / k[5]
-                else
-                    w[1] = 0.0
-                end
+                    if k[5] != T(0.0)
+                        w[1] = w[1] + (dprec[d] + dmelt[d] - perc - evap - r1[1] * aet) / k[5]
+                    else
+                        w[1] = T(0.0)
+                    end
 
-                if k[6] != 0.0
-                    w[2] = w[2] + (perc - r1[2] * aet) / k[6]
-                else
-                    w[2] = 0.0
-                end
+                    if k[6] != 0.0
+                        w[2] = w[2] + (perc - r1[2] * aet) / k[6]
+                    else
+                        w[2] = T(0.0)
+                    end
 
-                drainage = 0
+                    drainage = T(0)
 
-                if w[2] >= 1.0
-                    drainage = (w[2] - 1.0) * k[6]
-                    w[2] = 1.0
-                end
+                    if w[2] >= T(1.0)
+                        drainage = (w[2] - T(1.0)) * k[6]
+                        w[2] = T(1.0)
+                    end
 
-                runnoff = 0
+                    runnoff = T(0)
 
-                if w[1] >= 1.0
-                    runnoff = (w[1] - 1.0) * k[5]
-                    w[1] = 1.0
-                end
+                    if w[1] >= T(1.0)
+                        runnoff = (w[1] - T(1.0)) * k[5]
+                        w[1] = T(1.0)
+                    end
 
-                if w[1] <= 0.0
-                    w[1] = 0.0
-                end
+                    if w[1] <= T(0.0)
+                        w[1] = T(0.0)
+                    end
+                    
+                    if w[2] <= T(0.0)
+                        w[2] = T(0.0)
+                    end
                 
-                if w[2] <= 0.0
-                    w[2] = 0.0
                 end
 
                 annaet += aet
@@ -235,10 +245,10 @@ function hydrology(
                 meanwr[month][2] += w[1] / days[month]
                 meanwr[month][3] += w[2] / days[month]
 
-                if gc != 0.0
+                if gc != T(0.0)
                     meangc[month] += gc / days[month]
                 end
-                if fvc != 0.0
+                if fvc != T(0.0)
                     meanfvc[month] += fvc / days[month]
                 end
                 meanaet[month] += aet / days[month]

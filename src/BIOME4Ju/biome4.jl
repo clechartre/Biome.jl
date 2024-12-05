@@ -29,27 +29,26 @@ using .Ppeett
 using .SoilTemperature
 using .Snow
 
-
-function biome4(vars_in, output)
+function biome4(vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
     numofpfts = 13
 
     # Initialize variables
-    optdata = zeros(AbstractFloat, numofpfts + 1, 500)
+    optdata = zeros(T, numofpfts+1, 500)
     pfts = zeros(Int, numofpfts)
 
-    temp = zeros(12)
-    prec = zeros(12)
-    clou = zeros(12)
-    soil = zeros(5)
+    temp = zeros(T, 12)
+    prec = zeros(T, 12)
+    clou = zeros(T, 12)
+    soil = zeros(T, 5)
 
-    dphen = zeros(Float64, 365, 2)
-    realout = zeros(Float64, numofpfts+1, 500) # original fortran code uses 0-indexing for this one
-    optnpp = zeros(Float64, numofpfts+1) # original fortran code uses 0-indexing for this one
-    optlai = zeros(Float64, numofpfts+1) # original fortran code uses 0-indexing for this one
-    pftpar = zeros(Float64, 25, 25)
-    k = zeros(Float64, 12)
-    tsoil = zeros(Float64, 12)
-    radanom = zeros(Float64, 12)
+    dphen = ones(T, 365, 2)
+    realout = zeros(T, numofpfts+1, 500) # original fortran code uses 0-indexing for this one
+    optnpp = zeros(T, numofpfts+1) # original fortran code uses 0-indexing for this one
+    optlai = zeros(T, numofpfts+1) # original fortran code uses 0-indexing for this one
+    pftpar = zeros(T, 25, 25)
+    k = zeros(T, 12)
+    tsoil = zeros(T, 12)
+    radanom = zeros(T, 12)
 
     biomename = [
         "Tropical evergreen forest",
@@ -104,7 +103,7 @@ function biome4(vars_in, output)
     diagmode = iopt == 1
 
     # Set a dummy rad anomaly (not used in this version)
-    radanom .= 1.0
+    radanom .= T(1.0)
 
     # Initialize soil texture specific parameters
     k[1] = soil[1]
@@ -117,10 +116,9 @@ function biome4(vars_in, output)
     dclou = Daily.daily(clou)
     dprecin = Daily.daily(prec)
 
-    tprec = sum(prec) # prec works better than dprecin
-
     # Initialize parameters derived from climate data:
     climate_results = ClimateData.climdata(temp, prec, dtemp)
+    tprec = sum(prec)
     tsoil = SoilTemperature.soiltemp(temp)
 
     # Calculate mid-month values for pet, sun & dayl from temp, cloud & lat:
@@ -130,10 +128,10 @@ function biome4(vars_in, output)
     snow_results = Snow.snow(dtemp, dprecin)
 
     # Initialize the evergreen phenology
-    dphen .= 1.0
+    dphen .= T(1.0)
 
     # Initialize pft specific parameters
-    pftpar = PFTData.pftdata()
+    pftpar = PFTData.pftdata(T)
 
     # Rulebase of absolute constraints to select potentially present pfts:
     tmin, ts, clindex, pfts = Constraints.constraints(
@@ -157,7 +155,7 @@ function biome4(vars_in, output)
     # pfts[7] = 0 
     # pfts[8] = 0
     # pfts[9] = 0
-    # pfts[10] = 1
+    # pfts[10] = 0
     # pfts[11] = 0
     # pfts[12] = 0
     # pfts[13] = 0
@@ -169,17 +167,13 @@ function biome4(vars_in, output)
     # Calculate optimal LAI and NPP for the selected PFTs
     for pft in 1:numofpfts
         if pfts[pft] != 0
-            if pftpar[pft][1] >= 2
-                # Initialize the generic summergreen phenology
-                dphen = Phenology.phenology(dtemp, temp, climate_results.cold, ts, tmin, pft, ppeett_results.ddayl, pftpar)
+            if pftpar[pft, 1] >= 2
+                dphen = Phenology.phenology(dphen, dtemp, temp, climate_results.cold, tmin, pft, ppeett_results.ddayl, pftpar)
             end
 
-            # Assumed that annp = annual precipitation and subbed by tprec (total precipitation)
             optdata[pft+1, :], optlai[pft+1], optnpp[pft+1], realout = FindNPP.findnpp(
                 pfts,
                 pft,
-                optlai[pft+1],
-                optnpp[pft+1],
                 tprec,
                 dtemp,
                 ppeett_results.sun,
@@ -201,8 +195,6 @@ function biome4(vars_in, output)
         end
     end
 
-
-    # Select dominant plant type/s on the basis of modelled optimal NPP & LAI:
     competition_result = Competition.competition2(
         optnpp,
         optlai,
@@ -255,12 +247,12 @@ function diag_mode(lon, lat, tcm, tmin, gdd5, tprec, maxdepth, soil, k)
 
     if yorn == "y"
         print("Percolation index ~(0-7): ")
-        soil[1] = parse(Float64, readline())
+        soil[1] = parse(T, readline())
         soil[2] = soil[1]
         print("Top layer whc ~(0-999): ")
-        soil[3] = parse(Float64, readline())
+        soil[3] = parse(T, readline())
         print("Bottom layer whc ~(0-999): ")
-        soil[4] = parse(Float64, readline())
+        soil[4] = parse(T, readline())
 
         # Reinitialize soil texture specific parameters
         k[1] = soil[1]
@@ -275,8 +267,8 @@ end
 function diagnostic_output(biome, biomename, optdata)
     println("Biome $biome $(biomename[biome])")
 
-    sumagnpp = 0.0
-    delag = 0.0
+    sumagnpp = T(0.0)
+    delag = T(0.0)
 
     # First loop: Calculate sumagnpp
     for i in 2:7

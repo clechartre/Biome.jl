@@ -10,50 +10,46 @@ using Printf: @sprintf
 Competition submodule.
 """
 
-struct CompetitionResults
-    biome::Int
-    output::AbstractArray{Float64}
+struct CompetitionResults{T <: Real, U <: Int}
+    biome::U
+    output::AbstractArray{T}
 end
 
 function competition2(
-    optnpp::AbstractArray{Float64},
-    optlai::AbstractArray{Float64},
-    tmin::Float64,
-    tprec::Float64,
-    pfts::AbstractArray{Int64}, 
+    optnpp::AbstractArray{T},
+    optlai::AbstractArray{T},
+    tmin::T,
+    tprec::T,
+    pfts::AbstractArray{U}, 
     optdata,     # No typing for now
     output,      
     diagmode::Bool,
-    numofpfts::Int,
-    gdd0::Float64,
-    gdd5::Float64,
-    tcm::Float64,
-    pftpar::AbstractArray{Float64, 2},
-    soil::AbstractArray{Float64}   
-)::CompetitionResults
+    numofpfts::U,
+    gdd0::T,
+    gdd5::T,
+    tcm::T,
+    pftpar::AbstractArray{T, 2},
+    soil::AbstractArray{T}   
+)::CompetitionResults{T, U} where {T <: Real, U <: Int}
 
     # Initialize all of the variables that index an array
-    # Keep the value but add 1 when using as index
-    # Beware because it is both a variable AND an index 
-    # This micmac is a flaw of the original Fortran model that uses both 0 and 1-indexing
-    # We highly discourage this practice
-    optpft = 0      
-    subpft = 0      
-    grasspft = 0    
-    pftmaxnpp = 0
-    pftmaxlai = 0
-    dom = 0
-    wdom = 0
+    optpft = U(0)
+    subpft = U(0)
+    grasspft = U(0)
+    pftmaxnpp = U(0)
+    pftmaxlai = U(0)
+    dom = U(0)
+    wdom = U(0)
 
-    maxnpp = 0.0
-    maxlai = 0.0
-    grassnpp = 0.0
+    maxnpp = T(0.0)
+    maxlai = T(0.0)
+    grassnpp = T(0.0)
 
     grass, present = initialize_presence(numofpfts, optnpp)
 
     # Choose the dominant woody PFT on the basis of NPP
-    for pft in 1:numofpfts
-        if grass[pft+1] == true
+    for pft in 1:12
+        if grass[pft]
             if optnpp[pft+1] > grassnpp
                 grassnpp = optnpp[pft+1]
                 grasspft = pft
@@ -63,7 +59,6 @@ function competition2(
                 maxnpp = optnpp[pft+1]
                 pftmaxnpp = pft
             end
-        
             if optlai[pft+1] > maxlai
                 maxlai = optlai[pft+1]
                 pftmaxlai = pft
@@ -71,9 +66,9 @@ function competition2(
                 maxlai = optlai[pftmaxnpp+1]
                 pftmaxlai = pftmaxnpp
             end
-        
         end
     end
+    
 
     # Find average annual soil moisture value for all PFTs
     wetlayer, drymonth, wettest, driest, wetness = calculate_soil_moisture(numofpfts, optdata)
@@ -125,11 +120,8 @@ function competition2(
     biome = BiomeAssignment.newassignbiome(
         optpft,
         wdom,
-        grasspft,
         subpft,
         npp,
-        woodnpp,
-        grassnpp,
         subnpp,
         greendays,
         gdd0,
@@ -166,54 +158,52 @@ function competition2(
     return CompetitionResults(biome, output)
 end
 
-function initialize_presence(numofpfts::Int, optnpp::AbstractArray{Float64})::Tuple{Vector{Bool}, Vector{Bool}}
+function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T})::Tuple{Vector{Bool}, Vector{Bool}} where T <: Real
+    # Initialize grass statically: true for pft >= 8 except for 10
+    grass = [pft >= 8 && pft != 10 for pft in 1:numofpfts]
+    grass = vcat(grass, false) # Add padding for numofpfts+1
+
+    # Initialize present dynamically based on optnpp
     present = falses(numofpfts+1)
-    grass = falses(numofpfts+1)
-
     for pft in 1:numofpfts
-        if pft >= 8
-            grass[pft+1] = true
-        end
-
         if optnpp[pft+1] > 0.0
-            present[pft+1] = true
+            present[pft] = true
         end
-
     end
-
-    grass[10+1] = false
-    present[12+1] = true
+    present[12] = true # Special case
 
     return grass, present
 end
 
 
-
-function calculate_soil_moisture(numofpfts::Int, optdata::AbstractArray{})::Tuple{AbstractArray{Float64}, Vector{Int}, AbstractArray{Float64}, AbstractArray{Float64}, AbstractArray{Float64}}
-    wetlayer = zeros(Float64, numofpfts+1, 2)
-    drymonth = zeros(Int, 15)
-    wettest = fill(-1.0, numofpfts+1)
-    driest = fill(101.0, numofpfts+1)
-    wetness = zeros(Float64, numofpfts+1)
+function calculate_soil_moisture(
+    numofpfts::U,
+    optdata::AbstractArray{T}
+)::Tuple{AbstractArray{T}, Vector{U}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}} where {T <: Real, U <: Int}
+    wetlayer = zeros(T, numofpfts+1, 2)
+    drymonth = zeros(U, 15)
+    wettest = fill(T(-1.0), numofpfts+1)
+    driest = fill(T(101.0), numofpfts+1)
+    wetness = zeros(T, numofpfts+1)
 
     for pft in 1:numofpfts
-        wetness[pft+1] = 0.0
-        wetlayer[pft+1, 1] = 0.0
-        wetlayer[pft+1, 2] = 0.0
-        drymonth[pft+1] = 0
-        wettest[pft+1] = -1.0
-        driest[pft+1] = 101.0
+        wetness[pft+1] = T(0.0)
+        wetlayer[pft+1, 1] = T(0.0)
+        wetlayer[pft+1, 2] = T(0.0)
+        drymonth[pft+1] = U(0)
+        wettest[pft+1] = T(-1.0)
+        driest[pft+1] = T(101.0)
 
         for m in 1:12
             mwet = optdata[pft+1, m + 412]
-            wetness[pft+1] += (mwet / 12.0)
-            wetlayer[pft+1, 1] += optdata[pft+1, m + 412] / 12.0  # top
-            wetlayer[pft+1, 2] += optdata[pft+1, m + 424] / 12.0  # bottom
+            wetness[pft+1] += (mwet / T(12.0))
+            wetlayer[pft+1, 1] += optdata[pft+1, m + 412] / T(12.0)
+            wetlayer[pft+1, 2] += optdata[pft+1, m + 424] / T(12.0)
             if mwet > wettest[pft+1]
                 wettest[pft+1] = mwet
             end
             if mwet < driest[pft+1]
-                drymonth[pft+1] = m
+                drymonth[pft+1] = U(m)
                 driest[pft+1] = mwet
             end
         end
@@ -222,7 +212,7 @@ function calculate_soil_moisture(numofpfts::Int, optdata::AbstractArray{})::Tupl
     return wetlayer, drymonth, wettest, driest, wetness
 end
 
-function determine_subdominant_pft(pftmaxnpp::Int, optnpp::AbstractArray{Float64})::Tuple{Int, Int, Int, Float64}
+function determine_subdominant_pft(pftmaxnpp::U, optnpp::AbstractArray{T})::Tuple{U, U, U, T} where {T <: Real, U <: Int}
     optpft = pftmaxnpp
     wdom = optpft
 
@@ -242,33 +232,37 @@ function determine_subdominant_pft(pftmaxnpp::Int, optnpp::AbstractArray{Float64
 end
 
 function determine_optimal_pft(
-    optpft::Int,
-    wdom::Int,
-    subpft::Int,
-    optnpp::AbstractArray{Float64},
-    optlai::AbstractArray{Float64},
-    grasspft::Int,
-    tmin::Float64,
-    gdd5::Float64,
-    tcm::Float64,
-    tprec::Float64,
-    wetness::AbstractArray{Float64},
+    optpft::U,
+    wdom::U,
+    subpft::U,
+    optnpp::AbstractArray{T},
+    optlai::AbstractArray{T},
+    grasspft::U,
+    tmin::T,
+    gdd5::T,
+    tcm::T,
+    tprec::T,
+    wetness::AbstractArray{T},
     optdata::AbstractArray{},
     present::Vector{Bool}
-)::Tuple{Int, Float64, Float64, Int, Float64,Float64}
+)::Tuple{U, T, T, U, T, T} where {T <: Real, U <: Int}
     flop = false
-    nppdif = 0
 
-    # Initialize, else I get an error
+    # Initialize variables
     woodylai = optlai[wdom+1]
     woodnpp = optnpp[wdom+1]
     grasslai = optlai[grasspft+1]
-    
     firedays = optdata[wdom+1, 199]
     subfiredays = optdata[subpft+1, 199]
-    greendays = optdata[wdom+1, 200] 
-
+    greendays = optdata[wdom+1, 200]
+    nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
+    
     while true
+        # Update variables dynamically if wdom changes
+        woodylai = optlai[wdom+1]
+        woodnpp = optnpp[wdom+1]
+        grasslai = optlai[grasspft+1]
+
         if wdom != 0
             firedays = optdata[wdom+1, 199]
             subfiredays = optdata[subpft+1, 199]
@@ -280,8 +274,8 @@ function determine_optimal_pft(
         end
 
         nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
-        ratio = 0.0
 
+        # Mimicking Fortran conditions and goto-like behavior
         if (wdom == 3 || wdom == 5) && tmin > 0.0
             if gdd5 > 5000.0
                 wdom = 2
@@ -348,7 +342,7 @@ function determine_optimal_pft(
         end
 
         if wdom == 5
-            if present[3+1]
+            if present[3]
                 wdom = 3
                 subpft = 5
                 continue
@@ -396,7 +390,7 @@ function determine_optimal_pft(
             end
         end
 
-        if optpft == 0 && present[10+1]
+        if optpft == 0 && present[10]
             optpft = 10
         end
 
@@ -409,7 +403,7 @@ function determine_optimal_pft(
         end
 
         if optpft == grasspft
-            if optlai[grasspft+1] < 1.8 && present[10+1]
+            if optlai[grasspft+1] < 1.8 && present[10]
                 optpft = 10
             else
                 optpft = grasspft
@@ -417,7 +411,7 @@ function determine_optimal_pft(
         end
 
         if optpft == 11
-            if wetness[optpft+1] <= 25.0 && present[12+1]
+            if wetness[optpft+1] <= 25.0 && present[12]
                 optpft = 12
             end
         end
@@ -428,20 +422,22 @@ function determine_optimal_pft(
     return optpft, woodnpp, woodylai, greendays, grasslai, nppdif
 end
 
+
+
 function output_diagnostics(
-    numofpfts::Int,
-    pfts::AbstractArray{Int},
-    drymonth::AbstractArray{Int},
-    driest::AbstractArray{Float64},
-    wetness::AbstractArray{Float64},
-    optdata::AbstractArray{Float64},
-    wdom::Int,
-    optnpp::AbstractArray{Float64},
-    optlai::AbstractArray{Float64},
-    grasspft::Int,
-    grassnpp::Float64,
-    subpft::Int
-)::Nothing
+    numofpfts::U,
+    pfts::AbstractArray{U},
+    drymonth::AbstractArray{U},
+    driest::AbstractArray{T},
+    wetness::AbstractArray{T},
+    optdata::AbstractArray{T},
+    wdom::U,
+    optnpp::AbstractArray{T},
+    optlai::AbstractArray{T},
+    grasspft::U,
+    grassnpp::T,
+    subpft::U
+)::Nothing where {T <: Real, U <: Int}
     for pft in 1:numofpfts+1
         if pfts[pft] != 0
             println(@sprintf("%5d%5d%6.2f%6.2f%5d%5d",
@@ -459,24 +455,21 @@ function output_diagnostics(
 end
 
 function format_values_for_output(
-    optpft::Int,
-    wdom::Int,
-    grasspft::Int,
-    optnpp::AbstractArray{Float64},
-    optlai::AbstractArray{Float64},
-    grassnpp::Float64,
+    optpft::U,
+    wdom::U,
+    grasspft::U,
+    optnpp::AbstractArray{T},
+    optlai::AbstractArray{T},
+    grassnpp::T,
     optdata::AbstractArray{},
     woodnpp,
     woodylai,
     grasslai,
-)::Tuple{Int, Float64, Float64, Float64}
+)::Tuple{U, T, T, T} where {T <: Real, U <: Int}
 
     dom = optpft
     
     if optpft == 14
-        # woodnpp = optnpp[wdom+1]
-        # woodylai = optlai[wdom+1]
-        # grasslai = optlai[grasspft+1]
 
         npprat = woodnpp / grassnpp
         treepct = ((8.0 / 5.0) * npprat) - 0.54
@@ -529,25 +522,25 @@ end
 
 function assign_output_values(
     output::AbstractArray{},
-    dom::Int,
-    lai::Float64,
-    npp::Float64,
-    optlai::AbstractArray{Float64},
-    optnpp::AbstractArray{Float64},
-    grasspft::Int,
-    wetness::AbstractArray{Float64},
-    wetlayer::AbstractArray{Float64},
+    dom::U,
+    lai::T,
+    npp::T,
+    optlai::AbstractArray{T},
+    optnpp::AbstractArray{T},
+    grasspft::U,
+    wetness::AbstractArray{T},
+    wetlayer::AbstractArray{T},
     optdata::AbstractArray{},
-    optpft::Int,
-    tprec::Float64,
-    pftpar::AbstractArray{Float64},
-    wdom::Int,
-    tcm::Float64,
-    gdd0::Float64,
-    gdd5::Float64,
+    optpft::U,
+    tprec::T,
+    pftpar::AbstractArray{T},
+    wdom::U,
+    tcm::T,
+    gdd0::T,
+    gdd5::T,
     subpft,
     nppdif
-)::AbstractArray{Float64}
+)::AbstractArray{T} where {T <: Real, U <: Int}
     output[2] = round(lai * 100.0)
     output[3] = round(npp)
     output[4] = round(optlai[wdom+1] * 100.0)
@@ -597,7 +590,7 @@ function assign_output_values(
     # Average delaA for mixed ecosystems
     output[51] = optdata[dom+1, 51]
     # phi value
-    output[52] = optdata[8, 52]
+    output[52] = optdata[8+1, 52]
 
     # Optimized NPP for all PFTs
     for i in 1:14

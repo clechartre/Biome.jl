@@ -4,64 +4,64 @@ include("./table.jl")
 using .Table
 using Printf
 
-struct PpeettResults
-    dpet::AbstractArray{Float64}
-    dayl::AbstractArray{Float64}
-    sun::AbstractArray{Float64}
-    rad0::Float64
-    ddayl::AbstractArray{Float64}
+struct PpeettResults{T <: Real}
+    dpet::AbstractArray{T}
+    dayl::AbstractArray{T}
+    sun::AbstractArray{T}
+    rad0::T
+    ddayl::AbstractArray{T}
 end
 
-function safe_exp(x::Float64)::Float64
+function safe_exp(x::T)::T where {T <: Real}
     try
         return exp(x)
-    catch e
-        return Inf
+    catch
+        return T(Inf)
     end
 end
 
 function ppeett(
-    lat::Float32,
-    dtemp::AbstractArray{Float64},
-    dclou::AbstractArray{Float64},
-    radanom::AbstractArray{Float64},
-    temp::AbstractArray{Float64}
-)::PpeettResults
-    midday = [16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
-    daysinmonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    lat::T,
+    dtemp::AbstractArray{T},
+    dclou::AbstractArray{T},
+    radanom::AbstractArray{T},
+    temp::AbstractArray{T}
+)::PpeettResults{T} where {T <: Real}
+    midday = Int[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
+    daysinmonth = Int[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    pie = 4.0 * atan(1.0)
-    dip = pie / 180.0
+    pie = T(4.0) * atan(T(1.0))
+    dip = pie / T(180.0)
 
-    b = 0.2
-    radup = 107.0
-    qoo = 1360.0
-    d = 0.5
-    c = 0.25
-    albedo = 0.17
+    b = T(0.2)
+    radup = T(107.0)
+    qoo = T(1360.0)
+    d = T(0.5)
+    c = T(0.25)
+    albedo = T(0.17)
 
-    dpet = zeros(Float64, 365)
-    ddayl = zeros(Float64, 365)
-    dayl = zeros(Float64, 12)
-    sun = zeros(Float64, 12)
+    dpet = zeros(T, 365)
+    ddayl = zeros(T, 365)
+    dayl = zeros(T, 12)
+    sun = zeros(T, 12)
 
     day = 0
-    rad0 = 0.0
+    rad0 = T(0.0)
 
     for month in 1:12
-        for dayofm in 1:daysinmonth[month]
+        for _ in 1:daysinmonth[month]
             day += 1
 
             psi, l = Table.table(dtemp[day])
 
-            rl = (b + (1 - b) * (dclou[day] / 100.0)) * (radup - dtemp[day])
+            rl = (b + (T(1) - b) * (dclou[day] / T(100.0))) * (radup - dtemp[day])
             rl *= radanom[month]
 
-            qo = qoo * (1.0 + 2.0 * 0.01675 * cos(dip * (360.0 * day) / 365.0))
-            rs = qo * (c + d * (dclou[day] / 100.0)) * (1.0 - albedo)
+            qo = qoo * (T(1.0) + T(2.0) * T(0.01675) * cos(dip * (T(360.0) * day) / T(365.0)))
+            rs = qo * (c + d * (dclou[day] / T(100.0))) * (T(1.0) - albedo)
             rs *= radanom[month]
 
-            a = -dip * 23.4 * cos(dip * 360.0 * (day + 10.0) / 365.0)
+            a = -dip * T(23.4) * cos(dip * T(360.0) * (day + T(10.0)) / T(365.0))
             cla = cos(lat * dip) * cos(a)
             sla = sin(lat * dip) * sin(a)
             u = rs * sla - rl
@@ -70,24 +70,24 @@ function ppeett(
             if u >= v
                 ho = pie
             elseif u <= -v
-                ho = 0.0
+                ho = T(0.0)
             else
                 ho = acos(-u / v)
             end
 
-            sat = (2.5 * 10^6 * safe_exp((17.27 * dtemp[day]) / (237.3 + dtemp[day]))) / ((237.3 + dtemp[day]) ^ 2)
-            if (sat + psi) != 0 && psi != 0
-                fd = (3600.0 / (l * 1e6)) * (sat / (sat + psi))
+            sat = (T(2.5) * T(10)^T(6) * safe_exp((T(17.27) * dtemp[day]) / (T(237.3) + dtemp[day]))) / ((T(237.3) + dtemp[day])^T(2.0))
+            if (sat + psi) != T(0.0) && psi != T(0.0)
+                fd = (T(3600.0) / (l * T(1e6))) * (sat / (sat + psi))
             else
-                fd = 0
+                fd = T(0.0)
             end
 
-            dpet[day] = fd * 2.0 * ((rs * sla - rl) * ho + rs * cla * sin(ho)) / (pie / 12.0)
+            dpet[day] = fd * T(2.0) * ((rs * sla - rl) * ho + rs * cla * sin(ho)) / (pie / T(12.0))
 
-            if ho == 0.0
-                ddayl[day] = 0.0
+            if ho == T(0.0)
+                ddayl[day] = T(0.0)
             else
-                ddayl[day] = 24.0 * (ho / pie)
+                ddayl[day] = T(24.0) * (ho / pie)
             end
 
             if day == midday[month]
@@ -98,18 +98,18 @@ function ppeett(
                 if us >= vs
                     hos = pie
                 elseif us <= -vs
-                    hos = 0.0
+                    hos = T(0.0)
                 else
                     hos = acos(-us / vs)
                 end
 
-                sun[month] = 2.0 * (rs * sla * hos + rs * cla * sin(hos)) * (3600.0 * 12.0 / pie)
-                if sun[month] <= 0.0
-                    sun[month] = 0.0
+                sun[month] = T(2.0) * (rs * sla * hos + rs * cla * sin(hos)) * (T(3600.0) * T(12.0) / pie)
+                if sun[month] <= T(0.0)
+                    sun[month] = T(0.0)
                 end
 
-                if temp[month] > 0.0
-                    rad0 += daysinmonth[month] * sun[month] * 1e-9 * 0.5
+                if temp[month] > T(0.0)
+                    rad0 += daysinmonth[month] * sun[month] * T(1e-9) * T(0.5)
                 end
             end
         end

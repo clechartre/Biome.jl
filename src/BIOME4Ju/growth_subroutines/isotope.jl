@@ -7,37 +7,37 @@ Lloyd and Farquhar (1994)."""
 
 module Isotopes
 
-struct IsotopeResult
-    meanC3::Float64
-    meanC4::Float64
-    C3DA::AbstractArray{Float64}
-    C4DA::AbstractArray{Float64}
+struct IsotopeResult{T <: Real}
+    meanC3::T
+    meanC4::T
+    C3DA::AbstractArray{T}
+    C4DA::AbstractArray{T}
 end
 
-function isoC3(Cratio::Float64, Ca::Float64, temp::Float64, Rd::Float64)::Float64
+function isoC3(Cratio::T, Ca::T, temp::T, Rd::T)::T where {T <: Real}
     # Define fractionation parameters
-    a = 4.4
-    es = 1.1
-    a1 = 0.7
-    b = 27.5
-    e = 0.0
-    f = 8.0
+    a = T(4.4)
+    es = T(1.1)
+    a1 = T(0.7)
+    b = T(27.5)
+    e = T(0.0)
+    f = T(8.0)
 
-    if Rd <= 0
-        Rd = 0.01
+    if Rd <= T(0.0)
+        Rd = T(0.01)
     end
 
-    leaftemp = 1.05 * (temp + 2.5)
-    gamma = 1.54 * leaftemp
-    Rd = Rd / (86400.0 * 12.0)
-    Catm = Ca * 1.0e6
-    k = Rd / 11.0  # From Farquhar et al. 1982 p. 126
+    leaftemp = T(1.05) * (temp + T(2.5))
+    gamma = T(1.54) * leaftemp
+    Rd = Rd / (T(86400.0) * T(12.0))
+    Catm = Ca * T(1.0e6)
+    k = Rd / T(11.0)  # From Farquhar et al. 1982 p. 126
 
     # Calculate the fractionation
-    q = a * (1 - Cratio + 0.025)
-    r = 0.075 * (es + a1)
-    s = b * (Cratio - 0.1)
-    t = 0.0  # (e * Rd / k + f * gamma) / Catm
+    q = a * (T(1.0) - Cratio + T(0.025))
+    r = T(0.075) * (es + a1)
+    s = b * (Cratio - T(0.1))
+    t = T(0.0)  # (e * Rd / k + f * gamma) / Catm
 
     DeltaA = q + r + s - t
     delC3 = DeltaA
@@ -45,19 +45,19 @@ function isoC3(Cratio::Float64, Ca::Float64, temp::Float64, Rd::Float64)::Float6
     return delC3
 end
 
-function isoC4(Cratio::Float64, phi::Float64, temp::Float64)::Float64
+function isoC4(Cratio::T, phi::T, temp::T)::T where {T <: Real}
     # Define fractionation parameters
-    a = 4.4
-    es = 1.1
-    a1 = 0.7
-    b3 = 30.0
+    a = T(4.4)
+    es = T(1.1)
+    a1 = T(0.7)
+    b3 = T(30.0)
 
-    b4 = 26.19 - (9483 / (273.2 + temp))
+    b4 = T(26.19) - (T(9483.0) / (T(273.2) + temp))
 
     DeltaA = (
-        a * (1 - Cratio + 0.0125)
-        + 0.0375 * (es + a1)
-        + (b4 + (b3 - es - a1) * phi) * (Cratio - 0.05)
+        a * (T(1.0) - Cratio + T(0.0125))
+        + T(0.0375) * (es + a1)
+        + (b4 + (b3 - es - a1) * phi) * (Cratio - T(0.05))
     )
 
     delC4 = DeltaA
@@ -66,24 +66,24 @@ function isoC4(Cratio::Float64, phi::Float64, temp::Float64)::Float64
 end
 
 function isotope(
-    Cratio::AbstractArray{Float64},
-    Ca::Float64,
-    temp::AbstractArray{Float64},
-    Rd::AbstractArray{Float64},
+    Cratio::AbstractArray{T},
+    Ca::T,
+    temp::AbstractArray{T},
+    Rd::AbstractArray{T},
     c4month::Vector{Bool},
-    mgpp::AbstractArray{Float64},
-    phi::Float64,
-    gpp::Float64
-)::IsotopeResult
-    wtC3 = 0.0
-    wtC4 = 0.0
-    C3DA = zeros(Float64, 12)
-    C4DA = zeros(Float64, 12)
+    mgpp::AbstractArray{T},
+    phi::T,
+    gpp::T
+)::IsotopeResult{T} where {T <: Real}
+    wtC3 = T(0.0)
+    wtC4 = T(0.0)
+    C3DA = zeros(T, 12)
+    C4DA = zeros(T, 12)
 
     for m in 1:12
-        if mgpp[m] > 0.0
-            if Cratio[m] < 0.05
-                Cratio[m] = 0.05
+        if mgpp[m] > T(0.0)
+            if Cratio[m] < T(0.05)
+                Cratio[m] = T(0.05)
             end
 
             if c4month[m]
@@ -96,13 +96,13 @@ function isotope(
                 wtC3 += delC3 * mgpp[m]
             end
         else
-            C3DA[m] = 0.0
-            C4DA[m] = 0.0
+            C3DA[m] = T(0.0)
+            C4DA[m] = T(0.0)
         end
     end
 
-    meanC3 = gpp != 0 ? wtC3 / gpp : 0.0
-    meanC4 = gpp != 0 ? wtC4 / gpp : 0.0
+    meanC3 = gpp != T(0.0) ? wtC3 / gpp : T(0.0)
+    meanC4 = gpp != T(0.0) ? wtC4 / gpp : T(0.0)
 
     return IsotopeResult(meanC3, meanC4, C3DA, C4DA)
 end

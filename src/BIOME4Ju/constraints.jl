@@ -2,20 +2,18 @@
 
 module Constraints
 
-using LinearAlgebra: undef
-
 function constraints(
-    tcm::Float64,
-    twm::Float64,
-    tminin::AbstractFloat,
-    gdd5::Float64,
-    rad0::Float64,
-    gdd0::Float64,
-    maxdepth::Float64
-)::Tuple{Float64, Float64, AbstractArray{Float64}, Vector{Int}}
+    tcm::T,
+    twm::T,
+    tminin::T,
+    gdd5::T,
+    rad0::T,
+    gdd0::T,
+    maxdepth::T
+)::Tuple{T, T, AbstractArray{T}, Vector{Int}} where{T <: Real}
     npft = 13
     nclin = 6
-    undef = -99.9
+    undefined_value = -99.9
 
     limits = [
         [[-99.9, -99.9], [0.0, -99.9], [-99.9, -99.9], [-99.9, -99.9], [10.0, -99.9], [-99.9, -99.9]],
@@ -45,10 +43,10 @@ function constraints(
             lower_limit, upper_limit = limits[ip][iv]
 
             if (
-                (lower_limit != undef && upper_limit != undef && lower_limit <= clindex[iv] < upper_limit) ||
-                (lower_limit == undef && upper_limit != undef && clindex[iv] < upper_limit) ||
-                (lower_limit != undef && upper_limit == undef && lower_limit <= clindex[iv]) ||
-                (lower_limit == undef && upper_limit == undef)
+                (lower_limit != undefined_value && upper_limit != undefined_value && lower_limit <= clindex[iv] < upper_limit) ||
+                (lower_limit == undefined_value && upper_limit != undefined_value && clindex[iv] < upper_limit) ||
+                (lower_limit != undefined_value && upper_limit == undefined_value && lower_limit <= clindex[iv]) ||
+                (lower_limit == undefined_value && upper_limit == undefined_value)
             )
                 pfts[ip] = 1
             else

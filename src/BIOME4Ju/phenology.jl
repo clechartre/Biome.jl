@@ -1,100 +1,98 @@
-"""Calculate the a generic phenology for any summergreen pft
-three month period centred around the coldest month is
-defined as the minimum period during which foliage is not
-present. Plants then start growing leaves and the end of this
-3 month period or when the temperature gos above 5oC if this
-occurs later. Plants take 200 gdd5 to grow a full leaf canopy."""
-
 module Phenology
 
-using Base.Iterators: cycle
-
 function phenology(
-    dtemp::AbstractArray{Float64},
-    temp::AbstractArray{Float64},
-    tcm::Float64,
-    tdif::Float64,
-    tmin::Float64,
-    pft::Int,
-    ddayl::AbstractArray{Float64},
-    pftpar::AbstractArray{Float64, 2}
-)::AbstractArray{Float64}
-    daysinmonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    dphen = zeros(Float64, 365, 2)
-    ramp = [pftpar[pft, 8], pftpar[pft, 9]]
+    dphen::AbstractArray{T},
+    dtemp::AbstractArray{T},
+    temp::AbstractArray{T},
+    tcm::T,
+    tmin::T,
+    pft::U,
+    ddayl::AbstractArray{T},
+    pftpar::AbstractArray{T, 2}
+)::AbstractArray{T} where {T <: Real, U <: Int}
+    # Days in each month
+    daysinmonth = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    dphen = ones(T, 365, 2)
+    ramp = T[pftpar[pft, 8], pftpar[pft, 9]]
+    ont = pft == U(7) ? T(0.0) : T(5.0)
 
-    ont = pft == 7 ? 0.0 : 5.0
-
+    # Initialize variables
     warm = tcm
-    ncm = 0
-    hotm = 0
+    ncm = U(0)
+    hotm = U(0)
+
+    # Find coldest and hottest months
     for m in 1:12
         if temp[m] == tcm
-            ncm = m
+            ncm = U(m)
         end
         if temp[m] > warm
             warm = temp[m]
-            hotm = m
+            hotm = U(m)
         end
     end
 
+    # Phenology cases (spinup loop)
     for phencase in 1:2
-        coldm = [ncm - 1, ncm, ncm + 1]
-        if coldm[1] == 0
-            coldm[1] = 12
+        coldm = U[ncm - 1, ncm, ncm + 1]
+        if coldm[1] == U(0)
+            coldm[1] = U(12)
         end
-        if coldm[3] == 13
-            coldm[3] = 1
+        if coldm[3] == U(13)
+            coldm[3] = U(1)
         end
-        if hotm == 12
-            hotm = 0
+        if hotm == U(12)
+            hotm = U(0)
         end
 
-        gdd = 0.0
-        winter = 0
-        for _ in 1:2
-            day = 0
-            flip = 0
-            for m in 1:12
-                for dayofmonth in 1:daysinmonth[m]
-                    day += 1
+        gdd = T(0.0)
+        winter = U(0)
+        flip = U(0)
+
+        for _ in 1:2 # Spinup loop
+            day = U(0)
+            for m in 1:12 # Monthly loop
+                for _ in 1:daysinmonth[m] # Daily loop
+                    day += U(1)
+
+                    # Check temperature threshold
                     if dtemp[day] > ont
                         if m != coldm[1] && m != coldm[2] && m != coldm[3]
-                            today = max(dtemp[day], 0.0)
+                            today = max(dtemp[day], T(0.0))
+
                             gdd += today
-                            dphen[day, phencase] = if gdd == 0.0
-                                0.0
-                            elseif ramp[phencase] != 0
-                                gdd / ramp[phencase]
+                            if gdd == T(0.0)
+                                dphen[day, phencase] = T(0.0)
                             else
-                                0
+                                dphen[day, phencase] = gdd / ramp[phencase]
                             end
                             if gdd >= ramp[phencase]
-                                dphen[day, phencase] = 1.0
+                                dphen[day, phencase] = T(1.0)
                             end
-                            flip = 1
+                            flip = U(1)
                         else
-                            if flip == 1
-                                winter = 0
+                            if flip == U(1)
+                                winter = U(0)
                             end
-                            winter += 1
-                            dphen[day, phencase] = 0.0
-                            gdd = 0.0
-                            flip = 0
+                            winter += U(1)
+                            dphen[day, phencase] = T(0.0)
+                            gdd = T(0.0)
+                            flip = U(0)
                         end
                     end
 
-                    if phencase == 1
+                    # Fall leaves removal
+                    if phencase == U(1)
                         if m >= hotm
-                            if dtemp[day] < -10.0 || ddayl[day] < 10.0
-                                dphen[day, phencase] = 0.0
+                            if dtemp[day] < T(-10.0) || ddayl[day] < T(10.0)
+                                dphen[day, phencase] = T(0.0)
                             end
                         elseif m == coldm[1]
-                            dphen[day, phencase] = 0.0
+                            dphen[day, phencase] = T(0.0)
                         end
-                    elseif phencase == 2
-                        if dtemp[day] < -5.0
-                            dphen[day, phencase] = 0.0
+                    elseif phencase == U(2)
+                        if dtemp[day] < T(-5.0)
+                            dphen[day, phencase] = T(0.0)
                         end
                     end
                 end
