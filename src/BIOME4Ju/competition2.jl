@@ -77,7 +77,7 @@ function competition2(
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, optnpp)
 
     # Determine the optimal PFT based on various conditions
-    optpft, woodnpp, woodylai, greendays, grasslai, nppdif = determine_optimal_pft(
+    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
         optpft,
         wdom,
         subpft,
@@ -112,7 +112,7 @@ function competition2(
     end
 
     # Format values for output
-    dom, npp, lai, grasslai = format_values_for_output(
+    dom, npp, lai, grasslai, optpft = format_values_for_output(
         optpft, wdom, grasspft, optnpp, optlai, grassnpp, optdata, woodnpp, woodylai, grasslai
     )
 
@@ -245,7 +245,7 @@ function determine_optimal_pft(
     wetness::AbstractArray{T},
     optdata::AbstractArray{},
     present::Vector{Bool}
-)::Tuple{U, T, T, U, T, T} where {T <: Real, U <: Int}
+)::Tuple{U, T, T, U, T, T, U, U} where {T <: Real, U <: Int}
     flop = false
 
     # Initialize variables
@@ -276,15 +276,15 @@ function determine_optimal_pft(
         nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
 
         # Mimicking Fortran conditions and goto-like behavior
-        if (wdom == 3 || wdom == 5) && tmin > 0.0
-            if gdd5 > 5000.0
+        if (wdom == 3 || wdom == 5) && tmin > T(0.0)
+            if gdd5 > T(5000.0)
                 wdom = 2
                 continue
             end
         end
 
         if wdom == 1
-            if optnpp[wdom+1] < 2000.0
+            if optnpp[wdom+1] < T(000.0)
                 wdom = 2
                 subpft = 1
                 continue
@@ -292,11 +292,11 @@ function determine_optimal_pft(
         end
 
         if wdom == 2
-            if woodylai < 2.0
+            if woodylai < T(2.0)
                 optpft = grasspft
-            elseif grasspft == 9 && woodylai < 3.6
+            elseif grasspft == 9 && woodylai < T(3.6)
                 optpft = 14
-            elseif greendays < 270 && tcm > 21.0 && tprec < 1700.0
+            elseif greendays < 270 && tcm > T(21.0)&& tprec < T(1700.0)
                 optpft = 14
             else
                 optpft = wdom
@@ -304,11 +304,11 @@ function determine_optimal_pft(
         end
 
         if wdom == 3
-            if optnpp[wdom+1] < 140.0
+            if optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
-            elseif woodylai < 1.0
+            elseif woodylai < T(1.0)
                 optpft = grasspft
-            elseif woodylai < 2.0
+            elseif woodylai < T(2.0)
                 optpft = 14
             else
                 optpft = wdom
@@ -316,7 +316,7 @@ function determine_optimal_pft(
         end
 
         if wdom == 4
-            if woodylai < 2.0
+            if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
                 if !flop && subpft != 0
@@ -327,7 +327,7 @@ function determine_optimal_pft(
                 else
                     optpft = grasspft
                 end
-            elseif woodylai < 3.0 || firedays > 180
+            elseif woodylai < T(3.0) || firedays > U(180)
                 if nppdif < 0.0
                     optpft = 14
                 elseif !flop && subpft != 0
@@ -346,9 +346,9 @@ function determine_optimal_pft(
                 wdom = 3
                 subpft = 5
                 continue
-            elseif optnpp[wdom+1] < 140.0
+            elseif optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
-            elseif woodylai < 1.2
+            elseif woodylai < T(1.2)
                 optpft = 14
             else
                 optpft = wdom
@@ -356,9 +356,9 @@ function determine_optimal_pft(
         end
 
         if wdom == 6
-            if optnpp[wdom+1] < 140.0
+            if optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
-            elseif firedays > 90
+            elseif firedays > U(90)
                 if !flop && subpft != 0
                     wdom = subpft
                     subpft = 6
@@ -371,9 +371,9 @@ function determine_optimal_pft(
         end
 
         if wdom == 7
-            if optnpp[wdom+1] < 120.0
+            if optnpp[wdom+1] < T(120.0)
                 optpft = grasspft
-            elseif wetness[wdom+1] < 30.0 && nppdif < 0.0
+            elseif wetness[wdom+1] < T(30.0) && nppdif < T(0.0)
                 optpft = grasspft
             else
                 optpft = wdom
@@ -419,7 +419,7 @@ function determine_optimal_pft(
         break
     end
 
-    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif
+    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
 end
 
 
@@ -465,7 +465,7 @@ function format_values_for_output(
     woodnpp,
     woodylai,
     grasslai,
-)::Tuple{U, T, T, T} where {T <: Real, U <: Int}
+)::Tuple{U, T, T, T, U} where {T <: Real, U <: Int}
 
     dom = optpft
     
@@ -517,7 +517,7 @@ function format_values_for_output(
     grasslai = optlai[grasspft+1]
 
 
-    return dom, npp, lai, grasslai
+    return dom, npp, lai, grasslai, optpft
 end
 
 function assign_output_values(

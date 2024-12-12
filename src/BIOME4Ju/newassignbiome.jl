@@ -30,9 +30,9 @@ function newassignbiome(
         return 26
     end
     if optpft == 11
-        if gdd0 < 200.0
+        if gdd0 < T(200.0)
             return 25
-        elseif gdd0 < 500.0
+        elseif gdd0 < T(500.0)
             return 24
         else
             return 23
@@ -44,8 +44,8 @@ function newassignbiome(
 
     # Desert
     if optpft == 10
-        if grasslai > 1.0
-            if tmin >= 0.0
+        if grasslai > T(1.0)
+            if tmin >= T(0.0)
                 return 13
             else
                 return 14
@@ -53,7 +53,7 @@ function newassignbiome(
         else
             return 21
         end
-    elseif optnpp <= 100.0
+    elseif optnpp <= T(100.0)
         if optpft <= 5 || optpft in [9, 10]
             return 21 
         elseif optpft == 8
@@ -65,7 +65,7 @@ function newassignbiome(
 
     # Boreal Biomes
     if optpft == 6
-        if gdd5 > 900.0 && tcm > -19.0
+        if gdd5 > T(900.0) && tcm > T(-19.0)
             if present[4]
                 return 7
             else
@@ -84,7 +84,7 @@ function newassignbiome(
             return 4
         elseif subpft == 5
             return 9
-        elseif gdd5 > 900.0 && tcm > -19.0
+        elseif gdd5 > T(900.0) && tcm > T(-19.0)
             return 9
         else
             return 11
@@ -93,7 +93,7 @@ function newassignbiome(
 
     # Temperate Biomes
     if optpft == 8
-        if gdd0 >= 800.0
+        if gdd0 >= T(800.0)
             return 20
         else
             return 22
@@ -104,12 +104,12 @@ function newassignbiome(
     end
     if optpft == 4
         if present[6]
-            if tcm < -15.0
+            if tcm < T(-15.0)
                 return 9
             else
                 return 7
             end
-        elseif present[3] || (present[5] && gdd5 > 3000.0 && tcm > 3.0)
+        elseif present[3] || (present[5] && gdd5 > T(3000.0) && tcm > T(3.0))
             return 6
         else
             return 4
@@ -118,7 +118,7 @@ function newassignbiome(
     if optpft == 5
         if present[3]
             return 6
-        elseif subpft == 4 && nppdif < 50.0
+        elseif subpft == 4 && nppdif < T(50.0)
             return 5
         elseif subpft == 7
             return 9
@@ -130,7 +130,7 @@ function newassignbiome(
     # Savanna and Woodland
     if optpft == 14
         if woodpft <= 2
-            if woodylai > 4.0
+            if woodylai > T(4.0)
                 return 12
             else
                 return 13
@@ -152,9 +152,9 @@ function newassignbiome(
             return 1
         end
         if optpft == 2
-            if greendays > 300
+            if greendays > U(300)
                 return 1
-            elseif greendays > 250
+            elseif greendays > U(250)
                 return 2
             else
                 return 3
