@@ -284,7 +284,7 @@ function determine_optimal_pft(
         end
 
         if wdom == 1
-            if optnpp[wdom+1] < T(000.0)
+            if optnpp[wdom+1] < T(2000.0)
                 wdom = 2
                 subpft = 1
                 continue
