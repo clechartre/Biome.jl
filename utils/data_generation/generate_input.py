@@ -163,7 +163,7 @@ def resample_to_mean(input_cog_path: str, lon_pixels: int, lat_pixels: int) -> x
 
 @click.command()
 @click.option('--var', type=str, required=True, help='Variable to process (e.g., pr, tas, tasmin, clt)')
-@click.option('--year', type=int, required=True, help='Year to process (e.g., 2013)')
+@click.option('--year', type=str, required=True, help='Year to process (e.g., 2013)')
 @click.option('--resolution', type=click.Choice(['low', 'high']), required=True, help='Resolution to download data at, low = 55km, high = 1km ')
 def process_and_save_variable(var: str, year: int, resolution: str) -> None:
     """
@@ -174,7 +174,7 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
     year (int): Year of data to process.
     resolution (str): Resolution for the data ('low' = 55km, 'high' = 1km).
     """
-    base_url = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/monthly"
+    base_url = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies"
     data_arrays = []
 
     if resolution == "low":
@@ -182,7 +182,7 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
         lat_pixels = 360
     elif resolution == "high":
         lon_pixels =  43200
-        lat_pixels = 20880
+        lat_pixels = 21600
 
     dst_bounds = (-180, -90, 180, 90)
     dst_shape = (lat_pixels, lon_pixels)
@@ -192,7 +192,7 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
         # Download corresponding file
         month_str = f"{month:02d}"
         filename = f"CHELSA_{var}_{month_str}_{year}_V.2.1.tif"
-        url = f"{base_url}/{var}/{filename}"
+        url = f"{base_url}/{year}/{var}/{filename}"
         download_file(url, filename)
 
         # Reshape 
@@ -209,7 +209,8 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
         'tas': ('temp', "monthly mean temperature", "degC", 0.1, -273.15),
         'tasmin': ('tmin', "annual minimum temperature", "degC", 0.1, -273.15),
         'pr': ('prec', "monthly total precipitation", "mm", 0.01, 0),
-        'clt': ('sun', "total cloud cover", "percent", 0.01, 0)
+        'clt': ('sun', "total cloud cover", "percent", 0.01, 0),
+        'cmi': ('cmi', "climate moisture index", "kg m-2 month-1", 0.1, 0)
     }
 
     if var in var_map:
@@ -257,7 +258,7 @@ def process_and_save_variable(var: str, year: int, resolution: str) -> None:
         "_FillValue": -9999
     }
 
-    output_nc_path = f"/home/lechartr/BIOME4Py/data/generated_data/55k/{var_name}_{year}.nc"
+    output_nc_path = f"/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/1k/{var_name}_{year}_new.nc"
     ds.to_netcdf(output_nc_path)
     print(f"Aggregated data for {var_name} saved to {output_nc_path}")
 

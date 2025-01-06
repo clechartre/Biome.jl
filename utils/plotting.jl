@@ -38,39 +38,40 @@ function plot_biome_distribution(filename::String, output_file::String)
 
     # Define the color map with a transparent color for -9999
     cmap = [
-        RGBA(0, 0, 0, 0),          # Transparent for -9999
-        RGB(0.0, 0.3, 0.0),        # Tropical evergreen forest - Rich Dark Green
-        RGB(0.2, 0.8, 0.2),        # Tropical semi-deciduous forest - Vivid Light Green
-        RGB(0.9, 0.3, 0.1),        # Tropical deciduous forest/woodland - Orange-Red
-        RGB(0.1, 0.5, 0.1),        # Temperate deciduous forest - Forest Green
-        RGB(0.0, 0.4, 0.3),        # Temperate conifer forest - Muted Teal
-        RGB(0.5, 0.6, 0.2),        # Warm mixed forest - Olive Green
-        RGB(0.0, 0.5, 0.9),        # Cool mixed forest - Bright Blue
-        RGB(0.1, 0.3, 0.6),        # Cool conifer forest - Darker Blue
-        RGB(0.3, 0.8, 0.8),        # Cold mixed forest - Soft Cyan
-        RGB(0.0, 0.7, 0.5),        # Evergreen taiga/montane forest - Medium Turquoise
-        RGB(0.1, 0.4, 0.7),        # Deciduous taiga/montane forest - Slate Blue
-        RGB(1.0, 0.8, 0.1),        # Tropical savanna - Bright Yellow
-        RGB(0.9, 0.6, 0.3),        # Tropical xerophytic shrubland - Tan
-        RGB(0.8, 0.6, 0.6),        # Temperate xerophytic shrubland - Pale Pink
-        RGB(0.7, 0.5, 0.3),        # Temperate sclerophyll woodland - Brown
-        RGB(0.3, 0.9, 0.3),        # Temperate broadleaved savanna - Fresh Green
-        RGB(0.9, 0.7, 0.1),        # Open conifer woodland - Gold
-        RGB(0.6, 0.6, 0.3),        # Boreal parkland - Khaki
-        RGB(0.9, 0.9, 0.5),        # Tropical grassland - Light Yellow
-        RGB(0.6, 0.8, 0.5),        # Temperate grassland - Light Mint Green
-        RGB(1.0, 0.7, 0.5),        # Desert - Sand
-        RGB(0.5, 0.6, 0.8),        # Steppe tundra - Light Purple
-        RGB(0.7, 0.5, 0.9),        # Shrub tundra - Violet
-        RGB(0.6, 0.4, 0.7),        # Dwarf shrub tundra - Dark Violet
-        RGB(0.5, 0.3, 0.6),        # Prostrate shrub tundra - Deep Purple
-        RGB(0.6, 0.2, 0.4),        # Cushion-forbs, lichen and moss - Burgundy
-        RGB(0.8, 0.8, 0.8),        # Barren - Light Grey
-        RGB(1.0, 1.0, 1.0)         # Land ice - White
+        RGBA(0.0, 0.0, 0.0, 0.0),          # Transparent for -9999
+        RGB(0.1059, 0.3961, 0.0667),      # Tropical evergreen forest - Rich Dark Green
+        RGB(0.3216, 0.4980, 0.0157),      # Tropical semi-deciduous forest - Vivid Light Green
+        RGB(0.5765, 0.3961, 0.0275),      # Tropical deciduous forest/woodland - Orange-Red
+        RGB(0.2431, 0.7804, 0.0),         # Temperate deciduous forest - Forest Green
+        RGB(0.1176, 0.3961, 0.4),         # Temperate conifer forest - Muted Teal
+        RGB(0.0510, 0.0980, 0.5098),      # Warm mixed forest - Olive Green
+        RGB(0.8196, 1.0, 0.7882),         # Cool mixed forest - Bright Blue
+        RGB(0.1804, 0.5961, 0.1529),      # Cool conifer forest - Darker Blue
+        RGB(0.4784, 0.1961, 0.3020),      # Cold mixed forest - Soft Cyan
+        RGB(0.1608, 0.0863, 0.9216),      # Evergreen taiga/montane forest - Medium Turquoise
+        RGB(0.3412, 0.8, 1.0),            # Deciduous taiga/montane forest - Slate Blue
+        RGB(0.7137, 0.9020, 0.0),         # Tropical savanna - Bright Yellow
+        RGB(0.9725, 0.6980, 0.5843),      # Tropical xerophytic shrubland - Tan
+        RGB(0.9843, 0.8510, 0.6863),      # Temperate xerophytic shrubland - Pale Pink
+        RGB(0.4157, 0.5961, 0.0),         # Temperate sclerophyll woodland - Brown
+        RGB(0.7961, 0.8, 0.0),            # Temperate broadleaved savanna - Fresh Green
+        RGB(0.9725, 0.5961, 0.9098),      # Open conifer woodland - Gold
+        RGB(0.6039, 0.4941, 1.0),         # Boreal parkland - Khaki
+        RGB(0.8824, 0.6980, 0.2510),      # Tropical grassland - Light Yellow
+        RGB(0.9882, 0.8980, 0.4627),      # Temperate grassland - Light Mint Green
+        RGB(1.0, 1.0, 0.8980),            # Desert - Sand
+        RGB(0.8941, 0.9020, 0.0),         # Steppe tundra - Light Purple
+        RGB(0.4706, 0.9020, 0.4706),      # Shrub tundra - Violet
+        RGB(0.4941, 0.4980, 0.1608),      # Dwarf shrub tundra - Dark Violet
+        RGB(0.7843, 0.5961, 0.5922),      # Prostrate shrub tundra - Deep Purple
+        RGB(0.6980, 0.5961, 1.0),         # Cushion-forbs, lichen and moss - Melrose
+        RGB(0.8, 0.8, 0.6902),            # Barren - Foggy Gray
+        RGB(0.8235, 1.0, 1.0)             # Land ice - Oyster Bay
     ]
     
+    
     # Load the raster data
-    A = Raster(filename, name="biome")
+    A = Raster(filename, name="biome", lazy=true)
 
     # Convert the raster data to integers
     int_data = Int.(A[:, :])
@@ -92,7 +93,7 @@ function plot_biome_distribution(filename::String, output_file::String)
 
     # Create a dummy plot for the legend
     p2 = Plots.plot(legend=:outerright, xlims=(0, 1), ylims=(0, 1), framestyle=:none, xticks=[], yticks=[])
-    for i in 1:28
+    for i in 2:29
         Plots.scatter!(p2, [0], [0], label=biomename[i], color=cmap[i], markersize=10)
     end
 
