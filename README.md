@@ -7,7 +7,7 @@ This GitHub repository contains the translation to Julia of the original FORTRAN
 The original code works with a main routine and subroutines. You can see the infrastructure in the following graph. In this Julia version, we kept the overall structure where higher level modules call functions from sub-modules.
 
 <p align="middle">
-  <img src="figures/BIOME4_architecture.png"/>
+  <img src="figures/infrastructure_biome4jl.jpg"/>
 </p>
 
 

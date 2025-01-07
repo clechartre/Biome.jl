@@ -1,7 +1,5 @@
 """Biome4 orchestrator."""
 
-module BIOME4
-
 # Third-party
 using LinearAlgebra
 using Printf
@@ -29,7 +27,7 @@ using .Ppeett
 using .SoilTemperature
 using .Snow
 
-function biome4(vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
+function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
     numofpfts = 13
 
     # Initialize variables
@@ -289,5 +287,3 @@ function diagnostic_output(biome, biomename, optdata)
     print("Press return to continue")
     readline()
 end
-
-end # Module

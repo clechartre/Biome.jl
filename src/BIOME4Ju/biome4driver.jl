@@ -17,8 +17,12 @@ using Dates
 using Missings
 
 # First-party
+include("../model.jl")
 include("./biome4.jl")
-using .BIOME4
+include("./koppengeiger/koppenbiomes.jl")
+include("./koppengeiger/thornthwaitebiomes.jl")
+include("./koppengeiger/trollpfaffenbiomes.jl")
+include("./koppengeiger/wissmannbiomes.jl")
 
 function main(
     coordstring::String,
@@ -29,14 +33,27 @@ function main(
     sunfile::String,
     soilfile::String,
     year::String,
-    resolution::String,
-    checkpoint_file::String
+    checkpoint_file::String,
+    model::String
 ) where {T <: Real}
+
+    # Check the model in use
+    model_instance = if model == "biome4"
+        BIOME4Model()
+    elseif model == "wissmann"
+        WissmannModel()
+    elseif model == "thornthwaite"
+        ThornthwaiteModel()
+    elseif model == "koppengeiger"
+        KoppenModel()
+    elseif model == "trollpfaffen"
+        TrollPfaffenModel()
+    else
+        error("Unknown model: $model")
+    end
+
     # Chunk and checkpoint parameters
     chunk_size = 1000 # For functioning on node/debug, 100 works
-
-    # Set the resolution value based on the flag
-    res_value = resolution == "low" ? T(0.5) : T(0.009)
 
     # Open the first dataset just to get the dimensions for the output, then close again
     temp_ds = NCDataset(tempfile, "a")
@@ -259,7 +276,8 @@ function main(
             x_chunk_start,
             strx,
             stry,
-            endy
+            endy,
+            model_instance
         )
 
         # Save the checkpoint after processing the chunk
@@ -275,8 +293,7 @@ function parallel_process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, diag,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-    output_dataset,
-    x_chunk_start, strx, stry, endy
+    output_dataset, x_chunk_start, strx, stry, endy, model_instance::BiomeModel
 )where {T <: Real}
     # Container to hold the spawned tasks (futures)
     futures = []
@@ -295,11 +312,9 @@ function parallel_process_chunk(
         push!(futures, Threads.@spawn begin
             for x in 1:current_chunk_size
                 process_cell(
-                    x, y, strx,
-                    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, diag,
-                    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-                    output_dataset,
-                    x_chunk_start
+                    x, y, strx,temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk,
+                    ksat_chunk, whc_chunk, dz, lon_chunk, diag, biome_var, wdom_var, gdom_var, npp_var,
+                    tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,output_dataset, x_chunk_start, model_instance
                 )
             end
         end)
@@ -318,8 +333,7 @@ function serial_process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz,  lon_chunk, diag,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-    output_dataset,
-    x_chunk_start, strx, stry, endy
+    output_dataset, x_chunk_start, strx, stry, endy, model_instance::BiomeModel
 )where {T <: Real}
     for y in 1:cnty
         println("Serially processing y index $y")
@@ -339,11 +353,9 @@ function serial_process_chunk(
             end
 
             process_cell(
-                x, y, strx,
-                temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, diag,
-                biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-                output_dataset,
-                x_chunk_start
+                x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
+                dz, lon_chunk, diag, biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+                output_dataset,x_chunk_start, model_instance
             )
         end
 
@@ -357,8 +369,7 @@ function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, diag,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-    output_dataset,
-    x_chunk_start
+    output_dataset, x_chunk_start, model::BiomeModel
 )where {T <:Real}
     # Constants
     p0 = T(101325.0)  # sea level standard atmospheric pressure (Pa)
@@ -377,7 +388,7 @@ function process_cell(
         return
     end
 
-    if temp_chunk[x, y, 1] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
+    if temp_chunk[x, y, :] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
         return
     end    
 
@@ -403,7 +414,8 @@ function process_cell(
 
     input[46] = diag ? 1.0 : 0.0  # diagnostic mode
 
-    output = BIOME4.biome4(input, output)
+    # Run the model 
+    output = run(model, input, output)
 
     # Write results to the output variables
     biome_var[x_global_index, y_global_index] = output[1]
@@ -534,15 +546,15 @@ function parse_command_line()
         help = "Year of prediction from the climatology files"
         arg_type = String
 
-        "--resolution"
-        help = "Resolution: 'low' or 'high'"
-        arg_type = String
-        default = "low"
-
         "--checkpoint_file"
         help = "Path to the checkpoint file"
         arg_type = String
         default = "biome_checkpoint.txt"
+
+        "--model"
+        help = "Which prediction model to use"
+        arg_type = String # Make this a choice out of a list of options
+        default = "biome4"
 
     end
     return parse_args(s)
@@ -561,8 +573,8 @@ function main()
         args["sunfile"],
         args["soilfile"],
         args["year"],
-        args["resolution"],
-        args["checkpoint_file"]
+        args["checkpoint_file"],
+        args["model"]
     )
 end
 
