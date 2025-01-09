@@ -19,10 +19,10 @@ using Missings
 # First-party
 include("../model.jl")
 include("./biome4.jl")
-include("./koppengeiger/koppenbiomes.jl")
-include("./koppengeiger/thornthwaitebiomes.jl")
-include("./koppengeiger/trollpfaffenbiomes.jl")
-include("./koppengeiger/wissmannbiomes.jl")
+include("./models/koppenbiomes.jl")
+include("./models/thornthwaitebiomes.jl")
+include("./models/trollpfaffenbiomes.jl")
+include("./models/wissmannbiomes.jl")
 
 function main(
     coordstring::String,
