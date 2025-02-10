@@ -3,6 +3,7 @@
 # Third-party
 using LinearAlgebra
 using Printf
+using ComponentArrays
 
 # First-party
 include("./climdata.jl")
@@ -15,6 +16,7 @@ include("./phenology.jl")
 include("./ppeett.jl")
 include("./snow.jl")
 include("./soiltemp.jl")
+include("../../input/pft_parameters.jl")
 
 using .ClimateData
 using .Competition
@@ -129,7 +131,9 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
     dphen .= T(1.0)
 
     # Initialize pft specific parameters
-    pftpar = PFTData.pftdata(T)
+    # Replace the pftpar by the values from pft_parameters.jl
+    pft_dict = load_pft_parameters()
+    pftpar = [pft_dict[plant_type].main_params for plant_type in keys(pft_dict)]
 
     # Rulebase of absolute constraints to select potentially present pfts:
     tmin, ts, clindex, pfts = Constraints.constraints(
@@ -139,7 +143,8 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
         climate_results.gdd5,
         ppeett_results.rad0,
         climate_results.gdd0,
-        snow_results.maxdepth
+        snow_results.maxdepth,
+        pft_dict
     )
 
     #If you want to bypass the environmental constraints for your model
@@ -165,7 +170,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
     # Calculate optimal LAI and NPP for the selected PFTs
     for pft in 1:numofpfts
         if pfts[pft] != 0
-            if pftpar[pft, 1] >= 2
+            if pftpar[pft][:phenological_type] >= 2
                 dphen = Phenology.phenology(dphen, dtemp, temp, climate_results.cold, tmin, pft, ppeett_results.ddayl, pftpar)
             end
 
@@ -188,7 +193,8 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
                 p,
                 tsoil,
                 realout,
-                numofpfts
+                numofpfts,
+                pft_dict
             )
         end
     end

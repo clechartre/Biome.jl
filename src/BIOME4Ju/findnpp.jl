@@ -3,6 +3,7 @@ module FindNPP
 
 # Third-party
 using LinearAlgebra
+using ComponentArrays: ComponentArray
 
 # First-party
 include("growth.jl")
@@ -20,7 +21,7 @@ function findnpp(
     dpet::Array{T,1},
     dayl::Array{T,1},
     k::AbstractArray,
-    pftpar::AbstractArray{T, 2},
+    pftpar::AbstractArray,
     optdata,
     dphen::AbstractArray{T},
     co2::AbstractFloat,
@@ -28,6 +29,7 @@ function findnpp(
     tsoil::Array{T,1},
     realout::Array{T,2},
     numofpfts::U,
+    pft_dict::ComponentArray
 ) where {T <: Real, U <: Int}
     """Run NPP optimization model for one pft"""
 
@@ -78,7 +80,8 @@ function findnpp(
             tsoil,
             realin,
             mnpp,
-            c4mnpp
+            c4mnpp,
+            pft_dict
         )
         npp = growth_results.npp
         inv = growth_results.outv
@@ -113,7 +116,8 @@ function findnpp(
             tsoil,
             realin,
             mnpp,
-            c4mnpp
+            c4mnpp,
+            pft_dict
         )
         npp = growth_results.npp
         inv = growth_results.outv

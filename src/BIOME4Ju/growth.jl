@@ -20,6 +20,7 @@ using .Isotopes
 using .Photosynthesis
 using .Respiration
 using Statistics: mean
+using ComponentArrays: ComponentArray
 
 struct GrowthResults{T <: Real, U <: Int}
     npp::T
@@ -49,12 +50,10 @@ function safe_round_to_int(x::T)::Int where {T <: Real}
     end
 end
 
-function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}, Vector{T}, Vector{T}} where {T <: Real, U <: Int}
+function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}} where {T <: Real, U <: Int}
     midday = U[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
     days = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    optratioa = T[0.95, 0.9, 0.8, 0.8, 0.9, 0.8, 0.9, 0.65, 0.65, 0.70, 0.90, 0.75, 0.80]
-    kk = T[0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.5, 0.3, 0.6]
-    return midday, days, optratioa, kk
+    return midday, days
 end
 
 function determine_c4_and_optratio(pft::U, optratioa::AbstractArray{T}, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
@@ -76,7 +75,7 @@ function growth(
     dmelt::AbstractArray{T},
     dpet::AbstractArray{T},
     k::AbstractArray{T},
-    pftpar::AbstractArray{T, 2},
+    pftpar::AbstractArray,
     pft::U,
     dayl::AbstractArray{T},
     dtemp::AbstractArray{T},
@@ -87,7 +86,8 @@ function growth(
     tsoil::AbstractArray{T},
     realin::Vector{},
     mnpp::Vector{T},
-    c4mnpp::Vector{T}
+    c4mnpp::Vector{T},
+    pft_dict::ComponentArray
 )::GrowthResults where {T <: Real, U <: Int}
 
     # Initialize variables
@@ -98,18 +98,20 @@ function growth(
         reprocess = false
 
         # Initialize set values
-        midday, days, optratioa, kk = initialize_arrays(T, U)
+        midday, days= initialize_arrays(T, U)
+        optratioa = [pft_dict[plant_type].additional_params.optratioa for plant_type in keys(pft_dict)]
+        kk = [pft_dict[plant_type].additional_params.kk for plant_type in keys(pft_dict)]
         ca = co2 * T(1e-6)
         rainscalar = T(1000.0)
         wst = annp / rainscalar
         wst = min(wst, T(1.0))
-        phentype = round(U, pftpar[pft,1])
-        mgmin = pftpar[pft,2]
-        root = pftpar[pft,6]
-        age = pftpar[pft, 7]
-        c4pot = pftpar[pft, 11]
-        grass = round(U, pftpar[pft,10])
-        emax = pftpar[pft,3]
+        phentype = round(U, pftpar[pft][:phenological_type])
+        mgmin = pftpar[pft][:max_min_canopy_conductance]
+        root = pftpar[pft][:root_fraction_top_soil]
+        age = pftpar[pft][:leaf_longevity]
+        c4pot = pftpar[pft][:c4_plant]
+        grass = round(U, pftpar[pft][:sapwood_respiration])
+        emax = pftpar[pft][:Emax]
         maxfvc = one(T) - T(exp(-kk[pft] * maxlai))
 
         # Initialize values 
@@ -154,7 +156,7 @@ function growth(
         if c4
             photosynthesis_results_list = Vector{typeof(C4Photosynthesis.c4photo(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft))}(undef, 12)
         else
-            photosynthesis_results_list = Vector{typeof(Photosynthesis.photosynthesis(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft))}(undef, 12)
+            photosynthesis_results_list = Vector{typeof(Photosynthesis.photosynthesis(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pft_dict))}(undef, 12)
         end
     
         maxgc = T(0.0)
@@ -168,7 +170,7 @@ function growth(
                 pgphot = photosynthesis_results_list[m].grossphot
                 aday = photosynthesis_results_list[m].aday
             else
-                photosynthesis_results_list[m] = Photosynthesis.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                photosynthesis_results_list[m] = Photosynthesis.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft,pft_dict)
                 lresp[m] = photosynthesis_results_list[m].leafresp
                 pgphot = photosynthesis_results_list[m].grossphot
                 aday = photosynthesis_results_list[m].aday
@@ -229,7 +231,7 @@ function growth(
                         aday = photosynthesis_results_list[m].aday
                     else
 
-                        photosynthesis_results_list[m] = Photosynthesis.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                        photosynthesis_results_list[m] = Photosynthesis.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pft_dict)
                         leafresp = photosynthesis_results_list[m].leafresp
                         igphot = photosynthesis_results_list[m].grossphot
                         aday = photosynthesis_results_list[m].aday
@@ -291,7 +293,7 @@ function growth(
         annualfpar = if annualapar == T(0.0) T(0.0) else T(100.0) * annualapar / annualparr end
     
         # Calculate annual respiration costs to find annual NPP
-        respiration_results = Respiration.respiration(gpp, alresp, temp, grass, maxlai, monthlyfpar, pft)
+        respiration_results = Respiration.respiration(gpp, alresp, temp, grass, maxlai, monthlyfpar, pft, pft_dict)
         npp = respiration_results.npp
 
         if hydrology_results.wilt
@@ -368,7 +370,7 @@ function growth(
             annnep += cflux[m]
         end
     
-        fire_results = FireCalculation.fire(hydrology_results.wet, pft, maxlai, npp)
+        fire_results = FireCalculation.fire(hydrology_results.wet, pft, maxlai, npp, pft_dict)
     
         outv, realin = output_results(
             meanwr,
