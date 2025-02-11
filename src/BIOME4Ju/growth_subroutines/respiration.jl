@@ -1,4 +1,5 @@
 module Respiration
+using ComponentArrays: ComponentArray
 
 struct RespirationResults{T <: Real}
     npp::T
@@ -16,7 +17,8 @@ function respiration(
     grass::Int,
     lai::T,
     monthlyfpar::AbstractArray{T},
-    pft::U
+    pft::U,
+    pft_dict::ComponentArray
 )::RespirationResults{T} where {T <: Real, U <: Int}
     # Constants
     Ln = T(50.0)
@@ -28,8 +30,8 @@ function respiration(
     tref = T(10.0)
     t0 = T(46.02)
 
-    respfact = T[0.8, 0.8, 1.4, 1.6, 0.8, 4.0, 4.0, 1.6, 0.8, 1.4, 4.0, 4.0, 4.0]
-    allocfact = T[1.0, 1.0, 1.2, 1.2, 1.2, 1.2, 1.2, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5]
+    allocfact = [pft_dict[plant_type].additional_params.allocfact for plant_type in keys(pft_dict)]
+    respfact = [pft_dict[plant_type].additional_params.respfact for plant_type in keys(pft_dict)]
 
     # Calculate leafmass and litterfall
     litterfall = lai * Ln * allocfact[pft]

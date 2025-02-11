@@ -33,6 +33,7 @@ function c4photo(
     maxtemp::T = T(55.0)
 
     # PFT-specific parameters
+    # FIXME how do I handle this with the ComponentArray?
     t0 = zeros(10)
     t0[8] = T(10.0)
     t0[9] = T(10.0)

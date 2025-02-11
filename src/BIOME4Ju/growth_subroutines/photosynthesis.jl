@@ -1,5 +1,7 @@
 module Photosynthesis
 
+using ComponentArrays: ComponentArray
+
 struct PhotosynthesisResults{T <: Real}
     leafresp::T
     grossphot::T
@@ -38,6 +40,7 @@ function photosynthesis(
     p::T,
     ca::T,
     pft::U,
+    pft_dict::ComponentArray
 )::PhotosynthesisResults{T} where {T <: Real, U <: Int}
     # Constants
     qeffc3 = T(0.08)
@@ -59,8 +62,8 @@ function photosynthesis(
     leafresp = T(0.0)
 
     # PFT specific parameters
-    t0 = T[10.0, 10.0, 5.0, 4.0, 3.0, 0.0, 0.0, 4.5, 10.0, 5.0, -7.0, -7.0, -12.0]
-    tcurve = T[1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.8, 1.0, 1.0, 1.0, 0.6, 0.6, 0.5]
+    t0 = [pft_dict[plant_type].additional_params.t0 for plant_type in keys(pft_dict)]
+    tcurve = [pft_dict[plant_type].additional_params.tcurve for plant_type in keys(pft_dict)]
 
     # Derived parameters
     leafcost = (age / T(12.0)) ^ T(0.25)
