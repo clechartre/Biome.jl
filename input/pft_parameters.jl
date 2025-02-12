@@ -47,7 +47,7 @@ function load_pft_parameters()::ComponentArray
     ]
 
     # Define constraints
-    limits = [
+    constraint_values = [
         [[-99.9, -99.9], [0.0, -99.9], [-99.9, -99.9], [-99.9, -99.9], [10.0, -99.9], [-99.9, -99.9]],
         [[-99.9, -99.9], [0.0, -99.9], [-99.9, -99.9], [-99.9, -99.9], [10.0, -99.9], [-99.9, -99.9]],
         [[-99.9, -99.9], [-8.0, 5.0], [1200.0, -99.9], [-99.9, -99.9], [10.0, -99.9], [-99.9, -99.9]],
@@ -75,14 +75,14 @@ function load_pft_parameters()::ComponentArray
 
 
     # Flattened constraint values for easier assignment
-    limits_flattened = [vcat(lim...) for lim in limits]
+    limits_flattened = [vcat(lim...) for lim in constraint_values]
 
     # Additional parameter values
     additional_params_values = [
         optratioa, kk, c4, threshold, t0, tcurve, respfact, allocfact
     ]
 
-    pft_dict = OrderedDict{Symbol, ComponentArray}()
+    pftdict = OrderedDict{Symbol, ComponentArray}()
 
     for i in eachindex(plant_types)
         main_params = (; zip(parameter_names, specified_values[i])...)
@@ -95,9 +95,9 @@ function load_pft_parameters()::ComponentArray
             additional_params = additional_params
         )
 
-        pft_dict[plant_types[i]] = ComponentArray(combined_params)
+        pftdict[plant_types[i]] = ComponentArray(combined_params)
     end
 
-    return ComponentArray(pft_dict)
+    return ComponentArray(pftdict)
 end
 

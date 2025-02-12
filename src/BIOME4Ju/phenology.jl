@@ -8,12 +8,12 @@ function phenology(
     tmin::T,
     pft::U,
     ddayl::AbstractArray{T},
-    pftpar::AbstractArray
+    pftpar
 )::AbstractArray{T} where {T <: Real, U <: Int}
     # Days in each month
     daysinmonth = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     dphen = ones(T, 365, 2)
-    ramp = T[pftpar[pft][:GDD5_full_leaf_out], pftpar[pft][:GDD0_full_leaf_out]]
+    ramp = T[pftpar[pft].main_params.GDD5_full_leaf_out, pftpar[pft].main_params.GDD0_full_leaf_out]
     ont = pft == U(7) ? T(0.0) : T(5.0)
 
     # Initialize variables

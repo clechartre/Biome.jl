@@ -28,10 +28,10 @@ function fire(wet::AbstractVector{T},
     pft::U,
     lai::T,
     npp::T,
-    pft_dict::ComponentArray)::FireResult{T} where {T <: Real, U <: Int}
+    pftdict)::FireResult{T} where {T <: Real, U <: Int}
 
     # Threshold values per PFT
-    threshold = [pft_dict[plant_type].additional_params.threshold for plant_type in keys(pft_dict)]
+    threshold = pftdict[pft].additional_params.threshold
 
     # Initialize variables
     firedays = T(0.0)
@@ -41,12 +41,12 @@ function fire(wet::AbstractVector{T},
 
     # Loop through each day of the year
     for day in 1:365
-        if wet[day] < threshold[pft]
+        if wet[day] < threshold
             burn[day] = T(1.0)
-        elseif wet[day] > threshold[pft] + T(0.05)
+        elseif wet[day] > threshold + T(0.05)
             burn[day] = T(0.0)
         else
-            burn[day] = T(1.0) / exp(wet[day] - threshold[pft])
+            burn[day] = T(1.0) / exp(wet[day] - threshold)
         end
 
         # Update wetday and dryday

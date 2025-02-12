@@ -1,0 +1,444 @@
+{
+  "1": {
+    "name": "Temperate broadleaf evergreen tree",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.5,
+      "Emax": 10.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.69,
+      "leaf_longevity": 18.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "tcm": [-99.9, -99.9],
+      "min": [0.0, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "ltwm": [10.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.95,
+      "kk": 0.7,
+      "c4": false,
+      "threshold": 0.25,
+      "t0": 10.0,
+      "tcurve": 1.0,
+      "respfact": 0.8,
+      "allocfact": 1.0
+    }
+  },
+  "2": {
+    "name": "Temperate broadleaf deciduous tree",
+    "main_params": {
+      "phenological_type": 3.0,
+      "max_min_canopy_conductance": 0.5,
+      "Emax": 10.0,
+      "sw_drop": 0.5,
+      "sw_appear": 0.6,
+      "root_fraction_top_soil": 0.70,
+      "leaf_longevity": 9.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [0.0, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [10.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.9,
+      "kk": 0.7,
+      "c4": false,
+      "threshold": 0.20,
+      "t0": 10.0,
+      "tcurve": 1.0,
+      "respfact": 0.8,
+      "allocfact": 1.0
+    }
+  },
+  "3": {
+    "name": "TBE",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.2,
+      "Emax": 4.8,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.67,
+      "leaf_longevity": 18.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-8.0, 5.0],
+      "gdd": [1200.0, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [10.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.8,
+      "kk": 0.6,
+      "c4": false,
+      "threshold": 0.40,
+      "t0": 5.0,
+      "tcurve": 1.0,
+      "respfact": 1.4,
+      "allocfact": 1.2
+    }
+  },
+  "4": {
+    "name": "TST",
+    "main_params": {
+      "phenological_type": 2.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 10.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.65,
+      "leaf_longevity": 7.0,
+      "GDD5_full_leaf_out": 200.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-15.0, -99.9],
+      "min": [-99.9, -8.0],
+      "gdd": [1200.0, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [-99.9, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.8,
+      "kk": 0.6,
+      "c4": false,
+      "threshold": 0.33,
+      "t0": 4.0,
+      "tcurve": 1.0,
+      "respfact": 1.6,
+      "allocfact": 1.2
+    }
+  },
+  "5": {
+    "name": "CST",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.2,
+      "Emax": 4.8,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.52,
+      "leaf_longevity": 30.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-2.0, -99.9],
+      "min": [-99.9, 10.0],
+      "gdd": [900.0, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [10.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.9,
+      "kk": 0.5,
+      "c4": false,
+      "threshold": 0.40,
+      "t0": 3.0,
+      "tcurve": 0.9,
+      "respfact": 0.8,
+      "allocfact": 1.2
+    }
+  },
+  "6": {
+    "name": "bec",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.5,
+      "Emax": 4.5,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.83,
+      "leaf_longevity": 24.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-32.5, -2.0],
+      "min": [-99.9, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [-99.9, 21.0],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.8,
+      "kk": 0.5,
+      "c4": false,
+      "threshold": 0.33,
+      "t0": 0.0,
+      "tcurve": 0.8,
+      "respfact": 4.0,
+      "allocfact": 1.2
+    }
+  },
+  "7": {
+    "name": "BST",
+    "main_params": {
+      "phenological_type": 2.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 10.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.83,
+      "leaf_longevity": 24.0,
+      "GDD5_full_leaf_out": 200.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, 5.0],
+      "min": [-99.9, -10.0],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [-99.9, 21.0],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.9,
+      "kk": 0.4,
+      "c4": false,
+      "threshold": 0.33,
+      "t0": 0.0,
+      "tcurve": 0.8,
+      "respfact": 4.0,
+      "allocfact": 1.2
+    }
+  },
+  "8": {
+    "name": "C3_C4_temperate_grass",
+    "main_params": {
+      "phenological_type": 3.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 6.5,
+      "sw_drop": 0.2,
+      "sw_appear": 0.3,
+      "root_fraction_top_soil": 0.83,
+      "leaf_longevity": 8.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": 100.0,
+      "sapwood_respiration": 2.0,
+      "c4_plant": 1.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-99.9, 0.0],
+      "gdd": [550.0, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [-99.9, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.65,
+      "kk": 0.4,
+      "c4": false,
+      "threshold": 0.40,
+      "t0": 4.5,
+      "tcurve": 1.0,
+      "respfact": 1.6,
+      "allocfact": 1.0
+    }
+  },
+  "9": {
+    "name": "C4_tropical_grass",
+    "main_params": {
+      "phenological_type": 3.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 8.0,
+      "sw_drop": 0.2,
+      "sw_appear": 0.3,
+      "root_fraction_top_soil": 0.57,
+      "leaf_longevity": 10.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 2.0,
+      "c4_plant": 1.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-3.0, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [10.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.65,
+      "kk": 0.4,
+      "c4": true,
+      "threshold": 0.40,
+      "t0": 10.0,
+      "tcurve": 1.0,
+      "respfact": 0.8,
+      "allocfact": 1.0
+    }
+  },
+  "10": {
+    "name": "C3_C4_woody_desert",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.1,
+      "Emax": 1.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.53,
+      "leaf_longevity": 12.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 1.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-45.0, -99.9],
+      "gdd": [500.0, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [10.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.70,
+      "kk": 0.3,
+      "c4": true,
+      "threshold": 0.33,
+      "t0": 5.0,
+      "tcurve": 1.0,
+      "respfact": 1.4,
+      "allocfact": 1.0
+    }
+  },
+  "11": {
+    "name": "tundra shrubs",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 1.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.93,
+      "leaf_longevity": 8.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-99.9, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [50.0, -99.9],
+      "twm": [15.0, -99.9],
+      "snow": [15.0, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.90,
+      "kk": 0.5,
+      "c4": false,
+      "threshold": 0.33,
+      "t0": -7.0,
+      "tcurve": 0.6,
+      "respfact": 4.0,
+      "allocfact": 1.0
+    }
+  },
+  "12": {
+    "name": "cold_herbaceous",
+    "main_params": {
+      "phenological_type": 2.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 1.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.93,
+      "leaf_longevity": 8.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": 25.0,
+      "sapwood_respiration": 2.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-99.9, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [50.0, -99.9],
+      "twm": [15.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.75,
+      "kk": 0.3,
+      "c4": false,
+      "threshold": 0.33,
+      "t0": -7.0,
+      "tcurve": 0.6,
+      "respfact": 4.0,
+      "allocfact": 1.0
+    }
+  },
+"13": {
+    "name": "lichen_forb",
+    "main_params": {
+      "phenological_type": 1.0,
+      "max_min_canopy_conductance": 0.8,
+      "Emax": 1.0,
+      "sw_drop": -99.0,
+      "sw_appear": -99.0,
+      "root_fraction_top_soil": 0.93,
+      "leaf_longevity": 8.0,
+      "GDD5_full_leaf_out": -99.0,
+      "GDD0_full_leaf_out": -99.0,
+      "sapwood_respiration": 1.0,
+      "c4_plant": 0.0
+    },
+    "constraints": {
+      "ltcm": [-99.9, -99.9],
+      "min": [-99.9, -99.9],
+      "gdd": [-99.9, -99.9],
+      "gdd0": [-99.9, -99.9],
+      "twm": [15.0, -99.9],
+      "snow": [-99.9, -99.9]
+    },
+    "additional_params": {
+      "optratioa": 0.80,
+      "kk": 0.6,
+      "c4": false,
+      "threshold": 0.33,
+      "t0": -12.0,
+      "tcurve": 0.5,
+      "respfact": 4.0,
+      "allocfact": 1.5
+    }
+}
+}

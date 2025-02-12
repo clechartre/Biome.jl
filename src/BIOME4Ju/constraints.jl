@@ -12,14 +12,13 @@ function constraints(
     rad0::T,
     gdd0::T,
     maxdepth::T,
-    pft_dict::ComponentArray
+    pftdict
 )::Tuple{T, T, AbstractArray{T}, Vector{Int}} where{T <: Real}
     npft = 13
     nclin = 6
     undefined_value = -99.9
 
-    limits = [pft_dict[plant_type].constraints for plant_type in keys(pft_dict)]
-
+    limits = Dict(k => v.constraints for (k, v) in pftdict)
     tmin = tminin <= tcm ? tminin : tcm - 5.0
     ts = twm - tcm
 

@@ -69,14 +69,14 @@ function hydrology(
     dtemp::AbstractArray{T},
     grass::U,
     emax::T,
-    pftpar::AbstractArray
+    pftpar
 
 )::HydrologyResults where {T <: Real, U <: Int}
     days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     alfam = T(1.4)
     gm = T(5.0)
-    onnw = pftpar[pft][:sw_drop]
-    offw = pftpar[pft][:sw_drop]
+    onnw = pftpar[pft].main_params.sw_drop
+    offw = pftpar[pft].main_params.sw_drop
 
     # fvc is folicar vegetation cover, normal to be 0 for grasses
     runoffmonth = zeros(T, 12)

@@ -18,7 +18,7 @@ function respiration(
     lai::T,
     monthlyfpar::AbstractArray{T},
     pft::U,
-    pft_dict::ComponentArray
+    pftdict
 )::RespirationResults{T} where {T <: Real, U <: Int}
     # Constants
     Ln = T(50.0)
@@ -30,11 +30,11 @@ function respiration(
     tref = T(10.0)
     t0 = T(46.02)
 
-    allocfact = [pft_dict[plant_type].additional_params.allocfact for plant_type in keys(pft_dict)]
-    respfact = [pft_dict[plant_type].additional_params.respfact for plant_type in keys(pft_dict)]
+    allocfact = pftdict[pft].additional_params.allocfact
+    respfact = pftdict[pft].additional_params.respfact
 
     # Calculate leafmass and litterfall
-    litterfall = lai * Ln * allocfact[pft]
+    litterfall = lai * Ln * allocfact
 
     # Calculate stem maintenance respiration costs
     stemresp = T(0.0)
@@ -43,7 +43,7 @@ function respiration(
         if temp[m] <= -46.02
             mstemresp[m] = T(0.0)
         else
-            mstemresp[m] = lai * stemcarbon * respfact[pft] * exp(e0 * (T(1.0) / (tref + t0) - T(1.0) / (temp[m] + t0)))
+            mstemresp[m] = lai * stemcarbon * respfact * exp(e0 * (T(1.0) / (tref + t0) - T(1.0) / (temp[m] + t0)))
         end
         stemresp += mstemresp[m]
     end

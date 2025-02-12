@@ -28,7 +28,7 @@ function competition2(
     gdd0::T,
     gdd5::T,
     tcm::T,
-    pftpar::AbstractArray,
+    pftpar,
     soil::AbstractArray{T}   
 )::CompetitionResults{T, U} where {T <: Real, U <: Int}
 
@@ -533,7 +533,7 @@ function assign_output_values(
     optdata::AbstractArray{},
     optpft::U,
     tprec::T,
-    pftpar::AbstractArray,
+    pftpar,
     wdom::U,
     tcm::T,
     gdd0::T,
@@ -579,7 +579,7 @@ function assign_output_values(
         output[17] = 100
     end
 
-    output[18] = dom == 0 ? 0.0 : round(pftpar[dom][:root_fraction_top_soil] * 100.0)
+    output[18] = dom == 0 ? 0.0 : round(pftpar[dom].main_params.root_fraction_top_soil * 100.0)
 
     for month in 1:12
         output[24 + month] = optdata[dom+1, 24 + month]
