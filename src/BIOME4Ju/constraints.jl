@@ -1,5 +1,3 @@
-"""Provide environmental sieve."""
-
 module Constraints
 
 using ComponentArrays: ComponentArray
@@ -19,6 +17,7 @@ function constraints(
     undefined_value = -99.9
 
     limits = Dict(k => v.constraints for (k, v) in pftdict)
+
     tmin = tminin <= tcm ? tminin : tcm - 5.0
     ts = twm - tcm
 
@@ -26,18 +25,22 @@ function constraints(
     pfts = zeros(Int, npft)
 
     for ip in 1:npft
-        for iv in 1:2:nclin
-            lower_limit = limits[ip][iv]
-            upper_limit = limits[ip][iv+1]
-
-            if (
-                (lower_limit != undefined_value && upper_limit != undefined_value && lower_limit <= clindex[iv] < upper_limit) ||
-                (lower_limit == undefined_value && upper_limit != undefined_value && clindex[iv] < upper_limit) ||
-                (lower_limit != undefined_value && upper_limit == undefined_value && lower_limit <= clindex[iv])
-            )
-                pfts[ip] += 1
+        valid = true
+        for (iv, key) in enumerate([:tcm, :min, :gdd, :gdd0, :twm, :snow])
+            if haskey(limits[ip], key)
+                lower_limit, upper_limit = limits[ip][key]
+                if !(
+                    (lower_limit != undefined_value && upper_limit != undefined_value && lower_limit <= clindex[iv] < upper_limit) ||
+                    (lower_limit == undefined_value && upper_limit != undefined_value && clindex[iv] < upper_limit) ||
+                    (lower_limit != undefined_value && upper_limit == undefined_value && lower_limit <= clindex[iv]) ||
+                    (lower_limit == undefined_value && upper_limit == undefined_value)
+                )
+                    valid = false
+                    break
+                end
             end
         end
+        pfts[ip] = valid ? 1 : 0
     end
 
     return tmin, ts, clindex, pfts
