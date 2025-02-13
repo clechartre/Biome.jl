@@ -1,6 +1,6 @@
 {
   "1": {
-    "name": "Tropical Evergreen Trees",
+    "name": "tropical_evergreen",
     "main_params": {
       "phenological_type": 1.0,
       "max_min_canopy_conductance": 0.5,
@@ -34,7 +34,7 @@
     }
   },
   "2": {
-    "name": "Tropical Drought-deciduous Trees (raingreens)",
+    "name": "tropical_drought_deciduous",
     "main_params": {
       "phenological_type": 3.0,
       "max_min_canopy_conductance": 0.5,
@@ -68,7 +68,7 @@
     }
   },
   "3": {
-    "name": "Temperate Broadleaved Evergreen Trees",
+    "name": "temperate_broadleaved_evergreen",
     "main_params": {
       "phenological_type": 1.0,
       "max_min_canopy_conductance": 0.2,
@@ -102,7 +102,7 @@
     }
   },
   "4": {
-    "name": "Temperate Deciduous Trees",
+    "name": "temperate_deciduous",
     "main_params": {
       "phenological_type": 2.0,
       "max_min_canopy_conductance": 0.8,
@@ -136,7 +136,7 @@
     }
   },
   "5": {
-    "name": "Cool Conifer Trees",
+    "name": "cool_conifer",
     "main_params": {
       "phenological_type": 1.0,
       "max_min_canopy_conductance": 0.2,
@@ -170,7 +170,7 @@
     }
   },
   "6": {
-    "name": "Boreal Evergreen Trees",
+    "name": "boreal_evergreen",
     "main_params": {
       "phenological_type": 1.0,
       "max_min_canopy_conductance": 0.5,
@@ -204,7 +204,7 @@
     }
   },
   "7": {
-    "name": "Boreal Deciduous Trees",
+    "name": "boreal_deciduous",
     "main_params": {
       "phenological_type": 2.0,
       "max_min_canopy_conductance": 0.8,
@@ -340,7 +340,7 @@
     }
   },
   "11": {
-    "name": "tundra shrubs",
+    "name": "tundra_shrubs",
     "main_params": {
       "phenological_type": 1.0,
       "max_min_canopy_conductance": 0.8,
