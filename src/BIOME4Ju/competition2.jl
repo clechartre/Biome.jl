@@ -45,7 +45,7 @@ function competition2(
     maxlai = T(0.0)
     grassnpp = T(0.0)
 
-    present = initialize_presence(numofpfts, optnpp)
+    present = initialize_presence(numofpfts, optnpp, pftpar)
     grass = [pftpar[pft].additional_params.grass == true for pft in 1:numofpfts]
 
     # Choose the dominant woody PFT on the basis of NPP
@@ -161,16 +161,18 @@ function competition2(
     return CompetitionResults(biome, output)
 end
 
-function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T})::Vector{Bool} where T <: Real
+function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T}, pftpar)::Dict{String, Bool} where T <: Real
 
     # Initialize present dynamically based on optnpp
-    present = falses(numofpfts+1)
+    present = Dict{String, Bool}()
     for pft in 1:numofpfts
         if optnpp[pft+1] > 0.0
-            present[pft] = true
+            present[pftpar[pft].name] = true
+        else
+            present[pftpar[pft].name] = false
         end
     end
-    present[12] = true # Special case
+    present["lichen_forb"] = true # Special case
 
     return present
 end
@@ -244,7 +246,7 @@ function determine_optimal_pft(
     tprec::T,
     wetness::AbstractArray{T},
     optdata::AbstractArray{},
-    present::Vector{Bool},
+    present::Dict{String, Bool},
     pftpar
 )::Tuple{U, T, T, U, T, T, U, U} where {T <: Real, U <: Int}
     flop = false
@@ -350,7 +352,7 @@ function determine_optimal_pft(
 
         # if wdom == 5
         if wdom != 0 && pftpar[wdom].name == "cool_conifer"
-            if present[3]
+            if present["temperate_broadleaved_evergreen"]
                 wdom = find_index_by_name(pftpar, "temperate_broadleaved_evergreen")
                 subpft = find_index_by_name(pftpar, "cool_conifer")
                 continue
@@ -400,7 +402,7 @@ function determine_optimal_pft(
             end
         end
 
-        if optpft == 0 && present[10]
+        if optpft == 0 && present["C3_C4_woody_desert"]
             optpft = 10
         end
 
@@ -413,7 +415,7 @@ function determine_optimal_pft(
         end
 
         if optpft == grasspft
-            if optlai[grasspft+1] < 1.8 && present[10]
+            if optlai[grasspft+1] < 1.8 && present["C3_C4_woody_desert"]
                 optpft = 10
             else
                 optpft = grasspft
@@ -421,7 +423,7 @@ function determine_optimal_pft(
         end
 
         if optpft == 11
-            if wetness[optpft+1] <= 25.0 && present[12]
+            if wetness[optpft+1] <= 25.0 && present["cold_herbaceous"]
                 optpft = 12
             end
         end

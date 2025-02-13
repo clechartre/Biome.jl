@@ -13,7 +13,7 @@ function newassignbiome(
     gdd0::T,
     gdd5::T,
     tcm::T,
-    present::Vector{Bool},
+    present::Dict{String, Bool},
     woodylai::T,
     grasslai::T,
     tmin::T,
@@ -96,13 +96,13 @@ function newassignbiome(
     # if optpft == 6
     if pftpar[optpft].name == "boreal_evergreen"
         if gdd5 > T(900.0) && tcm > T(-19.0)
-            if present[4]
+            if present["temperate_deciduous"]
                 return 7
             else
                 return 8
             end
         else
-            if present[4]
+            if present["temperate_deciduous"]
                 return 9
             else
                 return 10
@@ -137,13 +137,13 @@ function newassignbiome(
     end
     # if optpft == 4
     if pftpar[optpft].name == "temperate_deciduous"
-        if present[6]
+        if present["boreal_evergreen"]
             if tcm < T(-15.0)
                 return 9
             else
                 return 7
             end
-        elseif present[3] || (present[5] && gdd5 > T(3000.0) && tcm > T(3.0))
+        elseif present["temperate_broadleaved_evergreen"] || (present["cool_conifer"] && gdd5 > T(3000.0) && tcm > T(3.0))
             return 6
         else
             return 4
@@ -151,7 +151,7 @@ function newassignbiome(
     end
     # if optpft == 5
     if pftpar[optpft].name == "cool_conifer"
-        if present[3]
+        if present["temperate_broadleaved_evergreen"]
             return 6
         elseif subpft != 0 && pftpar[subpft].name == "temperate_deciduous" && nppdif < T(50.0)
             return 5
