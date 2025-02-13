@@ -30,7 +30,8 @@
       "t0": 10.0,
       "tcurve": 1.0,
       "respfact": 0.8,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": false
     }
   },
   "2": {
@@ -64,7 +65,8 @@
       "t0": 10.0,
       "tcurve": 1.0,
       "respfact": 0.8,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": false
     }
   },
   "3": {
@@ -98,7 +100,8 @@
       "t0": 5.0,
       "tcurve": 1.0,
       "respfact": 1.4,
-      "allocfact": 1.2
+      "allocfact": 1.2,
+      "grass": false
     }
   },
   "4": {
@@ -132,7 +135,8 @@
       "t0": 4.0,
       "tcurve": 1.0,
       "respfact": 1.6,
-      "allocfact": 1.2
+      "allocfact": 1.2,
+      "grass": false
     }
   },
   "5": {
@@ -166,7 +170,8 @@
       "t0": 3.0,
       "tcurve": 0.9,
       "respfact": 0.8,
-      "allocfact": 1.2
+      "allocfact": 1.2,
+      "grass": false
     }
   },
   "6": {
@@ -200,7 +205,8 @@
       "t0": 0.0,
       "tcurve": 0.8,
       "respfact": 4.0,
-      "allocfact": 1.2
+      "allocfact": 1.2,
+      "grass": false
     }
   },
   "7": {
@@ -234,7 +240,8 @@
       "t0": 0.0,
       "tcurve": 0.8,
       "respfact": 4.0,
-      "allocfact": 1.2
+      "allocfact": 1.2,
+      "grass": false
     }
   },
   "8": {
@@ -268,7 +275,8 @@
       "t0": 4.5,
       "tcurve": 1.0,
       "respfact": 1.6,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": true
     }
   },
   "9": {
@@ -302,7 +310,8 @@
       "t0": 10.0,
       "tcurve": 1.0,
       "respfact": 0.8,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": true
     }
   },
   "10": {
@@ -336,7 +345,8 @@
       "t0": 5.0,
       "tcurve": 1.0,
       "respfact": 1.4,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": false
     }
   },
   "11": {
@@ -370,7 +380,8 @@
       "t0": -7.0,
       "tcurve": 0.6,
       "respfact": 4.0,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": true
     }
   },
   "12": {
@@ -404,7 +415,8 @@
       "t0": -7.0,
       "tcurve": 0.6,
       "respfact": 4.0,
-      "allocfact": 1.0
+      "allocfact": 1.0,
+      "grass": true
     }
   },
 "13": {
@@ -438,7 +450,8 @@
       "t0": -12.0,
       "tcurve": 0.5,
       "respfact": 4.0,
-      "allocfact": 1.5
+      "allocfact": 1.5,
+      "grass": true
     }
 }
 }

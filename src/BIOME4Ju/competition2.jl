@@ -45,11 +45,12 @@ function competition2(
     maxlai = T(0.0)
     grassnpp = T(0.0)
 
-    grass, present = initialize_presence(numofpfts, optnpp)
+    present = initialize_presence(numofpfts, optnpp)
+    grass = [pftpar[pft].additional_params.grass == true for pft in 1:numofpfts]
 
     # Choose the dominant woody PFT on the basis of NPP
     for pft in 1:12
-        if grass[pft]
+        if grass[pft] == 1
             if optnpp[pft+1] > grassnpp
                 grassnpp = optnpp[pft+1]
                 grasspft = pft
@@ -160,13 +161,7 @@ function competition2(
     return CompetitionResults(biome, output)
 end
 
-function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T})::Tuple{Vector{Bool}, Vector{Bool}} where T <: Real
-    # Initialize grass statically: true for pft >= 8 except for 10
-    grass = [pft >= 8 && pft != 10 for pft in 1:numofpfts]
-    grass = vcat(grass, false) # Add padding for numofpfts+1
-
-    # FIXME adapt this to the pftpar value for c4 - but whyyyy are we dealing with PFT 10 as a non grass? 
-    # We deal with it as C4 in photosynthesis.jl
+function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T})::Vector{Bool} where T <: Real
 
     # Initialize present dynamically based on optnpp
     present = falses(numofpfts+1)
@@ -177,7 +172,7 @@ function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T})::Tuple{V
     end
     present[12] = true # Special case
 
-    return grass, present
+    return present
 end
 
 
@@ -304,8 +299,8 @@ function determine_optimal_pft(
         if wdom != 0 && pftpar[wdom].name == "tropical_drought_deciduous"
             if woodylai < T(2.0)
                 optpft = grasspft
-            elseif grasspft == 9 && woodylai < T(3.6)
-                optpft = 14
+            elseif grasspft != 0 && pftpar[grasspft].name == "C4_tropical_grass" && woodylai < T(3.6)
+                optpft = 14 # FIXME should we change this to numofpfts + 1?
             elseif greendays < 270 && tcm > T(21.0)&& tprec < T(1700.0)
                 optpft = 14
             else
