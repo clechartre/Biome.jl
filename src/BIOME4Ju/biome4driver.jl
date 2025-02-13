@@ -57,8 +57,7 @@ function main(
     # Chunk and checkpoint parameters
     chunk_size = 1000 # For functioning on node/debug, 100 works
 
-    pftdict = json_to_component_array(pftfile)
-    # pftdict = ComponentArray(pftdict)
+    pft_dict = json_to_component_array(pftfile)
 
     # Open the first dataset just to get the dimensions for the output, then close again
     temp_ds = NCDataset(tempfile, "a")
@@ -267,7 +266,7 @@ function main(
             whc_chunk,
             dz, 
             lon_chunk,
-            pftdict,
+            pft_dict,
             diagnosticmode,
             biome_var,
             wdom_var,
@@ -297,7 +296,7 @@ function parallel_process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk,
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz,
-    lon_chunk, pftdict, diag, biome_var, wdom_var, gdom_var,
+    lon_chunk, pft_dict, diag, biome_var, wdom_var, gdom_var,
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
     output_dataset, x_chunk_start, strx, model_instance::BiomeModel
 )where {T <: Real}
@@ -319,7 +318,7 @@ function parallel_process_chunk(
             for x in 1:current_chunk_size
                 process_cell(
                     x, y, strx,temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk,
-                    ksat_chunk, whc_chunk, dz, lon_chunk, pftdict, diag, biome_var, wdom_var, gdom_var, npp_var,
+                    ksat_chunk, whc_chunk, dz, lon_chunk, pft_dict, diag, biome_var, wdom_var, gdom_var, npp_var,
                     tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, x_chunk_start, model_instance
                 )
             end
@@ -339,7 +338,7 @@ function serial_process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, pftdict, diag, biome_var, wdom_var, gdom_var, 
+    lon_chunk, pft_dict, diag, biome_var, wdom_var, gdom_var, 
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
     output_dataset, x_chunk_start, strx, model_instance::BiomeModel
 )where {T <: Real}
@@ -363,7 +362,7 @@ function serial_process_chunk(
             process_cell(
                 x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, pftdict, 
+                dz, lon_chunk, pft_dict, 
                 diag, biome_var, wdom_var, gdom_var, npp_var, 
                 tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
                 x_chunk_start, model_instance
@@ -380,7 +379,7 @@ function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, pftdict, diag,
+    lon_chunk, pft_dict, diag,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
     gdd5_var, subpft_var, wetness_var,x_chunk_start, model::BiomeModel
 )where {T <:Real}
@@ -427,7 +426,7 @@ function process_cell(
     input[46] = diag ? 1.0 : 0.0  # diagnostic mode
 
     # Run the model 
-    output = run(model, input, output, pftdict)
+    output = run(model, input, output, pft_dict)
 
     # Write results to the output variables
     biome_var[x_global_index, y_global_index] = output[1]

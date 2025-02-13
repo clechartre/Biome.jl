@@ -90,7 +90,8 @@ function competition2(
         tprec,
         wetness,
         optdata,
-        present
+        present,
+        pftpar
     )
 
     # Output some diagnostics if diagmode is on
@@ -162,6 +163,9 @@ function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T})::Tuple{V
     # Initialize grass statically: true for pft >= 8 except for 10
     grass = [pft >= 8 && pft != 10 for pft in 1:numofpfts]
     grass = vcat(grass, false) # Add padding for numofpfts+1
+
+    # FIXME adapt this to the pftpar value for c4 - but whyyyy are we dealing with PFT 10 as a non grass? 
+    # We deal with it as C4 in photosynthesis.jl
 
     # Initialize present dynamically based on optnpp
     present = falses(numofpfts+1)
@@ -244,7 +248,8 @@ function determine_optimal_pft(
     tprec::T,
     wetness::AbstractArray{T},
     optdata::AbstractArray{},
-    present::Vector{Bool}
+    present::Vector{Bool},
+    pftpar
 )::Tuple{U, T, T, U, T, T, U, U} where {T <: Real, U <: Int}
     flop = false
 
@@ -275,23 +280,30 @@ function determine_optimal_pft(
 
         nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
 
+        # FIXME how do I handle  KeyError: key 0 not found ? 
+        # Put all if wdom == 0 first? 
+
         # Mimicking Fortran conditions and goto-like behavior
-        if (wdom == 3 || wdom == 5) && tmin > T(0.0)
+        # if (wdom == 3 || wdom == 5) && tmin > T(0.0)
+
+        if wdom != 0 && (pftpar[wdom].name == "temperate_broadleaved_evergreen" || pftpar[wdom].name == "cool_conifer") && tmin > T(0.0)
             if gdd5 > T(5000.0)
-                wdom = 2
+                wdom = find_index_by_name(pftpar, "tropical_drought_deciduous")
                 continue
             end
         end
 
-        if wdom == 1
+        # if wdom == 1
+        if wdom != 0 && pftpar[wdom].name == "tropical_evergreen"
             if optnpp[wdom+1] < T(2000.0)
-                wdom = 2
-                subpft = 1
+                wdom = find_index_by_name(pftpar, "tropical_drought_deciduous")
+                subpft = find_index_by_name(pftpar, "tropical_evergreen")
                 continue
             end
         end
 
-        if wdom == 2
+        # if wdom == 2
+        if wdom != 0 && pftpar[wdom].name == "tropical_drought_deciduous"
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif grasspft == 9 && woodylai < T(3.6)
@@ -303,7 +315,8 @@ function determine_optimal_pft(
             end
         end
 
-        if wdom == 3
+        # if wdom == 3
+        if wdom != 0 && pftpar[wdom].name == "temperate_broadleaved_evergreen"
             if optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.0)
@@ -315,13 +328,14 @@ function determine_optimal_pft(
             end
         end
 
-        if wdom == 4
+        # if wdom == 4
+        if wdom != 0 && pftpar[wdom].name == "temperate_deciduous"
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
                 if !flop && subpft != 0
                     wdom = subpft
-                    subpft = 4
+                    subpft = find_index_by_name(pftpar, "temperate_deciduous")
                     flop = true
                     continue
                 else
@@ -332,7 +346,7 @@ function determine_optimal_pft(
                     optpft = 14
                 elseif !flop && subpft != 0
                     wdom = subpft
-                    subpft = 4
+                    subpft = find_index_by_name(pftpar, "temperate_deciduous")
                     flop = true
                     continue
                 end
@@ -341,10 +355,11 @@ function determine_optimal_pft(
             end
         end
 
-        if wdom == 5
+        # if wdom == 5
+        if wdom != 0 && pftpar[wdom].name == "cool_conifer"
             if present[3]
-                wdom = 3
-                subpft = 5
+                wdom = find_index_by_name(pftpar, "temperate_broadleaved_evergreen")
+                subpft = find_index_by_name(pftpar, "cool_conifer")
                 continue
             elseif optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
@@ -355,13 +370,14 @@ function determine_optimal_pft(
             end
         end
 
-        if wdom == 6
+        # if wdom == 6
+        if wdom != 0 && pftpar[wdom].name == "boreal_evergreen"
             if optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
             elseif firedays > U(90)
                 if !flop && subpft != 0
                     wdom = subpft
-                    subpft = 6
+                    subpft = find_index_by_name(pftpar, "boreal_evergreen")
                     flop = true
                     continue
                 else
@@ -370,7 +386,8 @@ function determine_optimal_pft(
             end
         end
 
-        if wdom == 7
+        # if wdom == 7
+        if wdom != 0 && pftpar[wdom].name == "boreal_deciduous"
             if optnpp[wdom+1] < T(120.0)
                 optpft = grasspft
             elseif wetness[wdom+1] < T(30.0) && nppdif < T(0.0)
@@ -383,7 +400,7 @@ function determine_optimal_pft(
         if wdom == 0
             if grasspft != 0
                 optpft = grasspft
-            elseif optnpp[13+1] != 0.0
+            elseif optnpp[13+1] != 0.0 # FIXME this is also indexing based on hardcoded pft indices
                 optpft = 13
             else
                 optpft = 0
@@ -686,6 +703,15 @@ function assign_output_values(
     output[455] = subpft
 
     return output
+end
+
+function find_index_by_name(pftpar, target_name)
+    for (key, element) in pairs(pftpar)
+        if element.name == target_name
+            return key
+        end
+    end
+    return nothing  # Return nothing if the name is not found
 end
 
 end # module Competition
