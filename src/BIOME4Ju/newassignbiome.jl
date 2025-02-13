@@ -16,7 +16,8 @@ function newassignbiome(
     present::Vector{Bool},
     woodylai::T,
     grasslai::T,
-    tmin::T
+    tmin::T,
+    pftpar
 )::U where {T <: Real, U <: Int}
     nppdif = optnpp - subnpp
 
@@ -25,11 +26,32 @@ function newassignbiome(
         return 27
     end
 
+    # Savanna and Woodland
+    if optpft == 14
+        if woodpft <= 2 # FIXME also find the common characteristic between 1 and 2
+            if woodylai > T(4.0)
+                return 12
+            else
+                return 13
+            end
+        elseif woodpft != 0 && pftpar[woodpft].name == "temperate_broadleaved_evergreen"
+            return 15
+        elseif woodpft != 0 && pftpar[woodpft].name == "temperate_deciduous"
+            return 16
+        elseif woodpft != 0 && pftpar[woodpft].name == "cool_conifer"
+            return 17
+        elseif woodpft != 0 && pftpar[woodpft].name in ["boreal_evergreen", "boreal_deciduous"]
+            return 18
+        end
+    end
+
     # Arctic/Alpine Biomes
-    if optpft == 13
+    # if optpft == 13
+    if pftpar[optpft].name == "lichen_forb"
         return 26
     end
-    if optpft == 11
+    # if optpft == 11
+    if pftpar[optpft].name == "tundra_shrubs"
         if gdd0 < T(200.0)
             return 25
         elseif gdd0 < T(500.0)
@@ -38,12 +60,14 @@ function newassignbiome(
             return 23
         end
     end
-    if optpft == 12
+    # if optpft == 12
+    if pftpar[optpft].name == "cold_herbaceous"
         return 22
     end
 
     # Desert
-    if optpft == 10
+    # if optpft == 10
+    if pftpar[optpft].name == "C3_C4_woody_desert"
         if grasslai > T(1.0)
             if tmin >= T(0.0)
                 return 13
@@ -54,17 +78,23 @@ function newassignbiome(
             return 21
         end
     elseif optnpp <= T(100.0)
-        if optpft <= 5 || optpft in [9, 10]
+        if pftpar[optpft].name in ["tropical_evergreen", 
+            "tropical_drought_deciduous", "temperate_broadleaved_evergreen",
+            "temperate_deciduous", "cool_conifer",
+             "C4_tropical_grass", "C3_C4_woody_desert"]
+            # What characteristic of the PFT is being used here? 
+            # TODO find common characteristic of PFT 1 to 5 and 9 and 10
             return 21 
-        elseif optpft == 8
-            if subpft != 6 || subpft != 7
+        elseif optpft != 0 && pftpar[optpft].name == "C3_C4_temperate_grass"
+            if subpft != 0 && (pftpar[subpft].name != "boreal_evergreen" || pftpar[subpft].name != "boreal_deciduous")
                 return 21
             end
         end
     end
 
     # Boreal Biomes
-    if optpft == 6
+    # if optpft == 6
+    if pftpar[optpft].name == "boreal_evergreen"
         if gdd5 > T(900.0) && tcm > T(-19.0)
             if present[4]
                 return 7
@@ -79,10 +109,11 @@ function newassignbiome(
             end
         end
     end
-    if optpft == 7
-        if subpft == 4
+    # if optpft == 7
+    if pftpar[optpft].name == "boreal_deciduous"
+        if subpft != 0 && pftpar[subpft].name == "temperate_deciduous"
             return 4
-        elseif subpft == 5
+        elseif subpft != 0 && pftpar[subpft].name == "cool_conifer"
             return 9
         elseif gdd5 > T(900.0) && tcm > T(-19.0)
             return 9
@@ -92,17 +123,20 @@ function newassignbiome(
     end
 
     # Temperate Biomes
-    if optpft == 8
+    # if optpft == 8
+    if pftpar[optpft].name == "C3_C4_temperate_grass"
         if gdd0 >= T(800.0)
             return 20
         else
             return 22
         end
     end
-    if optpft == 3
+    # if optpft == 3
+    if pftpar[optpft].name == "temperate_broadleaved_evergreen"
         return 6
     end
-    if optpft == 4
+    # if optpft == 4
+    if pftpar[optpft].name == "temperate_deciduous"
         if present[6]
             if tcm < T(-15.0)
                 return 9
@@ -115,43 +149,25 @@ function newassignbiome(
             return 4
         end
     end
-    if optpft == 5
+    # if optpft == 5
+    if pftpar[optpft].name == "cool_conifer"
         if present[3]
             return 6
-        elseif subpft == 4 && nppdif < T(50.0)
+        elseif subpft != 0 && pftpar[subpft].name == "temperate_deciduous" && nppdif < T(50.0)
             return 5
-        elseif subpft == 7
+        elseif subpft != 0 && pftpar[subpft].name == "boreal_deciduous"
             return 9
         else
             return 5
         end
     end
 
-    # Savanna and Woodland
-    if optpft == 14
-        if woodpft <= 2
-            if woodylai > T(4.0)
-                return 12
-            else
-                return 13
-            end
-        elseif woodpft == 3
-            return 15
-        elseif woodpft == 4
-            return 16
-        elseif woodpft == 5
-            return 17
-        elseif woodpft in [6, 7]
-            return 18
-        end
-    end
-
     # Tropical Biomes
-    if optpft <= 2 || optpft == 9
-        if optpft == 1
+    if pftpar[optpft].name in ["tropical_evergreen", "tropical_drought_deciduous", "C4_tropical_grass"]
+        if pftpar[optpft].name == "tropical_evergreen"
             return 1
         end
-        if optpft == 2
+        if pftpar[optpft].name == "tropical_drought_deciduous"
             if greendays > U(300)
                 return 1
             elseif greendays > U(250)
@@ -160,7 +176,7 @@ function newassignbiome(
                 return 3
             end
         end
-        if optpft == 9
+        if pftpar[optpft].name == "C4_tropical_grass"
             return 19
         end
     end

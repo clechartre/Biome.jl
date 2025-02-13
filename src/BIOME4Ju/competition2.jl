@@ -131,7 +131,8 @@ function competition2(
         present,
         woodylai,
         grasslai,
-        tmin
+        tmin,
+        pftpar
     )
 
     output = assign_output_values(
@@ -280,12 +281,9 @@ function determine_optimal_pft(
 
         nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
 
-        # FIXME how do I handle  KeyError: key 0 not found ? 
-        # Put all if wdom == 0 first? 
 
         # Mimicking Fortran conditions and goto-like behavior
         # if (wdom == 3 || wdom == 5) && tmin > T(0.0)
-
         if wdom != 0 && (pftpar[wdom].name == "temperate_broadleaved_evergreen" || pftpar[wdom].name == "cool_conifer") && tmin > T(0.0)
             if gdd5 > T(5000.0)
                 wdom = find_index_by_name(pftpar, "tropical_drought_deciduous")
