@@ -16,7 +16,6 @@ include("./phenology.jl")
 include("./ppeett.jl")
 include("./snow.jl")
 include("./soiltemp.jl")
-include("../../input/pft_parameters.jl")
 
 using .ClimateData
 using .Competition

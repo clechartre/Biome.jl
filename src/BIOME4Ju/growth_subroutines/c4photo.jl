@@ -33,12 +33,8 @@ function c4photo(
     maxtemp::T = T(55.0)
 
     # PFT-specific parameters
-    # FIXME how do I handle this with the ComponentArray?
-    t0 = zeros(10)
-    t0[8] = T(10.0)
-    t0[9] = T(10.0)
-    t0[10] = T(10.0)
-    
+    # TODO verify that this gives the same result as the original code
+    t0 = T(10.0)
 
     # Determine qeffc4 and tune based on PFT
     qeffc4, tune = if pft in [8, 9]
@@ -56,7 +52,7 @@ function c4photo(
     daytime = max(daytime, T(4.0))
 
     # Temperature stress calculation
-    mintemp = t0[pft]
+    mintemp = t0
     tstress = if mintemp + T(1) < temp < maxtemp
         exp(-T(10.0) / (temp - mintemp))
     else
