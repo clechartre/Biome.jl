@@ -128,10 +128,8 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pf
 
     # Initialize the evergreen phenology
     dphen .= T(1.0)
-
     # Initialize pft specific parameters by taking main_params from pftdict
     pftpar = pftdict
-
     # Rulebase of absolute constraints to select potentially present pfts:
     tmin, ts, clindex, pfts = Constraints.constraints(
         climate_results.cold,
@@ -183,7 +181,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pf
                 ppeett_results.dpet,
                 ppeett_results.dayl,
                 k,
-                pftpar,
+                pftdict,
                 optdata[pft+1, :],
                 dphen,
                 co2,
@@ -209,7 +207,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pf
         climate_results.gdd0,
         climate_results.gdd5,
         climate_results.cold,
-        pftpar,
+        pftdict,
         soil
     )
     biome = competition_result.biome

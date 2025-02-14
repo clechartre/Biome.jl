@@ -17,7 +17,7 @@ function constraints(
     undefined_value = -99.9
 
     limits = Dict(k => v.constraints for (k, v) in pftdict)
-
+    
     tmin = tminin <= tcm ? tminin : tcm - 5.0
     ts = twm - tcm
 

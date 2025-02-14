@@ -49,7 +49,7 @@ function competition2(
     grass = [pftpar[pft].additional_params.grass == true for pft in 1:numofpfts]
 
     # Choose the dominant woody PFT on the basis of NPP
-    for pft in 1:12
+    for pft in 1:12 # FIXME this is hardcoded - need to change for if pft is everything but lichen_forb
         if grass[pft] == 1
             if optnpp[pft+1] > grassnpp
                 grassnpp = optnpp[pft+1]
@@ -396,35 +396,35 @@ function determine_optimal_pft(
             if grasspft != 0
                 optpft = grasspft
             elseif optnpp[13+1] != 0.0 # FIXME this is also indexing based on hardcoded pft indices
-                optpft = 13
+                optpft = find_index_by_name(pftpar, "lichen_forb")
             else
                 optpft = 0
             end
         end
 
         if optpft == 0 && present["C3_C4_woody_desert"]
-            optpft = 10
+            optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")
         end
 
-        if optpft == 10
-            if grasspft != 9 && optnpp[grasspft+1] > optnpp[10+1]
+        if optpft ∉ [0, 14] && pftpar[optpft].name == "C3_C4_temperate_grass"
+            if pftpar[grasspft].name != "C4_tropical_grass" && optnpp[grasspft+1] > optnpp[10+1]
                 optpft = grasspft
             else
-                optpft = 10
+                optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")
             end
         end
 
         if optpft == grasspft
             if optlai[grasspft+1] < 1.8 && present["C3_C4_woody_desert"]
-                optpft = 10
+                optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")
             else
                 optpft = grasspft
             end
         end
 
-        if optpft == 11
+        if optpft ∉ [0, 14]  && pftpar[optpft].name == "tundra_shrubs"
             if wetness[optpft+1] <= 25.0 && present["cold_herbaceous"]
-                optpft = 12
+                optpft = find_index_by_name(pftpar, "cold_herbaceous")
             end
         end
 
