@@ -21,7 +21,7 @@ function competition2(
     tmin::T,
     tprec::T,
     pfts::AbstractArray{U}, 
-    optdata,     # No typing for now
+    optdata,
     output,      
     diagmode::Bool,
     numofpfts::U,
@@ -48,8 +48,12 @@ function competition2(
     present = initialize_presence(numofpfts, optnpp, pftpar)
     grass = [pftpar[pft].additional_params.grass == true for pft in 1:numofpfts]
 
-    # Choose the dominant woody PFT on the basis of NPP
-    for pft in 1:12 # FIXME this is hardcoded - need to change for if pft is everything but lichen_forb
+    # Choose the dominant woody PFT on the basis of NPP - for all PFTs but lichen_forbs
+    for pft in keys(pftpar)
+        if pftpar[pft].name == "lichen_forbs"
+            continue  # Skip iteration for lichen_forbs
+        end
+
         if grass[pft] == 1
             if optnpp[pft+1] > grassnpp
                 grassnpp = optnpp[pft+1]
@@ -69,13 +73,12 @@ function competition2(
             end
         end
     end
-    
 
     # Find average annual soil moisture value for all PFTs
     wetlayer, drymonth, wettest, driest, wetness = calculate_soil_moisture(numofpfts, optdata)
 
     # Determine the subdominant woody PFT
-    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, optnpp)
+    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, optnpp, pftpar)
 
     # Determine the optimal PFT based on various conditions
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
@@ -172,7 +175,7 @@ function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T}, pftpar):
             present[pftpar[pft].name] = false
         end
     end
-    present["lichen_forb"] = true # Special case
+    present["cold_herbaceous"] = true # Special case
 
     return present
 end
@@ -214,15 +217,15 @@ function calculate_soil_moisture(
     return wetlayer, drymonth, wettest, driest, wetness
 end
 
-function determine_subdominant_pft(pftmaxnpp::U, optnpp::AbstractArray{T})::Tuple{U, U, U, T} where {T <: Real, U <: Int}
+function determine_subdominant_pft(pftmaxnpp::U, optnpp::AbstractArray{T}, pftpar)::Tuple{U, U, U, T} where {T <: Real, U <: Int}
     optpft = pftmaxnpp
     wdom = optpft
 
-    subnpp = 0.0
-    subpft = 0.0
+    subnpp = T(0.0)
+    subpft = U(0)
 
-    for pft in 1:7
-        if pft != wdom
+    for pft in keys(pftpar)
+        if pft != wdom && pftpar[pft].additional_params.grass == false && pftpar[pft].additional_params.c4 == false
             if optnpp[pft+1] > subnpp
                 subnpp = optnpp[pft+1]
                 subpft = pft
