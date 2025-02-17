@@ -404,7 +404,7 @@ function process_cell(
         return
     end    
 
-    input = zeros(T, 51)
+    input = zeros(T, 50)
     output = zeros(T, 500)
 
     elv = elv_chunk[x, y]

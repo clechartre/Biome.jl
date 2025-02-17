@@ -56,11 +56,11 @@ function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}} wh
     return midday, days
 end
 
-function determine_c4_and_optratio(pftdict, pft::U, optratioa::T, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
+function determine_c4_and_optratio(pftpar, pft::U, optratioa::T, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
     if c4_override != nothing
         c4 = c4_override
     else
-        if pftdict[pft].additional_params.c4 == true 
+        if pftpar[pft].additional_params.c4 == true 
             c4 = true
         else
             c4 = false
@@ -92,8 +92,7 @@ function growth(
     tsoil::AbstractArray{T},
     realin::Vector{},
     mnpp::Vector{T},
-    c4mnpp::Vector{T},
-    pftdict
+    c4mnpp::Vector{T}
 )::GrowthResults where {T <: Real, U <: Int}
 
     # Initialize variables
@@ -105,14 +104,14 @@ function growth(
 
         # Initialize set values
         midday, days= initialize_arrays(T, U)
-        optratioa = pftdict[pft].additional_params.optratioa
-        kk = pftdict[pft].additional_params.kk
+        optratioa = pftpar[pft].additional_params.optratioa
+        kk = pftpar[pft].additional_params.kk
         ca = co2 * T(1e-6)
         rainscalar = T(1000.0)
         wst = annp / rainscalar
         wst = min(wst, T(1.0))
         phentype = round(U, pftpar[pft].main_params.phenological_type)
-        mgmin = pftdict[pft].main_params.max_min_canopy_conductance
+        mgmin = pftpar[pft].main_params.max_min_canopy_conductance
         root = pftpar[pft].main_params.root_fraction_top_soil
         age = pftpar[pft].main_params.leaf_longevity
         c4pot = pftpar[pft].main_params.c4_plant
@@ -156,13 +155,13 @@ function growth(
         optgc = zeros(T, 12)
     
         # Set the value of optratio depending on whether c4 plant or not.
-        c4, optratio = determine_c4_and_optratio(pftdict, pft, optratioa, c4_override)
+        c4, optratio = determine_c4_and_optratio(pftpar, pft, optratioa, c4_override)
     
         # Initialize the array to store photosynthesis results
         if c4
-            photosynthesis_results_list = Vector{typeof(C4Photosynthesis.c4photo(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pftdict))}(undef, 12)
+            photosynthesis_results_list = Vector{typeof(C4Photosynthesis.c4photo(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pftpar))}(undef, 12)
         else
-            photosynthesis_results_list = Vector{typeof(Photosynthesis.photosynthesis(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pftdict))}(undef, 12)
+            photosynthesis_results_list = Vector{typeof(Photosynthesis.photosynthesis(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pftpar))}(undef, 12)
         end
     
         maxgc = T(0.0)
@@ -171,12 +170,12 @@ function growth(
             fpar = T(1.0) - T(exp(-kk * maxlai))
 
             if c4
-                photosynthesis_results_list[m] = C4Photosynthesis.c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftdict)
+                photosynthesis_results_list[m] = C4Photosynthesis.c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                 lresp[m] = photosynthesis_results_list[m].leafresp
                 pgphot = photosynthesis_results_list[m].grossphot
                 aday = photosynthesis_results_list[m].aday
             else
-                photosynthesis_results_list[m] = Photosynthesis.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftdict)
+                photosynthesis_results_list[m] = Photosynthesis.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                 lresp[m] = photosynthesis_results_list[m].leafresp
                 pgphot = photosynthesis_results_list[m].grossphot
                 aday = photosynthesis_results_list[m].aday
@@ -231,13 +230,13 @@ function growth(
                     fpar = meanfvc[m]
     
                     if c4
-                        photosynthesis_results_list[m] = C4Photosynthesis.c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftdict)
+                        photosynthesis_results_list[m] = C4Photosynthesis.c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                         leafresp = photosynthesis_results_list[m].leafresp
                         igphot = photosynthesis_results_list[m].grossphot
                         aday = photosynthesis_results_list[m].aday
                     else
 
-                        photosynthesis_results_list[m] = Photosynthesis.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftdict)
+                        photosynthesis_results_list[m] = Photosynthesis.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                         leafresp = photosynthesis_results_list[m].leafresp
                         igphot = photosynthesis_results_list[m].grossphot
                         aday = photosynthesis_results_list[m].aday
@@ -299,7 +298,7 @@ function growth(
         annualfpar = if annualapar == T(0.0) T(0.0) else T(100.0) * annualapar / annualparr end
     
         # Calculate annual respiration costs to find annual NPP
-        respiration_results = Respiration.respiration(gpp, alresp, temp, grass, maxlai, monthlyfpar, pft, pftdict)
+        respiration_results = Respiration.respiration(gpp, alresp, temp, grass, maxlai, monthlyfpar, pft, pftpar)
         npp = respiration_results.npp
 
         if hydrology_results.wilt
@@ -331,9 +330,9 @@ function growth(
         end
     
         nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
-            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, pftdict)
+            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, pftpar)
     
-        if pftdict[pft].name == "C3_C4_woody_desert"
+        if pftpar[pft].name == "C3_C4_woody_desert"
             if c4
                 c4 = false
                 c4_override = false
@@ -356,7 +355,7 @@ function growth(
         isotope_results = Isotopes.IsotopeResult(T(0.0), T(0.0), T[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], T[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
         if gpp > 0.0 
-            if pftdict[pft].additional_params.grass == true || pftdict[pft].name == "C3_C4_woody_desert"
+            if pftpar[pft].additional_params.grass == true || pftpar[pft].name == "C3_C4_woody_desert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
                 phi = CalcPhi.calcphi(mgpp)
@@ -365,7 +364,7 @@ function growth(
         end
     
         moist = map(mean, meanwr)
-        hetresp_results = HeterotrophicRespiration.hetresp(pft, npp, temp, tsoil, meanaet, moist, isotope_results.meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, pftdict)
+        hetresp_results = HeterotrophicRespiration.hetresp(pft, npp, temp, tsoil, meanaet, moist, isotope_results.meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, pftpar)
 
         annresp = sum(hetresp_results.Rtot)
     
@@ -376,7 +375,7 @@ function growth(
             annnep += cflux[m]
         end
     
-        fire_results = FireCalculation.fire(hydrology_results.wet, pft, maxlai, npp, pftdict)
+        fire_results = FireCalculation.fire(hydrology_results.wet, pft, maxlai, npp, pftpar)
     
         outv, realin = output_results(
             meanwr,
@@ -436,19 +435,19 @@ function compare_c3_c4_npp(
     c4leafresp::AbstractArray{T},
     nppsum::T,
     c4::Bool,
-    pftdict
+    pftpar
 ) where {T <: Real}
     c4months = 0
     annc4npp = T(0.0)
     c4month = fill(false, 12)
     
     for m in 1:12
-        if pftdict[pft].name == "C4_tropical_grass"
+        if pftpar[pft].name == "C4_tropical_grass"
             c4month[m] = true
         end
     end
 
-    if pftdict[pft].name == "C3_C4_woody_desert"
+    if pftpar[pft].name == "C3_C4_woody_desert"
         for m in 1:12
             if c4mnpp[m] > mnpp[m]
                 c4months += 1

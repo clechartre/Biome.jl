@@ -28,8 +28,7 @@ function findnpp(
     p::AbstractFloat,
     tsoil::Array{T,1},
     realout::Array{T,2},
-    numofpfts::U,
-    pftdict
+    numofpfts::U
 ) where {T <: Real, U <: Int}
     """Run NPP optimization model for one pft"""
 
@@ -80,8 +79,7 @@ function findnpp(
             tsoil,
             realin,
             mnpp,
-            c4mnpp,
-            pftdict
+            c4mnpp
         )
         npp = growth_results.npp
         inv = growth_results.outv
@@ -116,8 +114,7 @@ function findnpp(
             tsoil,
             realin,
             mnpp,
-            c4mnpp,
-            pftdict
+            c4mnpp
         )
         npp = growth_results.npp
         inv = growth_results.outv

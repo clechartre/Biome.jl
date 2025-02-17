@@ -47,14 +47,15 @@ function competition2(
 
     present = initialize_presence(numofpfts, optnpp, pftpar)
     grass = [pftpar[pft].additional_params.grass == true for pft in 1:numofpfts]
+    grass = vcat(grass, false)
 
     # Choose the dominant woody PFT on the basis of NPP - for all PFTs but lichen_forbs
     for pft in keys(pftpar)
-        if pftpar[pft].name == "lichen_forbs"
+        if pftpar[pft].name == "lichen_forb"
             continue  # Skip iteration for lichen_forbs
         end
 
-        if grass[pft] == 1
+        if grass[pft]
             if optnpp[pft+1] > grassnpp
                 grassnpp = optnpp[pft+1]
                 grasspft = pft
@@ -225,7 +226,7 @@ function determine_subdominant_pft(pftmaxnpp::U, optnpp::AbstractArray{T}, pftpa
     subpft = U(0)
 
     for pft in keys(pftpar)
-        if pft != wdom && pftpar[pft].additional_params.grass == false && pftpar[pft].additional_params.c4 == false
+        if pft != wdom && (pftpar[pft].additional_params.grass == false && pftpar[pft].additional_params.grass == false && pftpar[pft].additional_params.c4 == false)
             if optnpp[pft+1] > subnpp
                 subnpp = optnpp[pft+1]
                 subpft = pft
@@ -395,7 +396,6 @@ function determine_optimal_pft(
         end
 
         if wdom == 0
-            index = find_index_by_name(pftpar, "lichen_forb")
             if grasspft != 0
                 optpft = grasspft
             elseif optnpp[14] != 0.0
@@ -409,9 +409,9 @@ function determine_optimal_pft(
             optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")
         end
 
-        if optpft ∉ [0, 14] && pftpar[optpft].name == "C3_C4_temperate_grass"
+        if optpft ∉ [0, 14] && pftpar[optpft].name == "C3_C4_woody_desert"
             index = find_index_by_name(pftpar, "C3_C4_woody_desert") # FIXME double check if this works
-            if pftpar[grasspft].name != "C4_tropical_grass" && optnpp[grasspft+1] > optnpp[index+1] 
+            if grasspft != 0 && pftpar[grasspft].name != "C4_tropical_grass" && optnpp[grasspft+1] > optnpp[index+1] 
                 optpft = grasspft
             else
                 optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")

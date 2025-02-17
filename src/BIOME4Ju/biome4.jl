@@ -181,15 +181,14 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pf
                 ppeett_results.dpet,
                 ppeett_results.dayl,
                 k,
-                pftdict,
+                pftpar,
                 optdata[pft+1, :],
                 dphen,
                 co2,
                 p,
                 tsoil,
                 realout,
-                numofpfts,
-                pftdict
+                numofpfts
             )
         end
     end
