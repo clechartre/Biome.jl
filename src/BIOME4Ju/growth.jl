@@ -356,7 +356,7 @@ function growth(
         isotope_results = Isotopes.IsotopeResult(T(0.0), T(0.0), T[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], T[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
         if gpp > 0.0 
-            if pftdict[pft].additional_params.grass == true
+            if pftdict[pft].additional_params.grass == true || pftdict[pft].name == "C3_C4_woody_desert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
                 phi = CalcPhi.calcphi(mgpp)

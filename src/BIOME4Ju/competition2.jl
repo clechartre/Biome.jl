@@ -281,7 +281,6 @@ function determine_optimal_pft(
 
         nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
 
-
         # Mimicking Fortran conditions and goto-like behavior
         # if (wdom == 3 || wdom == 5) && tmin > T(0.0)
         if wdom != 0 && (pftpar[wdom].name == "temperate_broadleaved_evergreen" || pftpar[wdom].name == "cool_conifer") && tmin > T(0.0)
@@ -396,9 +395,10 @@ function determine_optimal_pft(
         end
 
         if wdom == 0
+            index = find_index_by_name(pftpar, "lichen_forb")
             if grasspft != 0
                 optpft = grasspft
-            elseif optnpp[13+1] != 0.0 # FIXME this is also indexing based on hardcoded pft indices
+            elseif optnpp[14] != 0.0
                 optpft = find_index_by_name(pftpar, "lichen_forb")
             else
                 optpft = 0
@@ -410,7 +410,8 @@ function determine_optimal_pft(
         end
 
         if optpft ∉ [0, 14] && pftpar[optpft].name == "C3_C4_temperate_grass"
-            if pftpar[grasspft].name != "C4_tropical_grass" && optnpp[grasspft+1] > optnpp[10+1]
+            index = find_index_by_name(pftpar, "C3_C4_woody_desert") # FIXME double check if this works
+            if pftpar[grasspft].name != "C4_tropical_grass" && optnpp[grasspft+1] > optnpp[index+1] 
                 optpft = grasspft
             else
                 optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")

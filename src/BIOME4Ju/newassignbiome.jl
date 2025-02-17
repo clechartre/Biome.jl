@@ -26,29 +26,9 @@ function newassignbiome(
         return 27
     end
 
-    # Savanna and Woodland
-    if optpft == 14
-        if woodpft != 0 && (pftpar[woodpft].name == "tropical_evergreen" || pftpar[woodpft].name == "tropical_drought_deciduous")
-            if woodylai > T(4.0)
-                return 12
-            else
-                return 13
-            end
-        elseif woodpft != 0 && pftpar[woodpft].name == "temperate_broadleaved_evergreen"
-            return 15
-        elseif woodpft != 0 && pftpar[woodpft].name == "temperate_deciduous"
-            return 16
-        elseif woodpft != 0 && pftpar[woodpft].name == "cool_conifer"
-            return 17
-        elseif woodpft != 0 && pftpar[woodpft].name in ["boreal_evergreen", "boreal_deciduous"]
-            return 18
-        end
-    
-
-    # Arctic/Alpine Biomes
-    # if optpft == 13
-    else
-        
+    if optpft != 14
+        # Arctic/Alpine Biomes
+        # if optpft == 13        
         if pftpar[optpft].name == "lichen_forb"
             return 26
         end
@@ -181,6 +161,24 @@ function newassignbiome(
             if pftpar[optpft].name == "C4_tropical_grass"
                 return 19
             end
+        end
+
+    # Savanna and Woodland
+    elseif optpft == 14
+        if woodpft != 0 && (pftpar[woodpft].name == "tropical_evergreen" || pftpar[woodpft].name == "tropical_drought_deciduous")
+            if woodylai > T(4.0)
+                return 12
+            else
+                return 13
+            end
+        elseif woodpft != 0 && pftpar[woodpft].name == "temperate_broadleaved_evergreen"
+            return 15
+        elseif woodpft != 0 && pftpar[woodpft].name == "temperate_deciduous"
+            return 16
+        elseif woodpft != 0 && pftpar[woodpft].name == "cool_conifer"
+            return 17
+        elseif woodpft != 0 && pftpar[woodpft].name in ["boreal_evergreen", "boreal_deciduous"]
+            return 18
         end
 
     end
