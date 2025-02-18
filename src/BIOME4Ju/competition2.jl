@@ -51,6 +51,7 @@ function competition2(
 
     # Choose the dominant woody PFT on the basis of NPP - for all PFTs but lichen_forbs
     for pft in keys(pftpar)
+
         if pftpar[pft].name == "lichen_forb"
             continue  # Skip iteration for lichen_forbs
         end
@@ -80,6 +81,7 @@ function competition2(
 
     # Determine the subdominant woody PFT
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, optnpp, pftpar)
+
 
     # Determine the optimal PFT based on various conditions
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
@@ -140,6 +142,7 @@ function competition2(
         pftpar
     )
 
+
     output = assign_output_values(
         output,
         dom,
@@ -166,7 +169,6 @@ function competition2(
 end
 
 function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T}, pftpar)::Dict{String, Bool} where T <: Real
-
     # Initialize present dynamically based on optnpp
     present = Dict{String, Bool}()
     for pft in 1:numofpfts
@@ -396,9 +398,10 @@ function determine_optimal_pft(
         end
 
         if wdom == 0
+            index = find_index_by_name(pftpar, "lichen_forb")
             if grasspft != 0
                 optpft = grasspft
-            elseif optnpp[14] != 0.0
+            elseif optnpp[index+1] != 0.0
                 optpft = find_index_by_name(pftpar, "lichen_forb")
             else
                 optpft = 0

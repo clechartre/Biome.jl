@@ -32,6 +32,7 @@ function newassignbiome(
         if pftpar[optpft].name == "lichen_forb"
             return 26
         end
+
         # if optpft == 11
         if pftpar[optpft].name == "tundra_shrubs"
             if gdd0 < T(200.0)
