@@ -114,7 +114,6 @@ function growth(
         mgmin = pftpar[pft].main_params.max_min_canopy_conductance
         root = pftpar[pft].main_params.root_fraction_top_soil
         age = pftpar[pft].main_params.leaf_longevity
-        c4pot = pftpar[pft].main_params.c4_plant
         grass = round(U, pftpar[pft].main_params.sapwood_respiration)
         emax = pftpar[pft].main_params.Emax
         maxfvc = one(T) - T(exp(-kk * maxlai))
