@@ -13,6 +13,8 @@ The original code works with a main routine and subroutines. You can see the inf
 
 ## Requirements in Input data:
 
+The PFTs and their characteristics are supplied to the model through a JSON file. Default PFT value for BIOME4 can be found on `input\pft.json`
+
 BIOME4 requires the following variables to run (in the form of gridded fields):
 
 - climatological monthly mean fields of temperature (°C)
@@ -88,8 +90,8 @@ srun julia -O3 --project=. -e 'include("/path/to/src/BIOME4Ju/biome4driver.jl");
     "/path/to/tmin_data.nc",  # Path to the minimum temperature data file (NetCDF format)
     "/path/to/prec_data.nc",  # Path to the precipitation data file (NetCDF format)
     "/path/to/sun_data.nc",   # Path to the sunshine/cloud cover data file (NetCDF format)
-    "/path/to/ksat_data.nc",  # Path to the soil hydraulic conductivity (ksat) file (NetCDF format)
-    "/path/to/whc_data.nc",   # Path to the water holding capacity (WHC) data file (NetCDF format)
+    "/path/to/soil.nc",       # Path to the water holding capacity (WHC) and saturate conductivity (Ksat) data file (NetCDF format)
+    "path/to/pft.json",       # Path to the PFT characteristic file
     "year",                   # Year of data source as a string, will determine the output file name
     "high"                    # Resolution setting: choose from "high" or "low"
 )'
