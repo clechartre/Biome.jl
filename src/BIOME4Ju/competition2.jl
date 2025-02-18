@@ -414,7 +414,7 @@ function determine_optimal_pft(
 
         if optpft ∉ [0, 14] && pftpar[optpft].name == "C3_C4_woody_desert"
             index = find_index_by_name(pftpar, "C3_C4_woody_desert") # FIXME double check if this works
-            if grasspft != 0 && pftpar[grasspft].name != "C4_tropical_grass" && optnpp[grasspft+1] > optnpp[index+1] 
+            if (grasspft == 0 || pftpar[grasspft].name != "C4_tropical_grass") && optnpp[grasspft+1] > optnpp[index+1] 
                 optpft = grasspft
             else
                 optpft = find_index_by_name(pftpar, "C3_C4_woody_desert")

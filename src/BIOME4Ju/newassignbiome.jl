@@ -166,7 +166,7 @@ function newassignbiome(
 
     # Savanna and Woodland
     elseif optpft == 14
-        if woodpft != 0 || pftpar[woodpft].name == "tropical_evergreen" || pftpar[woodpft].name == "tropical_drought_deciduous"
+        if woodpft == 0 || pftpar[woodpft].name == "tropical_evergreen" || pftpar[woodpft].name == "tropical_drought_deciduous"
             if woodylai > T(4.0)
                 return 12
             else
