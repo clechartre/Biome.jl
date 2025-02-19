@@ -3,6 +3,7 @@
 # Third-party
 using LinearAlgebra
 using Printf
+using ComponentArrays: ComponentArray
 
 # First-party
 include("./climdata.jl")
@@ -27,7 +28,7 @@ using .Ppeett
 using .SoilTemperature
 using .Snow
 
-function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
+function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pftdict) where {T <: Real, U <: Int}
     numofpfts = 13
 
     # Initialize variables
@@ -127,10 +128,8 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
 
     # Initialize the evergreen phenology
     dphen .= T(1.0)
-
-    # Initialize pft specific parameters
-    pftpar = PFTData.pftdata(T)
-
+    # Initialize pft specific parameters by taking main_params from pftdict
+    pftpar = pftdict
     # Rulebase of absolute constraints to select potentially present pfts:
     tmin, ts, clindex, pfts = Constraints.constraints(
         climate_results.cold,
@@ -139,7 +138,8 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
         climate_results.gdd5,
         ppeett_results.rad0,
         climate_results.gdd0,
-        snow_results.maxdepth
+        snow_results.maxdepth,
+        pftdict
     )
 
     #If you want to bypass the environmental constraints for your model
@@ -165,7 +165,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
     # Calculate optimal LAI and NPP for the selected PFTs
     for pft in 1:numofpfts
         if pfts[pft] != 0
-            if pftpar[pft, 1] >= 2
+            if pftpar[pft].main_params.phenological_type >= 2
                 dphen = Phenology.phenology(dphen, dtemp, temp, climate_results.cold, tmin, pft, ppeett_results.ddayl, pftpar)
             end
 
@@ -206,7 +206,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}) wh
         climate_results.gdd0,
         climate_results.gdd5,
         climate_results.cold,
-        pftpar,
+        pftdict,
         soil
     )
     biome = competition_result.biome

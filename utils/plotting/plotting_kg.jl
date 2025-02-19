@@ -2,7 +2,7 @@ using Rasters, Plots, Colors, NCDatasets
 
 include("../../src/model.jl")
 
-function plot_biomes(m::KoppenModel, filename::String, output_file::String)
+function plot_biomes(m::KoppenModel, filename::String, output_file::String, pftdict::none)
     # Define Köppen-Geiger biome names and their corresponding indices
     biome_names = [ 
         "Equatorial fully humid (Af)", "Equatorial monsoonal (Am)", "Equatorial summer dry (As)",

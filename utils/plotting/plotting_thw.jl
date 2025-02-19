@@ -2,7 +2,7 @@ using Rasters, Plots, Colors, NCDatasets
 
 include("../../src/model.jl")
 
-function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String)
+function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String, pftdict::none)
     # Define Thornthwaite climate categories
     THORN_LABELS = ["Wet", "Humid", "Subhumid", "Semiarid", "Arid"]
     THORN_TEMP_LABELS = ["Tropical", "Mesothermal", "Microthermal", "Taiga", "Tundra", "Frost"]

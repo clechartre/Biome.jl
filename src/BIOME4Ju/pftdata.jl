@@ -18,7 +18,7 @@ function pftdata(::Type{T})::Array{T, 2} where {T <: Real}
     var = fill(T(-99.0), 25, 25)  # Default values set to -99.0
 
     # Define specific values for the PFTs and their parameters
-    specified_values = [
+    parameter_values = [
         [T(1.0), T(0.5), T(10.0), T(-99.0), T(-99.0), T(0.69), T(18.0), T(-99.0), T(-99.0), T(1.0), T(0.0)],
         [T(3.0), T(0.5), T(10.0), T(0.5), T(0.6), T(0.70), T(9.0), T(-99.0), T(-99.0), T(1.0), T(0.0)],
         [T(1.0), T(0.2), T(4.8), T(-99.0), T(-99.0), T(0.67), T(18.0), T(-99.0), T(-99.0), T(1.0), T(0.0)],
@@ -34,11 +34,11 @@ function pftdata(::Type{T})::Array{T, 2} where {T <: Real}
         [T(1.0), T(0.8), T(1.0), T(-99.0), T(-99.0), T(0.93), T(8.0), T(-99.0), T(-99.0), T(1.0), T(0.0)]
     ]
 
-    # Convert specified_values to a 2D matrix
-    specified_values = hcat(specified_values...)'
+    # Convert parameter_values to a 2D matrix
+    parameter_values = hcat(parameter_values...)'
 
     # Populate the first `npft x npar` section of `var` with the specified values
-    var[1:npft, 1:npar] .= specified_values
+    var[1:npft, 1:npar] .= parameter_values
 
     # Set the rest of the array to 0.0
     var[npft+1:end, :] .= T(0.0)

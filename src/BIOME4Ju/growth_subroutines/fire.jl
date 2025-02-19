@@ -1,5 +1,7 @@
 module FireCalculation
 
+using ComponentArrays
+
 struct FireResult{T <: Real}
     firedays::T
     wetday::T
@@ -22,13 +24,14 @@ Calculate the number of potential fire days in a year based on threshold values 
 # Returns
 - A `FireResult` struct containing firedays, wetday, dryday, firefraction, and burnfraction.
 """
-function fire(wet::AbstractVector{T}, pft::U, lai::T, npp::T)::FireResult{T} where {T <: Real, U <: Int}
+function fire(wet::AbstractVector{T},
+    pft::U,
+    lai::T,
+    npp::T,
+    pftdict)::FireResult{T} where {T <: Real, U <: Int}
 
     # Threshold values per PFT
-    threshold = T[
-        0.25, 0.20, 0.40, 0.33, 0.40, 0.33, 0.33, 0.40,
-        0.40, 0.33, 0.33, 0.33, 0.33
-    ]
+    threshold = pftdict[pft].additional_params.threshold
 
     # Initialize variables
     firedays = T(0.0)
@@ -38,12 +41,12 @@ function fire(wet::AbstractVector{T}, pft::U, lai::T, npp::T)::FireResult{T} whe
 
     # Loop through each day of the year
     for day in 1:365
-        if wet[day] < threshold[pft]
+        if wet[day] < threshold
             burn[day] = T(1.0)
-        elseif wet[day] > threshold[pft] + T(0.05)
+        elseif wet[day] > threshold + T(0.05)
             burn[day] = T(0.0)
         else
-            burn[day] = T(1.0) / exp(wet[day] - threshold[pft])
+            burn[day] = T(1.0) / exp(wet[day] - threshold)
         end
 
         # Update wetday and dryday

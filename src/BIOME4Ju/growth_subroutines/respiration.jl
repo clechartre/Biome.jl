@@ -1,4 +1,5 @@
 module Respiration
+using ComponentArrays: ComponentArray
 
 struct RespirationResults{T <: Real}
     npp::T
@@ -16,7 +17,8 @@ function respiration(
     grass::Int,
     lai::T,
     monthlyfpar::AbstractArray{T},
-    pft::U
+    pft::U,
+    pftdict
 )::RespirationResults{T} where {T <: Real, U <: Int}
     # Constants
     Ln = T(50.0)
@@ -28,11 +30,11 @@ function respiration(
     tref = T(10.0)
     t0 = T(46.02)
 
-    respfact = T[0.8, 0.8, 1.4, 1.6, 0.8, 4.0, 4.0, 1.6, 0.8, 1.4, 4.0, 4.0, 4.0]
-    allocfact = T[1.0, 1.0, 1.2, 1.2, 1.2, 1.2, 1.2, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5]
+    allocfact = pftdict[pft].additional_params.allocfact
+    respfact = pftdict[pft].additional_params.respfact
 
     # Calculate leafmass and litterfall
-    litterfall = lai * Ln * allocfact[pft]
+    litterfall = lai * Ln * allocfact
 
     # Calculate stem maintenance respiration costs
     stemresp = T(0.0)
@@ -41,7 +43,7 @@ function respiration(
         if temp[m] <= -46.02
             mstemresp[m] = T(0.0)
         else
-            mstemresp[m] = lai * stemcarbon * respfact[pft] * exp(e0 * (T(1.0) / (tref + t0) - T(1.0) / (temp[m] + t0)))
+            mstemresp[m] = lai * stemcarbon * respfact * exp(e0 * (T(1.0) / (tref + t0) - T(1.0) / (temp[m] + t0)))
         end
         stemresp += mstemresp[m]
     end

@@ -2,7 +2,7 @@ using Rasters, Plots, Colors, NCDatasets
 
 include("../../src/model.jl")
 
-function plot_biomes(m::WissmannModel, filename::String, output_file::String)
+function plot_biomes(m::WissmannModel, filename::String, output_file::String, pftdict::none)
     # Define Wissmann climate zone names and their corresponding indices
     wissmann_names = [
         "Rainforest, equatorial", "Rainforest, weak dry period", "Savannah and monsoonal rainforest",

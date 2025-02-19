@@ -49,6 +49,7 @@ function hetresp(
     Rmean::T,
     meanKlit::T,
     meanKsoil::T,
+    pftdict
 )::HetRespResults{T} where {T <: Real, U <: Int}
 
     # Constants and initializations
@@ -69,7 +70,7 @@ function hetresp(
         )
     else
         # Partition annual NPP into pools according to Foley strategy
-        if pft == 1 || pft == 2
+        if pftdict[pft].name == "tropical_evergreen" || pftdict[pft].name == "tropical_drought_deciduous"
             Plit = T(0.650) * nppann
             Pfst = T(0.980) * T(0.350) * nppann
             Pslo = T(0.020) * T(0.350) * nppann

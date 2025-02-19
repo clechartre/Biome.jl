@@ -108,6 +108,6 @@ function plot_biomes(m::BIOME4Model, filename::String, output_file::String)
 end
 
 # Example usage:
-filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_my_code_myinput_climatologies_debug.nc"
-output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_my_code_myinput_climatologies_debug.png"
+filename = "/Users/capucinelechartre/Documents/PhD/BIOME5/output_all_int.nc"
+output_file = "/Users/capucinelechartre/Documents/PhD/BIOME5/output_all_int.png"
 plot_biomes(BIOME4Model(), filename, output_file)

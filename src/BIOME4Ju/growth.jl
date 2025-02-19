@@ -20,6 +20,7 @@ using .Isotopes
 using .Photosynthesis
 using .Respiration
 using Statistics: mean
+using ComponentArrays: ComponentArray
 
 struct GrowthResults{T <: Real, U <: Int}
     npp::T
@@ -49,23 +50,27 @@ function safe_round_to_int(x::T)::Int where {T <: Real}
     end
 end
 
-function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}, Vector{T}, Vector{T}} where {T <: Real, U <: Int}
+function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}} where {T <: Real, U <: Int}
     midday = U[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
     days = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    optratioa = T[0.95, 0.9, 0.8, 0.8, 0.9, 0.8, 0.9, 0.65, 0.65, 0.70, 0.90, 0.75, 0.80]
-    kk = T[0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.5, 0.3, 0.6]
-    return midday, days, optratioa, kk
+    return midday, days
 end
 
-function determine_c4_and_optratio(pft::U, optratioa::AbstractArray{T}, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
+function determine_c4_and_optratio(pftpar, pft::U, optratioa::T, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
     if c4_override != nothing
         c4 = c4_override
     else
-        if pft in [9, 10] c4 = true else c4 = false end
+        if pftpar[pft].additional_params.c4 == true 
+            c4 = true
+        else
+            c4 = false
+        end 
     end
-    optratio = c4 ? T(0.4) : optratioa[pft]
+
+    optratio = c4 ? T(0.4) : T(optratioa)
     return c4, optratio
 end
+
 
 function growth(
     maxlai::T,
@@ -76,7 +81,7 @@ function growth(
     dmelt::AbstractArray{T},
     dpet::AbstractArray{T},
     k::AbstractArray{T},
-    pftpar::AbstractArray{T, 2},
+    pftpar,
     pft::U,
     dayl::AbstractArray{T},
     dtemp::AbstractArray{T},
@@ -98,19 +103,20 @@ function growth(
         reprocess = false
 
         # Initialize set values
-        midday, days, optratioa, kk = initialize_arrays(T, U)
+        midday, days= initialize_arrays(T, U)
+        optratioa = pftpar[pft].additional_params.optratioa
+        kk = pftpar[pft].additional_params.kk
         ca = co2 * T(1e-6)
         rainscalar = T(1000.0)
         wst = annp / rainscalar
         wst = min(wst, T(1.0))
-        phentype = round(U, pftpar[pft,1])
-        mgmin = pftpar[pft,2]
-        root = pftpar[pft,6]
-        age = pftpar[pft, 7]
-        c4pot = pftpar[pft, 11]
-        grass = round(U, pftpar[pft,10])
-        emax = pftpar[pft,3]
-        maxfvc = one(T) - T(exp(-kk[pft] * maxlai))
+        phentype = round(U, pftpar[pft].main_params.phenological_type)
+        mgmin = pftpar[pft].main_params.max_min_canopy_conductance
+        root = pftpar[pft].main_params.root_fraction_top_soil
+        age = pftpar[pft].main_params.leaf_longevity
+        grass = round(U, pftpar[pft].main_params.sapwood_respiration)
+        emax = pftpar[pft].main_params.Emax
+        maxfvc = one(T) - T(exp(-kk * maxlai))
 
         # Initialize values 
         phi = T(0.0)
@@ -148,27 +154,27 @@ function growth(
         optgc = zeros(T, 12)
     
         # Set the value of optratio depending on whether c4 plant or not.
-        c4, optratio = determine_c4_and_optratio(pft, optratioa, c4_override)
+        c4, optratio = determine_c4_and_optratio(pftpar, pft, optratioa, c4_override)
     
         # Initialize the array to store photosynthesis results
         if c4
-            photosynthesis_results_list = Vector{typeof(C4Photosynthesis.c4photo(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft))}(undef, 12)
+            photosynthesis_results_list = Vector{typeof(C4Photosynthesis.c4photo(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pftpar))}(undef, 12)
         else
-            photosynthesis_results_list = Vector{typeof(Photosynthesis.photosynthesis(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft))}(undef, 12)
+            photosynthesis_results_list = Vector{typeof(Photosynthesis.photosynthesis(T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), pft, pftpar))}(undef, 12)
         end
     
         maxgc = T(0.0)
         for m in 1:12
             tsecs = T(3600.0) * dayl[m]
-            fpar = T(1.0) - T(exp(-kk[pft] * maxlai))
+            fpar = T(1.0) - T(exp(-kk * maxlai))
 
             if c4
-                photosynthesis_results_list[m] = C4Photosynthesis.c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                photosynthesis_results_list[m] = C4Photosynthesis.c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                 lresp[m] = photosynthesis_results_list[m].leafresp
                 pgphot = photosynthesis_results_list[m].grossphot
                 aday = photosynthesis_results_list[m].aday
             else
-                photosynthesis_results_list[m] = Photosynthesis.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                photosynthesis_results_list[m] = Photosynthesis.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                 lresp[m] = photosynthesis_results_list[m].leafresp
                 pgphot = photosynthesis_results_list[m].grossphot
                 aday = photosynthesis_results_list[m].aday
@@ -223,13 +229,13 @@ function growth(
                     fpar = meanfvc[m]
     
                     if c4
-                        photosynthesis_results_list[m] = C4Photosynthesis.c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                        photosynthesis_results_list[m] = C4Photosynthesis.c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                         leafresp = photosynthesis_results_list[m].leafresp
                         igphot = photosynthesis_results_list[m].grossphot
                         aday = photosynthesis_results_list[m].aday
                     else
 
-                        photosynthesis_results_list[m] = Photosynthesis.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                        photosynthesis_results_list[m] = Photosynthesis.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
                         leafresp = photosynthesis_results_list[m].leafresp
                         igphot = photosynthesis_results_list[m].grossphot
                         aday = photosynthesis_results_list[m].aday
@@ -277,13 +283,13 @@ function growth(
         end
     
         # Calculate monthly LAI
-        monthlylai = [log(1 - monthlyfpar[m]) / (-kk[pft]) for m in 1:12]
+        monthlylai = [log(1 - monthlyfpar[m]) / (-kk) for m in 1:12]
     
         # Calculate 10-day LAI
         tendaylai = zeros(T, 40)  # Initialize a vector of size 40
         i = 1
         for day in 1:10:365
-            tendaylai[i] = log(1 - hydrology_results.dayfvc[day]) / (-kk[pft])
+            tendaylai[i] = log(1 - hydrology_results.dayfvc[day]) / (-kk)
             i += 1
         end
     
@@ -291,7 +297,7 @@ function growth(
         annualfpar = if annualapar == T(0.0) T(0.0) else T(100.0) * annualapar / annualparr end
     
         # Calculate annual respiration costs to find annual NPP
-        respiration_results = Respiration.respiration(gpp, alresp, temp, grass, maxlai, monthlyfpar, pft)
+        respiration_results = Respiration.respiration(gpp, alresp, temp, grass, maxlai, monthlyfpar, pft, pftpar)
         npp = respiration_results.npp
 
         if hydrology_results.wilt
@@ -323,9 +329,9 @@ function growth(
         end
     
         nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
-            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4)
+            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, pftpar)
     
-        if pft == 10
+        if pftpar[pft].name == "C3_C4_woody_desert"
             if c4
                 c4 = false
                 c4_override = false
@@ -348,7 +354,7 @@ function growth(
         isotope_results = Isotopes.IsotopeResult(T(0.0), T(0.0), T[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], T[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
         if gpp > 0.0 
-            if pft >= 8
+            if pftpar[pft].additional_params.grass == true || pftpar[pft].name == "C3_C4_woody_desert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
                 phi = CalcPhi.calcphi(mgpp)
@@ -357,7 +363,7 @@ function growth(
         end
     
         moist = map(mean, meanwr)
-        hetresp_results = HeterotrophicRespiration.hetresp(pft, npp, temp, tsoil, meanaet, moist, isotope_results.meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
+        hetresp_results = HeterotrophicRespiration.hetresp(pft, npp, temp, tsoil, meanaet, moist, isotope_results.meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, pftpar)
 
         annresp = sum(hetresp_results.Rtot)
     
@@ -368,7 +374,7 @@ function growth(
             annnep += cflux[m]
         end
     
-        fire_results = FireCalculation.fire(hydrology_results.wet, pft, maxlai, npp)
+        fire_results = FireCalculation.fire(hydrology_results.wet, pft, maxlai, npp, pftpar)
     
         outv, realin = output_results(
             meanwr,
@@ -427,19 +433,20 @@ function compare_c3_c4_npp(
     c4ccratio::AbstractArray{T},
     c4leafresp::AbstractArray{T},
     nppsum::T,
-    c4::Bool
+    c4::Bool,
+    pftpar
 ) where {T <: Real}
     c4months = 0
     annc4npp = T(0.0)
     c4month = fill(false, 12)
     
     for m in 1:12
-        if pft == 9
+        if pftpar[pft].name == "C4_tropical_grass"
             c4month[m] = true
         end
     end
 
-    if pft == 10
+    if pftpar[pft].name == "C3_C4_woody_desert"
         for m in 1:12
             if c4mnpp[m] > mnpp[m]
                 c4months += 1

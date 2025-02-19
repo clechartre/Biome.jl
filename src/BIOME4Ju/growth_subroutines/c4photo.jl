@@ -14,6 +14,7 @@ function c4photo(
     p::T,
     ca::T,
     pft::U,
+    pftdict
 )::PhotosynthesisResults{T} where {T <: Real, U <: Int}
     # Constants
     drespc4::T = T(0.03)
@@ -33,16 +34,13 @@ function c4photo(
     maxtemp::T = T(55.0)
 
     # PFT-specific parameters
-    t0 = zeros(10)
-    t0[8] = T(10.0)
-    t0[9] = T(10.0)
-    t0[10] = T(10.0)
-    
+    # TODO verify that this gives the same result as the original code
+    t0 = T(10.0)
 
     # Determine qeffc4 and tune based on PFT
-    qeffc4, tune = if pft in [8, 9]
+    qeffc4, tune = if pftdict[pft].name in ["C3_C4_temperate_grass", "C4_tropical_grass"]
         (T(0.0633), T(1.0))
-    elseif pft == 10
+    elseif pftdict[pft].name == "C3_C4_woody_desert"
         (T(0.0565), T(0.75))
     else
         println("Running the c4 photosynthesis routine with a non-c4 PFT")
@@ -55,7 +53,7 @@ function c4photo(
     daytime = max(daytime, T(4.0))
 
     # Temperature stress calculation
-    mintemp = t0[pft]
+    mintemp = t0
     tstress = if mintemp + T(1) < temp < maxtemp
         exp(-T(10.0) / (temp - mintemp))
     else
