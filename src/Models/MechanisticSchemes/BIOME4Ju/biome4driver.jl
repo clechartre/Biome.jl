@@ -18,12 +18,12 @@ using Plots
 gr()
 
 # First-party
-include("../model.jl")
+include("../../../model.jl")
 include("./biome4.jl")
-include("./models/koppenbiomes.jl")
-include("./models/thornthwaitebiomes.jl")
-include("./models/trollpfaffenbiomes.jl")
-include("./models/wissmannbiomes.jl")
+include("../../ClimaticEnveloppeSchemes/koppenbiomes.jl")
+include("../../ClimaticEnveloppeSchemes/thornthwaitebiomes.jl")
+include("../../ClimaticEnveloppeSchemes/trollpfaffenbiomes.jl")
+include("../../ClimaticEnveloppeSchemes/wissmannbiomes.jl")
 
 function main(
     coordstring::String,
