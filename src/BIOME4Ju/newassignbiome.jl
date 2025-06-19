@@ -3,6 +3,46 @@ Jed Kaplan 3/1998"""
 
 module BiomeAssignment
 
+abstract struct AbstractBiome end
+
+struct Desert <: AbstractBiome end
+
+function assign_biome(pft_vec, biomes::Desert)
+
+    if pftpar[optpft].name == "C3_C4_woody_desert"
+            if grasslai > T(1.0)
+                if tmin >= T(0.0)
+                    return 13
+                else
+                    return 14
+                end
+            else
+                return 21
+            end
+        elseif optnpp <= T(100.0)
+            if pftpar[optpft].name in ["tropical_evergreen", 
+                "tropical_drought_deciduous", "temperate_broadleaved_evergreen",
+                "temperate_deciduous", "cool_conifer",
+                "C4_tropical_grass", "C3_C4_woody_desert"]
+                # What characteristic of the PFT is being used here? 
+                # TODO find common characteristic of PFT 1 to 5 and 9 and 10
+                return 21 
+            elseif optpft != 0 && pftpar[optpft].name == "C3_C4_temperate_grass"
+                if subpft != 0 && (pftpar[subpft].name != "boreal_evergreen" || pftpar[subpft].name != "boreal_deciduous")
+                    return 21
+                end
+            end
+        end
+
+end
+
+"""
+
+Arguments:
+- Vector{AbstractPFT}
+- Vector{AbstractBiome}
+
+"""
 function newassignbiome(
     optpft::U,
     woodpft::U,
@@ -50,30 +90,7 @@ function newassignbiome(
 
         # Desert
         # if optpft == 10
-        if pftpar[optpft].name == "C3_C4_woody_desert"
-            if grasslai > T(1.0)
-                if tmin >= T(0.0)
-                    return 13
-                else
-                    return 14
-                end
-            else
-                return 21
-            end
-        elseif optnpp <= T(100.0)
-            if pftpar[optpft].name in ["tropical_evergreen", 
-                "tropical_drought_deciduous", "temperate_broadleaved_evergreen",
-                "temperate_deciduous", "cool_conifer",
-                "C4_tropical_grass", "C3_C4_woody_desert"]
-                # What characteristic of the PFT is being used here? 
-                # TODO find common characteristic of PFT 1 to 5 and 9 and 10
-                return 21 
-            elseif optpft != 0 && pftpar[optpft].name == "C3_C4_temperate_grass"
-                if subpft != 0 && (pftpar[subpft].name != "boreal_evergreen" || pftpar[subpft].name != "boreal_deciduous")
-                    return 21
-                end
-            end
-        end
+        
 
         # Boreal Biomes
         # if optpft == 6
