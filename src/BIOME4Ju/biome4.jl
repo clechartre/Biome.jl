@@ -28,8 +28,30 @@ using .Ppeett
 using .SoilTemperature
 using .Snow
 
-function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pftdict) where {T <: Real, U <: Int}
-    numofpfts = 13
+abstract struct AbstractPFT end
+
+# fichier biome4/pfts.jl
+struct WoodyDesert <: AbstractPFT
+    name
+    phenological_type
+    char_categorical
+    char_float::
+end
+
+get_name(pft::AbstractPFT) = pft.name
+
+const BIOME4PFTS = [WoodyDesert(), ]
+
+"""
+Put Doc
+
+args in: 
+- pfts: Vec{AbstractPFT}- replaces pft_dict
+- vars_in::DimensionalDate, 
+- NO OUTPUTS
+"""
+function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
+    numofpfts = 13 # 
 
     # Initialize variables
     optdata = zeros(T, numofpfts+1, 500)
@@ -48,37 +70,6 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}, output::Vector{T}, pf
     k = zeros(T, 12)
     tsoil = zeros(T, 12)
     radanom = zeros(T, 12)
-
-    biomename = [
-        "Tropical evergreen forest",
-        "Tropical semi-deciduous forest",
-        "Tropical deciduous forest/woodland",
-        "Temperate deciduous forest",
-        "Temperate conifer forest",
-        "Warm mixed forest",
-        "Cool mixed forest",
-        "Cool conifer forest",
-        "Cold mixed forest",
-        "Evergreen taiga/montane forest",
-        "Deciduous taiga/montane forest",
-        "Tropical savanna",
-        "Tropical xerophytic shrubland",
-        "Temperate xerophytic shrubland",
-        "Temperate sclerophyll woodland",
-        "Temperate broadleaved savanna",
-        "Open conifer woodland",
-        "Boreal parkland",
-        "Tropical grassland",
-        "Temperate grassland",
-        "Desert",
-        "Steppe tundra",
-        "Shrub tundra",
-        "Dwarf shrub tundra",
-        "Prostrate shrub tundra",
-        "Cushion-forbs, lichen and moss",
-        "Barren",
-        "Land ice"
-    ]
 
     # Assign the variables that arrived in the array vars_in
     lon = vars_in[49]
