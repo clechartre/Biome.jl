@@ -49,7 +49,7 @@ Put Doc
 
 args in: 
 - pfts: Vec{AbstractPFT{len}}- replaces pft_dict
-- vars_in::DimensionalDate, 
+- vars_in::DimensionalData (Vector)
 - NO OUTPUTS
 
 args out:
