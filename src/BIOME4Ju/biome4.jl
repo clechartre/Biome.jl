@@ -36,6 +36,7 @@ struct WoodyDesert <: AbstractPFT
     phenological_type
     char_categorical
     char_float::
+    dominance::Float64 = 0. # output of competition
 end
 
 get_name(pft::AbstractPFT) = pft.name
