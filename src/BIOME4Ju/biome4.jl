@@ -31,12 +31,13 @@ using .Snow
 abstract struct AbstractPFT end
 
 # fichier biome4/pfts.jl
-struct WoodyDesert <: AbstractPFT
+# composite type
+# this should 
+struct WoodyDesert{len} <: AbstractPFT
     name
     phenological_type
     char_categorical
     char_float::
-    dominance::Float64 = 0. # output of competition
 end
 
 get_name(pft::AbstractPFT) = pft.name
@@ -47,15 +48,19 @@ const BIOME4PFTS = [WoodyDesert(), ]
 Put Doc
 
 args in: 
-- pfts: Vec{AbstractPFT}- replaces pft_dict
+- pfts: Vec{AbstractPFT{len}}- replaces pft_dict
 - vars_in::DimensionalDate, 
 - NO OUTPUTS
+
+args out:
+- dominance: vector of length pfts
+- npp: vector of length pfts
 """
 function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
-    numofpfts = 13 # 
+    numofpfts = 13 # TOFIX: comes from length of pfts
 
     # Initialize variables
-    optdata = zeros(T, numofpfts+1, 500)
+    optdata = zeros(T, numofpfts+1, 500) # TOFIX: dimension should be decided upon the dim of the PFTTypes
     pfts = zeros(Int, numofpfts)
 
     temp = zeros(T, 12)
@@ -73,6 +78,7 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
     radanom = zeros(T, 12)
 
     # Assign the variables that arrived in the array vars_in
+    # TOFIX: you need to use views, from DimensionalData
     lon = vars_in[49]
     lat = vars_in[1]  # vars_in[49] - (vars_in[1] / vars_in[50])
     co2 = vars_in[2]
@@ -103,11 +109,13 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
     k[6] = soil[4]
 
     # Linearly interpolate mid-month values to quasi-daily values:
+    # TOFIX: dimensionaldata can interpolate for you
     dtemp = Daily.daily(temp)
     dclou = Daily.daily(clou)
     dprecin = Daily.daily(prec)
 
     # Initialize parameters derived from climate data:
+    # TOFIX: not needed
     climate_results = ClimateData.climdata(temp, prec, dtemp)
     tprec = sum(prec)
     tsoil = SoilTemperature.soiltemp(temp)
@@ -119,9 +127,12 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
     snow_results = Snow.snow(dtemp, dprecin)
 
     # Initialize the evergreen phenology
+    # To document
     dphen .= T(1.0)
     # Initialize pft specific parameters by taking main_params from pftdict
     pftpar = pftdict
+
+    
     # Rulebase of absolute constraints to select potentially present pfts:
     tmin, ts, clindex, pfts = Constraints.constraints(
         climate_results.cold,
@@ -136,6 +147,7 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
 
     #If you want to bypass the environmental constraints for your model
     # set all pfts to present (1). You can turn them off by setting to 0
+    # TOFIX: should be encoded in PFTs
     # pfts[1] = 0
     # pfts[2] = 0
     # pfts[3] = 0
