@@ -1,5 +1,14 @@
 module Biome4Driver
 
+
+# CREATE a new file constants.jl
+const P0 = T(101325.0)  # sea level standard atmospheric pressure (Pa)
+    # cp = T(1004.68506 ) # constant-pressure specific heat (J kg-1 K-1)
+    # T0 = T(288.16)    # sea level standard temperature (K)
+    # g = T(9.80665)    # earth surface gravitational acceleration (m s-1)
+    # M = T(0.02896968) # molar mass of dry air (kg mol-1)
+    # R0 = T(8.314462618)  # universal gas constant (J mol-1 K-1)
+
 # Standard library
 using Base.Threads
 using Base.Iterators
@@ -375,6 +384,11 @@ function serial_process_chunk(
     end
 end
 
+
+"""
+In charge of slicing the inputs
+
+"""
 function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
@@ -383,13 +397,7 @@ function process_cell(
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
     gdd5_var, subpft_var, wetness_var,x_chunk_start, model::BiomeModel
 )where {T <:Real}
-    # Constants
-    p0 = T(101325.0)  # sea level standard atmospheric pressure (Pa)
-    cp = T(1004.68506 ) # constant-pressure specific heat (J kg-1 K-1)
-    T0 = T(288.16)    # sea level standard temperature (K)
-    g = T(9.80665)    # earth surface gravitational acceleration (m s-1)
-    M = T(0.02896968) # molar mass of dry air (kg mol-1)
-    R0 = T(8.314462618)  # universal gas constant (J mol-1 K-1)
+
 
     # Convert local indices to global indices
     x_global_index = x_chunk_start - strx + x
@@ -408,8 +416,9 @@ function process_cell(
     output = zeros(T, 500)
 
     elv = elv_chunk[x, y]
-    p = p0 * (1.0 - (g * elv) / (cp * T0))^(cp * M / R0)
+    p = p0 * (1.0 - (g * elv) / (cp * T0))^(cp * M / R0) #TOFIX: should be in a modular function
 
+    # TOFIX: this should be indexed with DimensionalData semantics
     input[1] = lat_chunk[y]
     input[2] = co2
     input[3] = p
@@ -426,10 +435,13 @@ function process_cell(
     input[46] = diag ? 1.0 : 0.0  # diagnostic mode
 
     # Run the model 
+    # TOFIX: will change with refactoring
     output = run(model, input, output, pft_dict)
 
     # Write results to the output variables
-    biome_var[x_global_index, y_global_index] = output[1]
+    # use DimensionalData
+
+    biome_var[x_global_index, y_global_index] = output[1] # bad idea to have hardcoded index; abstract if to work with any pft property
     wdom_var[x_global_index, y_global_index] = output[12]
     gdom_var[x_global_index, y_global_index] = output[13]
     npp_var[x_global_index, y_global_index, :] = output[60:72]
