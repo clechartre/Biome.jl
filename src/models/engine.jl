@@ -1,14 +1,5 @@
 module Biome4Driver
 
-
-# CREATE a new file constants.jl
-const P0 = T(101325.0)  # sea level standard atmospheric pressure (Pa)
-    # cp = T(1004.68506 ) # constant-pressure specific heat (J kg-1 K-1)
-    # T0 = T(288.16)    # sea level standard temperature (K)
-    # g = T(9.80665)    # earth surface gravitational acceleration (m s-1)
-    # M = T(0.02896968) # molar mass of dry air (kg mol-1)
-    # R0 = T(8.314462618)  # universal gas constant (J mol-1 K-1)
-
 # Standard library
 using Base.Threads
 using Base.Iterators
@@ -24,15 +15,41 @@ using NCDatasets
 using DataStructures: OrderedDict
 using JSON3
 using Plots
+using DimensionalData
 gr()
 
 # First-party
-include("../model.jl")
-include("./biome4.jl")
-include("./models/koppenbiomes.jl")
-include("./models/thornthwaitebiomes.jl")
-include("./models/trollpfaffenbiomes.jl")
-include("./models/wissmannbiomes.jl")
+include("../AbstractTypes.jl")
+export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT
+
+# Models
+include("../abstractmodel.jl")
+export WissmannModel, BIOME4Model, ThornthwaiteModel, KoppenModel, TrollPfaffenModel
+
+# Climatic Envelope Options
+include("../models/ClimaticEnvelope/koppenbiomes.jl")
+include("../models/ClimaticEnvelope/thornthwaitebiomes.jl")
+include("../models/ClimaticEnvelope/trollpfaffenbiomes.jl")
+include("../models/ClimaticEnvelope/wissmannbiomes.jl")
+
+# Mechanistic Options
+include("../models/MechanisticModel/biome4.jl")
+include("../models/MechanisticModel/pfts.jl")
+
+# Objects 
+include("../models/MechanisticModel/constants.jl")
+using .Constants: T, P0, CP, T0, G, M, R0,
+    QEFFC3, DRESPC3, ABS1, TETA, SLO2, JTOE, OPTRATIO,
+    KO25, KC25, TAO25, CMASS, KCQ10, KOQ10, TAOQ10,
+    TWIGLOSS, TUNE, LEAFRESP,
+    MAXTEMP,
+    LN, Y, M10, P1, STEMCARBON,
+    E0, TREF, TEMP0,
+    A, ES, A1, B3, B
+
+# Now one could also define his own biome classifcation as a module
+# import .MyCustomBiomeModel
+# mycustombiomeclassification = MyCustomBiomeModel.MyCustomBiomeClassification()
 
 function main(
     coordstring::String,
@@ -42,9 +59,7 @@ function main(
     precfile::String,
     sunfile::String,
     soilfile::String,
-    pftfile::String,
     year::String,
-    checkpoint_file::String,
     model::String
 ) where {T <: Real}
 
@@ -53,6 +68,7 @@ function main(
         BIOME4Model()
     elseif model == "wissmann"
         WissmannModel()
+        # FIXME we need a placeholder for NULL PFTs
     elseif model == "thornthwaite"
         ThornthwaiteModel()
     elseif model == "koppengeiger"
@@ -62,11 +78,6 @@ function main(
     else
         error("Unknown model: $model")
     end
-
-    # Chunk and checkpoint parameters
-    chunk_size = 1000 # For functioning on node/debug, 100 works
-
-    pft_dict = json_to_component_array(pftfile)
 
     # Open the first dataset just to get the dimensions for the output, then close again
     temp_ds = NCDataset(tempfile, "a")
@@ -166,14 +177,9 @@ function main(
         wetness_var[:, :] = fill(T(-9999.0), cntx, cnty)
     end
 
-    # Load checkpoint
-    x_chunk_start = load_checkpoint(checkpoint_file, strx)
-    # Ensure x_chunk_start is at least strx
-    x_chunk_start = max(x_chunk_start, strx)
-    println("Resuming from x_chunk_start: $x_chunk_start")
-
     # Set up chunking variables
-    x_chunk_size = chunk_size
+    x_chunk_size = 1000
+    chunk_size = x_chunk_size  # Number of x indices to process in each chunk
     lat_chunk = nothing
 
     # Read latitude (only once since it's the same for all x chunks)
@@ -181,7 +187,7 @@ function main(
         lat_chunk = ds["lat"][stry:endy]
     end
 
-    for x_chunk_start in x_chunk_start:chunk_size:endx
+    for x_chunk_start in strx:chunk_size:endx
         x_chunk_end = min(x_chunk_start + x_chunk_size - 1, endx)
         current_chunk_size = x_chunk_end - x_chunk_start + 1
 
@@ -261,7 +267,7 @@ function main(
         println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
 
         # Process the data in this chunk
-        serial_process_chunk(
+        process_chunk(
             current_chunk_size,
             cnty,
             temp_chunk,
@@ -275,7 +281,6 @@ function main(
             whc_chunk,
             dz, 
             lon_chunk,
-            pft_dict,
             diagnosticmode,
             biome_var,
             wdom_var,
@@ -287,13 +292,10 @@ function main(
             subpft_var,
             wetness_var,
             output_dataset,
-            x_chunk_start,
             strx,
             model_instance
         )
 
-        # Save the checkpoint after processing the chunk
-        save_checkpoint(checkpoint_file, x_chunk_start)
     end
 
     # Close the NetCDF file
@@ -301,55 +303,13 @@ function main(
 end
 
 
-function parallel_process_chunk(
-    current_chunk_size, cnty,
-    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk,
-    prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz,
-    lon_chunk, pft_dict, diag, biome_var, wdom_var, gdom_var,
-    npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-    output_dataset, x_chunk_start, strx, model_instance::BiomeModel
-)where {T <: Real}
-    # Container to hold the spawned tasks (futures)
-    futures = []
-
-    for y in 1:cnty
-        println("Parallel processing y index $y")
-
-        # Skip already processed rows
-        y_global_index = y
-        if all(biome_var[:, y_global_index] .!= -9999)
-            println("Skipping already processed row: $y")
-            continue
-        end
-
-        # Spawn a single task to process all x indices at once for this y
-        push!(futures, Threads.@spawn begin
-            for x in 1:current_chunk_size
-                process_cell(
-                    x, y, strx,temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk,
-                    ksat_chunk, whc_chunk, dz, lon_chunk, pft_dict, diag, biome_var, wdom_var, gdom_var, npp_var,
-                    tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, x_chunk_start, model_instance
-                )
-            end
-        end)
-    end
-
-    # Wait for all futures to complete
-    for future in futures
-         fetch(future)
-    end
-
-    sync(output_dataset)
-end
-
-
-function serial_process_chunk(
+function process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, pft_dict, diag, biome_var, wdom_var, gdom_var, 
+    lon_chunk, diag, biome_var, wdom_var, gdom_var, 
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-    output_dataset, x_chunk_start, strx, model_instance::BiomeModel
+    output_dataset, strx, model_instance::BiomeModel
 )where {T <: Real}
     for y in 1:cnty
         println("Serially processing y index $y")
@@ -362,7 +322,6 @@ function serial_process_chunk(
         end
 
         for x in 1:current_chunk_size
-            x_global_index = x_chunk_start - strx + x
 
             if temp_chunk[x, y, 1] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
                 continue
@@ -371,10 +330,9 @@ function serial_process_chunk(
             process_cell(
                 x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, pft_dict, 
+                dz, lon_chunk,
                 diag, biome_var, wdom_var, gdom_var, npp_var, 
-                tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-                x_chunk_start, model_instance
+                tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, model_instance
             )
         end
 
@@ -393,14 +351,13 @@ function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, pft_dict, diag,
+    lon_chunk, diag,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
-    gdd5_var, subpft_var, wetness_var,x_chunk_start, model::BiomeModel
+    gdd5_var, subpft_var, wetness_var,  model::BiomeModel
 )where {T <:Real}
 
-
     # Convert local indices to global indices
-    x_global_index = x_chunk_start - strx + x
+    x_global_index = strx + x
     y_global_index = y
 
     if biome_var[x_global_index, y_global_index] != -9999
@@ -412,13 +369,56 @@ function process_cell(
         return
     end    
 
-    input = zeros(T, 50)
-    output = zeros(T, 500)
-
     elv = elv_chunk[x, y]
-    p = p0 * (1.0 - (g * elv) / (cp * T0))^(cp * M / R0) #TOFIX: should be in a modular function
+    p = P0 * (1.0 - (G * elv) / (CP * T0))^(CP * M / R0) #FIXME: should be in a modular function
 
-    # TOFIX: this should be indexed with DimensionalData semantics
+    # FIXME: this should be indexed with DimensionalData semantics 
+    # Transform all data into DimArray before stacking
+
+    # FIXME edit: use Rasters.jl instead
+
+    # # Climate variables
+    # prec_da = DimArray(prec_chunk[x, y, :], (:time))
+    # temp_da = DimArray(temp_chunk[x, y, :], (:time))
+    # cldp_da = DimArray(cldp_chunk[x, y, :], (:time))
+
+    # # Soil Variables
+    # ksat1 = sum(ksat_chunk[x, y, 1:3] .* dz[1:3]) / sum(dz[1:3])
+    # ksat2 = sum(ksat_chunk[x, y, 4:6] .* dz[4:6]) / sum(dz[4:6])
+    # whc1 = sum(whc_chunk[x, y, 1:3])  # in mm/cm
+    # whc2 = sum(whc_chunk[x, y, 4:6])  # in mm/cm
+
+    # ksat1_da = DimArray([ksat1], (:ksat1))
+    # ksat2_da = DimArray([ksat2], (:ksat2))
+    # whc1_da = DimArray([whc1], (:whc1))
+    # whc2_da = DimArray([whc2], (:whc2))
+
+    # # Single Variables
+    # co2_da = DimArray([co2], (:co2))
+    # lon_da = DimArray([lon_chunk[x]], (:lon))
+    # lat_da = DimArray([lat_chunk[y]], (:lat))
+    # tmin_da = DimArray(tmin_chunk[x, y], (:tmin))
+    # p_da = DimArray([p], (:p))
+    # diag_da = DimArray([diag ? 1.0 : 0.0], (:diag))
+
+    # Stack all the DimArrays into a single DimStack
+    # input = DimStack(
+    #     lon=lon_da,
+    #     lat=lat_da,
+    #     co2=co2_da,
+    #     p=p_da,
+    #     tmin=tmin_da,
+    #     temp=temp_da,
+    #     prec=prec_da,
+    #     cldp=cldp_da,
+    #     ksat1=ksat1_da,
+    #     ksat2=ksat2_da,
+    #     whc1=whc1_da,
+    #     whc2=whc2_da,
+    #     diag=diag_da
+    # )
+    input = zeros(T, 50)
+
     input[1] = lat_chunk[y]
     input[2] = co2
     input[3] = p
@@ -435,8 +435,9 @@ function process_cell(
     input[46] = diag ? 1.0 : 0.0  # diagnostic mode
 
     # Run the model 
-    # TOFIX: will change with refactoring
-    output = run(model, input, output, pft_dict)
+    # FIXME: will change with refactoring
+
+    output = run(model, input)
 
     # Write results to the output variables
     # use DimensionalData
@@ -453,29 +454,9 @@ function process_cell(
 
 end
 
-# Function to load checkpoint
-function load_checkpoint(checkpoint_file::String, strx::U)where {U <: Int}
-    if isfile(checkpoint_file)
-        # Read the checkpoint file to get the last processed chunk
-        open(checkpoint_file, "r") do file
-            checkpoint_data = readline(file)
-            return parse(U, checkpoint_data)
-        end
-    else
-        # If no checkpoint file exists, start from the beginning
-        return strx
-    end
-end
 
 function round_to_nearest(value::T, base::T = 0.05) where {T <: AbstractFloat}
     return round(value / base) * base
-end
-
-# Function to save checkpoint
-function save_checkpoint(checkpoint_file::String, x_chunk_start::U)where { U <: Int}
-    open(checkpoint_file, "w") do file
-        write(file, "$x_chunk_start\n")
-    end
 end
 
 function get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
@@ -526,43 +507,6 @@ function uniform_fill_value(data::Array{T, N}; fill_value=-9999.0) where {T, N}
     return data
 end
 
-# Function to recursively convert JSON3.Object to a Dict with integer keys for numeric strings
-function json_to_dict(obj)
-    if obj isa JSON3.Object
-        return Dict(
-            (tryparse(Int, String(k)) !== nothing ? tryparse(Int, String(k)) : Symbol(k)) => json_to_dict(v)
-            for (k, v) in pairs(obj)
-        )
-    elseif obj isa JSON3.Array
-        return [json_to_dict(v) for v in obj]
-    else
-        return obj  # Keep values as-is
-    end
-end
-
-# Function to recursively convert a dictionary into a ComponentArray
-function convert_to_component(obj)
-    if obj isa Dict
-        # If the dictionary keys are integers (top-level PFT dictionary), keep them as is
-        if all(k -> k isa Int, keys(obj))
-            return Dict(k => convert_to_component(v) for (k, v) in obj)
-        else
-            # Convert inner Dicts with Symbol keys to ComponentArray
-            return ComponentArray(; (Symbol(k) => convert_to_component(v) for (k, v) in obj)...)
-        end
-    elseif obj isa Vector
-        return collect(obj)  # Convert to standard array
-    else
-        return obj  # Keep values unchanged
-    end
-end
-
-# Main function to parse JSON and convert it to a ComponentArray
-function json_to_component_array(json_str::String)
-    json_data = JSON3.read(json_str)  # Read JSON
-    dict_data = json_to_dict(json_data)  # Convert to native Dict
-    return convert_to_component(dict_data)  # Convert to ComponentArray
-end
 
 function parse_command_line()
     s = ArgParseSettings()
@@ -603,18 +547,9 @@ function parse_command_line()
         help = "Path to the saturated conductivity file"
         arg_type = String
 
-        "--pftfile"
-        help = "Path to the JSON PFT file"
-        arg_type = String
-
         "--year"
         help = "Year of prediction from the climatology files"
         arg_type = String
-
-        "--checkpoint_file"
-        help = "Path to the checkpoint file"
-        arg_type = String
-        default = "biome_checkpoint.txt"
 
         "--model"
         help = "Which prediction model to use"
@@ -637,9 +572,7 @@ function main()
         args["precfile"],
         args["sunfile"],
         args["soilfile"],
-        args["pftfile"],
         args["year"],
-        args["checkpoint_file"],
         args["model"]
     )
 end

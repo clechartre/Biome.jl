@@ -1,24 +1,13 @@
-module ClimateData
-
 """
 Calculate GDDs, TCM, wrin, and total precipitation.
 """
 
 using Dates
 
-struct ClimateResults{T <: Real}
-    cold::T
-    warm::T
-    gdd5::T
-    gdd0::T
-    rain::T
-    alttmin::T
-end
-
 function climdata(temp::AbstractArray{T},
     prec::AbstractArray{T},
     dtemp::AbstractArray{T}
-)::ClimateResults where {T <: Real}
+)::Tuple{T, T, T, T} where {T <: Real}
 
     cold = T(100.0)
     warm = T(-100.0)
@@ -50,10 +39,8 @@ function climdata(temp::AbstractArray{T},
         gdd0 += minus0
     end
 
-    alttmin = (T(0.006) * cold^2) + (T(1.316) * cold) - T(21.9)
+    # alttmin = (T(0.006) * cold^2) + (T(1.316) * cold) - T(21.9)
 
-    return ClimateResults(cold, warm, gdd5, gdd0, rain, alttmin)
+    return cold,  gdd5, gdd0, warm
 end
-
-end # module
 

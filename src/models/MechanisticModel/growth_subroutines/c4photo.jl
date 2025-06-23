@@ -1,9 +1,26 @@
-module C4Photosynthesis
-
 include("./photosynthesis.jl")
+include("../../constants.jl")
 using Base.Math: exp
 using .Photosynthesis: PhotosynthesisResults
-
+using .Constants: MAXTEMP, TAO25, TAOQ10, SLO2, JTOE, OPTRATIO, CMASS, TWIGLOSS, TUNE
+"""
+    c4photo(ratio, dsun, daytime, temp, age, fpar, p, ca, pft) :: PhotosynthesisResults
+Calculate C4 photosynthesis based on environmental and plant functional type (PFT) parameters.
+Arguments:
+- `ratio`: The ratio of intercellular to ambient CO2 concentration.
+- `dsun`: Daily solar radiation (MJ/m²/day).
+- `daytime`: Length of the day (hours).
+- `temp`: Air temperature (°C).
+- `age`: Leaf age (months).
+- `fpar`: Fraction of photosynthetically active radiation absorbed by the canopy.
+- `p`: Atmospheric pressure (kPa).
+- `ca`: Ambient CO2 concentration (ppm).
+- `pft`: Plant Functional Type (integer index).
+Returns:
+- `leafresp`: Leaf respiration rate.
+- `grossphot`: Gross photosynthesis rate.
+- `aday`: Net daily photosynthesis.
+"""
 function c4photo(
     ratio::T,
     dsun::T,
@@ -14,33 +31,17 @@ function c4photo(
     p::T,
     ca::T,
     pft::U,
-    pftdict
-)::PhotosynthesisResults{T} where {T <: Real, U <: Int}
-    # Constants
-    drespc4::T = T(0.03)
-    abs1::T = T(1.0)
-    teta::T = T(0.7)
-    slo2::T = T(20.9e3)
-    jtoe::T = T(2.3e-6)
-    optratio::T = T(0.95)
-    ko25::T = T(30.0e3)
-    kc25::T = T(30.0)
-    tao25::T = T(2600.0)
-    cmass::T = T(12.0)
-    kcq10::T = T(2.1)
-    koq10::T = T(1.2)
-    taoq10::T = T(0.57)
-    twigloss::T = T(1.0)
-    maxtemp::T = T(55.0)
-
+    BIOME4PFTS::AbstractPFTList,
+)::Tuple{T,T,T} where {T <: Real, U <: Int}
     # PFT-specific parameters
     # TODO verify that this gives the same result as the original code
     t0 = T(10.0)
 
     # Determine qeffc4 and tune based on PFT
-    qeffc4, tune = if pftdict[pft].name in ["C3_C4_temperate_grass", "C4_tropical_grass"]
+    # FIXME this is a bit of a hack, we should have a better way to handle PFT-specific parameters - ask if C4 and then define these parameters in C4 plants
+    qeffc4, tune = if get_name(BIOME4PFTS, pft) in ["C3_C4_temperate_grass", "C4_tropical_grass"]
         (T(0.0633), T(1.0))
-    elseif pftdict[pft].name == "C3_C4_woody_desert"
+    elseif get_name(BIOME4PFTS, pft) == "C3_C4_woody_desert"
         (T(0.0565), T(0.75))
     else
         println("Running the c4 photosynthesis routine with a non-c4 PFT")
@@ -116,7 +117,5 @@ function c4photo(
         (adaygcc4 / cmass) * (T(8.314) * (temp + T(273.3)) / p) * T(1000.0)
     end
 
-    return PhotosynthesisResults(T(leafrespc4), T(grossphotc4), T(adayc4))
+    return T(leafrespc4), T(grossphotc4), T(adayc4)
 end
-
-end # module

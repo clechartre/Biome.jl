@@ -5,24 +5,18 @@ There are separate routines for calculating fractionation by both
 C3 and C4 plants.  This program is based upon the model used by
 Lloyd and Farquhar (1994)."""
 
-module Isotopes
-
-struct IsotopeResult{T <: Real}
-    meanC3::T
-    meanC4::T
-    C3DA::AbstractArray{T}
-    C4DA::AbstractArray{T}
-end
-
+"""
+isoC3(Cratio, Ca, temp, Rd) :: T
+Calculate the isotopic fractionation for C3 plants based on the given parameters.
+Arguments:
+- `Cratio`: The ratio of intercellular to ambient CO2 concentration.
+- `Ca`: Ambient CO2 concentration (ppm).
+- `temp`: Air temperature (°C).
+- `Rd`: Daytime respiration rate (µmol m⁻² s⁻¹).
+Returns:
+- `delC3`: The isotopic fractionation value for C3 plants.
+"""
 function isoC3(Cratio::T, Ca::T, temp::T, Rd::T)::T where {T <: Real}
-    # Define fractionation parameters
-    a = T(4.4)
-    es = T(1.1)
-    a1 = T(0.7)
-    b = T(27.5)
-    e = T(0.0)
-    f = T(8.0)
-
     if Rd <= T(0.0)
         Rd = T(0.01)
     end
@@ -34,9 +28,9 @@ function isoC3(Cratio::T, Ca::T, temp::T, Rd::T)::T where {T <: Real}
     k = Rd / T(11.0)  # From Farquhar et al. 1982 p. 126
 
     # Calculate the fractionation
-    q = a * (T(1.0) - Cratio + T(0.025))
-    r = T(0.075) * (es + a1)
-    s = b * (Cratio - T(0.1))
+    q = A * (T(1.0) - Cratio + T(0.025))
+    r = T(0.075) * (ES + A1)
+    s = B * (Cratio - T(0.1))
     t = T(0.0)  # (e * Rd / k + f * gamma) / Catm
 
     DeltaA = q + r + s - t
@@ -46,18 +40,12 @@ function isoC3(Cratio::T, Ca::T, temp::T, Rd::T)::T where {T <: Real}
 end
 
 function isoC4(Cratio::T, phi::T, temp::T)::T where {T <: Real}
-    # Define fractionation parameters
-    a = T(4.4)
-    es = T(1.1)
-    a1 = T(0.7)
-    b3 = T(30.0)
-
     b4 = T(26.19) - (T(9483.0) / (T(273.2) + temp))
 
     DeltaA = (
-        a * (T(1.0) - Cratio + T(0.0125))
-        + T(0.0375) * (es + a1)
-        + (b4 + (b3 - es - a1) * phi) * (Cratio - T(0.05))
+        A * (T(1.0) - Cratio + T(0.0125))
+        + T(0.0375) * (ES + A1)
+        + (b4 + (B3 - ES - A1) * phi) * (Cratio - T(0.05))
     )
 
     delC4 = DeltaA
@@ -65,6 +53,15 @@ function isoC4(Cratio::T, phi::T, temp::T)::T where {T <: Real}
     return delC4
 end
 
+"""
+isotope(Cratio, Ca, temp, Rd, c4month, mgpp, phi, gpp) :: IsotopeResult
+Calculate the total fractionation of 13C
+as it goes from free air (as 13CO2) to fixed carbon in the leaf.
+For use with the BIOME3 model of A. Haxeltine (1996).
+There are separate routines for calculating fractionation by both
+C3 and C4 plants.  This program is based upon the model used by
+Lloyd and Farquhar (1994).
+"""
 function isotope(
     Cratio::AbstractArray{T},
     Ca::T,
@@ -74,7 +71,7 @@ function isotope(
     mgpp::AbstractArray{T},
     phi::T,
     gpp::T
-)::IsotopeResult{T} where {T <: Real}
+    )::Tuple{T, T, AbstractArray{T}, AbstractArray{T}} where {T <: Real}
     wtC3 = T(0.0)
     wtC4 = T(0.0)
     C3DA = zeros(T, 12)
@@ -104,7 +101,5 @@ function isotope(
     meanC3 = gpp != T(0.0) ? wtC3 / gpp : T(0.0)
     meanC4 = gpp != T(0.0) ? wtC4 / gpp : T(0.0)
 
-    return IsotopeResult(meanC3, meanC4, C3DA, C4DA)
+    return meanC3, meanC4, C3DA, C4DA
 end
-
-end # module

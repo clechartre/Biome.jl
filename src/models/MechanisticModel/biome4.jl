@@ -1,48 +1,35 @@
 """Biome4 orchestrator."""
-
 # Third-party
 using LinearAlgebra
 using Printf
 using ComponentArrays: ComponentArray
+using DimensionalData
 
 # First-party
 include("./climdata.jl")
-include("./competition2.jl")
+export climdata
 include("./constraints.jl")
+export constraints
 include("./findnpp.jl")
+export findnpp
 include("./growth_subroutines/daily.jl")
-include("./pftdata.jl")
+export daily
 include("./phenology.jl")
+export phenology
 include("./ppeett.jl")
+export ppeett
 include("./snow.jl")
+export snow
 include("./soiltemp.jl")
-
-using .ClimateData
-using .Competition
-using .Constraints
-using .Daily
-using .FindNPP
-using .PFTData
-using .Phenology
-using .Ppeett
-using .SoilTemperature
-using .Snow
-
-abstract struct AbstractPFT end
-
-# fichier biome4/pfts.jl
-# composite type
-# this should 
-struct WoodyDesert{len} <: AbstractPFT
-    name
-    phenological_type
-    char_categorical
-    char_float::
-end
-
-get_name(pft::AbstractPFT) = pft.name
-
-const BIOME4PFTS = [WoodyDesert(), ]
+export soiltemp
+include("./pfts.jl")
+export BiomeClassification, get_name, get_phenological_type, 
+        get_max_min_canopy_conductance, get_Emax, get_sw_drop, 
+        get_sw_appear, get_root_fraction_top_soil, get_leaf_longevity,
+        get_GDD5_full_leaf_out, get_GDD0_full_leaf_out, get_sapwood_respiration,
+        get_optratioa, get_kk, get_c4, get_threshold, get_t0, get_tcurve,
+        get_respfact, get_allocfact, get_grass, get_constraints,
+        edit_presence, get_presence
 
 """
 Put Doc
@@ -56,17 +43,26 @@ args out:
 - dominance: vector of length pfts
 - npp: vector of length pfts
 """
-function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
-    numofpfts = 13 # TOFIX: comes from length of pfts
+function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
+    # Whatever biomeclassification that will be called will depend on the model. Then we will jump into a folder
+    BIOME4PFTS = BiomeClassification()
+    numofpfts = length(BIOME4PFTS.pft_list)
 
     # Initialize variables
-    optdata = zeros(T, numofpfts+1, 500) # TOFIX: dimension should be decided upon the dim of the PFTTypes
-    pfts = zeros(Int, numofpfts)
+    optdata = zeros(T, numofpfts+1, 500) # FIXME: dimension should be decided upon the dim of the PFTTypes
 
-    temp = zeros(T, 12)
-    prec = zeros(T, 12)
-    clou = zeros(T, 12)
-    soil = zeros(T, 5)
+    # FIXME this will change and will not be based on indices but names in the Raster object
+    temp = @views vars_in[5:16] # 12 months of temperature
+    prec = @views vars_in[17:28] # 12 months of precipitation
+    clou = @views vars_in[29:40] # 12 months of cloud cover
+    soil = @views vars_in[41:44] # soil parameters
+    tminin = vars_in[45] # minimum temperature
+
+    lon = vars_in[49]
+    lat = vars_in[1]  # vars_in[49] - (vars_in[1] / vars_in[50])
+    co2 = vars_in[2]
+    p = vars_in[3]
+
 
     dphen = ones(T, 365, 2)
     realout = zeros(T, numofpfts+1, 500) # original fortran code uses 0-indexing for this one
@@ -78,22 +74,7 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
     radanom = zeros(T, 12)
 
     # Assign the variables that arrived in the array vars_in
-    # TOFIX: you need to use views, from DimensionalData
-    lon = vars_in[49]
-    lat = vars_in[1]  # vars_in[49] - (vars_in[1] / vars_in[50])
-    co2 = vars_in[2]
-    p = vars_in[3]
-    tminin = vars_in[4]
-
-    for i in 1:12
-        temp[i] = vars_in[4 + i]
-        prec[i] = vars_in[16 + i]
-        clou[i] = vars_in[28 + i]
-    end
-
-    for i in 1:4
-        soil[i] = vars_in[40 + i]
-    end
+    # FIXME: you need to use views, from DimensionalData
 
     iopt = round(Int, vars_in[46])
 
@@ -109,95 +90,77 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
     k[6] = soil[4]
 
     # Linearly interpolate mid-month values to quasi-daily values:
-    # TOFIX: dimensionaldata can interpolate for you
-    dtemp = Daily.daily(temp)
-    dclou = Daily.daily(clou)
-    dprecin = Daily.daily(prec)
+    # FIXME: dimensionaldata can interpolate for you
+    dtemp = daily(temp)
+    dclou = daily(clou)
+    dprecin = daily(prec)
 
     # Initialize parameters derived from climate data:
-    # TOFIX: not needed
-    climate_results = ClimateData.climdata(temp, prec, dtemp)
+    # FIXME: not needed
+    cold, gdd5, gdd0, warm = climdata(temp, prec, dtemp)
     tprec = sum(prec)
-    tsoil = SoilTemperature.soiltemp(temp)
+    tsoil = soiltemp(temp)
 
     # Calculate mid-month values for pet, sun & dayl from temp, cloud & lat:
-    ppeett_results = Ppeett.ppeett(lat, dtemp, dclou, radanom, temp)
+    dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, radanom, temp)
 
     # Run snow model
-    snow_results = Snow.snow(dtemp, dprecin)
+    dprec, dmelt, maxdepth = snow(dtemp, dprecin)
 
     # Initialize the evergreen phenology
-    # To document
+    # FIXME To document
     dphen .= T(1.0)
-    # Initialize pft specific parameters by taking main_params from pftdict
-    pftpar = pftdict
 
-    
     # Rulebase of absolute constraints to select potentially present pfts:
-    tmin, ts, clindex, pfts = Constraints.constraints(
-        climate_results.cold,
-        climate_results.warm,
+    tmin, BIOME4PFTS = constraints(
+        cold,
+        warm,
         tminin,
-        climate_results.gdd5,
-        ppeett_results.rad0,
-        climate_results.gdd0,
-        snow_results.maxdepth,
-        pftdict
+        gdd5,
+        rad0,
+        gdd0,
+        maxdepth,
+        BIOME4PFTS
     )
 
     #If you want to bypass the environmental constraints for your model
-    # set all pfts to present (1). You can turn them off by setting to 0
-    # TOFIX: should be encoded in PFTs
-    # pfts[1] = 0
-    # pfts[2] = 0
-    # pfts[3] = 0
-    # pfts[4] = 0
-    # pfts[5] = 0
-    # pfts[6] = 0
-    # pfts[7] = 0 
-    # pfts[8] = 0
-    # pfts[9] = 0
-    # pfts[10] = 0
-    # pfts[11] = 0
-    # pfts[12] = 0
-    # pfts[13] = 0
+    # set all pfts to present(true). You can turn them off by setting to false
+    # edit_presence(BIOME4PFTS.pft_list[1], true)
 
     if diagmode
-        diag_mode(lon, lat, climate_results.cold, tmin, climate_results.gdd5, tprec, snow_results.maxdepth, soil, k)
+        diag_mode(lon, lat, cold, tmin, gdd5, tprec, maxdepth, soil, k)
     end
 
     # Calculate optimal LAI and NPP for the selected PFTs
     for pft in 1:numofpfts
-        if pfts[pft] != 0
-            if pftpar[pft].main_params.phenological_type >= 2
-                dphen = Phenology.phenology(dphen, dtemp, temp, climate_results.cold, tmin, pft, ppeett_results.ddayl, pftpar)
+        if get_presence(BIOME4PFTS.pft_list[pft]) == true
+            if get_phenological_type(BIOME4PFTS.pft_list[pft]) >= 2
+                dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl, pftpar)
             end
 
-            optdata[pft+1, :], optlai[pft+1], optnpp[pft+1], realout = FindNPP.findnpp(
-                pfts,
+            optdata[pft+1, :], optlai[pft+1], optnpp[pft+1], realout = findnpp(
                 pft,
                 tprec,
                 dtemp,
-                ppeett_results.sun,
+                sun,
                 temp,
-                snow_results.dprec,
-                snow_results.dmelt,
-                ppeett_results.dpet,
-                ppeett_results.dayl,
+                dprec,
+                dmelt,
+                dpet,
+                dayl,
                 k,
-                pftpar,
+                BIOME4PFTS,
                 optdata[pft+1, :],
                 dphen,
                 co2,
                 p,
                 tsoil,
                 realout,
-                numofpfts
             )
         end
     end
 
-    competition_result = Competition.competition2(
+    biome, output = competition2(
         optnpp,
         optlai,
         tmin,
@@ -207,14 +170,11 @@ function run(m::BIOME4Model, pfts = BIOME4PFTS, vars_in::Vector{Union{T, U}}, ou
         realout,
         diagmode,
         numofpfts,
-        climate_results.gdd0,
-        climate_results.gdd5,
-        climate_results.cold,
-        pftdict,
-        soil
+        gdd0,
+        gdd5,
+        cold,
+        BIOME4PFTS
     )
-    biome = competition_result.biome
-    output = competition_result.output
 
     # Final output biome is given by the integer biome:
     output[1] = biome

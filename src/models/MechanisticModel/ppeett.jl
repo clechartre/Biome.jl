@@ -4,14 +4,6 @@ include("./table.jl")
 using .Table
 using Printf
 
-struct PpeettResults{T <: Real}
-    dpet::AbstractArray{T}
-    dayl::AbstractArray{T}
-    sun::AbstractArray{T}
-    rad0::T
-    ddayl::AbstractArray{T}
-end
-
 function safe_exp(x::T)::T where {T <: Real}
     try
         return exp(x)
@@ -26,7 +18,7 @@ function ppeett(
     dclou::AbstractArray{T},
     radanom::AbstractArray{T},
     temp::AbstractArray{T}
-)::PpeettResults{T} where {T <: Real}
+)::Tuple{AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, AbstractArray{T}} where {T <: Real}
     midday = Int[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
     daysinmonth = Int[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -115,7 +107,7 @@ function ppeett(
         end
     end
 
-    return PpeettResults(dpet, dayl, sun, rad0, ddayl)
+    return dpet, dayl, sun, rad0, ddayl
 end
 
 end # module Ppeett

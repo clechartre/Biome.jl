@@ -1,17 +1,6 @@
-module FireCalculation
-
-using ComponentArrays
-
-struct FireResult{T <: Real}
-    firedays::T
-    wetday::T
-    dryday::T
-    firefraction::T
-    burnfraction::T
-end
 
 """
-    fire(wet::AbstractVector{T}, pft::U, lai::T, npp::T)::FireResult{T}
+fire(wet::AbstractVector{T}, pft::U, lai::T, npp::T)::firedays::T, wetday::T, dryday::T, firefraction::T, burnfraction::T
 
 Calculate the number of potential fire days in a year based on threshold values for soil moisture.
 
@@ -22,13 +11,18 @@ Calculate the number of potential fire days in a year based on threshold values 
 - `npp`: Net Primary Productivity.
 
 # Returns
-- A `FireResult` struct containing firedays, wetday, dryday, firefraction, and burnfraction.
+- A tuple containing:
+- `firedays`: Total number of fire days in the year.
+- `wetday`: Maximum wetness observed during the year.
+- `dryday`: Minimum wetness observed during the year.
+- `firefraction`: Fraction of days with fire potential.
+- `burnfraction`: Fraction of litter burned based on fire potential.
 """
 function fire(wet::AbstractVector{T},
     pft::U,
     lai::T,
     npp::T,
-    pftdict)::FireResult{T} where {T <: Real, U <: Int}
+    pftdict)::Tuple{T, T, T, T, T} where {T <: Real, U <: Int}
 
     # Threshold values per PFT
     threshold = pftdict[pft].additional_params.threshold
@@ -68,9 +62,5 @@ function fire(wet::AbstractVector{T},
     end
 
     # Return results as a FireResult
-    return FireResult(
-        firedays, wetday, dryday, firefraction, burnfraction
-    )
+    return firedays, wetday, dryday, firefraction, burnfraction
 end
-
-end # module

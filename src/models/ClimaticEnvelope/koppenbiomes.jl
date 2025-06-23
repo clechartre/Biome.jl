@@ -2,7 +2,7 @@
 using Statistics
 
 # Define the Köppen-Geiger classification function
-function run(m::KoppenModel, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
+function run(m::KoppenModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
     # Define Köppen-Geiger classes
     KG = Dict(
         :Af => 1,  # Equatorial, fully humid

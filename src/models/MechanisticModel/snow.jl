@@ -2,13 +2,7 @@ module Snow
 
 using Dates
 
-struct SnowResults{T <: Real}
-    dprec::AbstractArray{T}
-    dmelt::AbstractArray{T}
-    maxdepth::T
-end
-
-function snow(dtemp::AbstractArray{T}, dprecin::AbstractArray{T})::SnowResults{T} where {T <: Real}
+function snow(dtemp::AbstractArray{T}, dprecin::AbstractArray{T})::Tuple{AbstractArray{T}, AbstractArray{T}, T} where {T <: Real}
     tsnow = T(-1.0)
     km = T(0.7)
     snowpack = T(0.0)
@@ -48,7 +42,7 @@ function snow(dtemp::AbstractArray{T}, dprecin::AbstractArray{T})::SnowResults{T
         end
     end
 
-    return SnowResults(dprec, dmelt, maxdepth)
+    return dprec, dmelt, maxdepth
 end
 
 end # module

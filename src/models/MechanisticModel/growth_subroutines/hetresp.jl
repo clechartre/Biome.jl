@@ -1,19 +1,5 @@
-module HeterotrophicRespiration
-
-struct HetRespResults{T <: Real}
-    Rlit::Vector{T}
-    Rfst::Vector{T}
-    Rslo::Vector{T}
-    Rtot::Vector{T}
-    isoR::Vector{T}
-    isoflux::Vector{T}
-    Rmean::T
-    meanKlit::T
-    meanKsoil::T
-end
-
 """
-    hetresp(pft, nppann, tair, tsoil, aet, moist, isoveg)
+hetresp(pft, nppann, tair, tsoil, aet, moist, isoveg)
 
 Model heterotrophic respiration of litter and soil organic carbon
 in both a fast and a slow pool. It assumes equilibrium and so decays
@@ -50,7 +36,7 @@ function hetresp(
     meanKlit::T,
     meanKsoil::T,
     pftdict
-)::HetRespResults{T} where {T <: Real, U <: Int}
+    )::Tuple{Vector{T}, Vector{T}, Vector{T}, Vector{T}, Vector{T}, Vector{T}, T, T, T} where {T <: Real, U <: Int}
 
     # Constants and initializations
     isoatm = T(-8.0)
@@ -65,9 +51,7 @@ function hetresp(
 
     if nppann <= T(0.0)
         # If NPP is zero or less, all respiration values should be zero
-        return HetRespResults(
-            Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
-        )
+        return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
     else
         # Partition annual NPP into pools according to Foley strategy
         if pftdict[pft].name == "tropical_evergreen" || pftdict[pft].name == "tropical_drought_deciduous"
@@ -119,10 +103,6 @@ function hetresp(
             isoflux[m] = (isoatm - isoR[m]) * Rtot[m]
         end
 
-        return HetRespResults(
-            Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
-        )
+        return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
     end
 end
-
-end # module

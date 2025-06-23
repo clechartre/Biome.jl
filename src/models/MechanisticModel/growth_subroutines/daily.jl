@@ -1,7 +1,5 @@
-module Daily
-
 """
-    daily!(mly::Vector{T}, dly::Vector{T})
+daily!(mly::Vector{T}, dly::Vector{T})
 
 Linearly interpolate the mid-month values (mly) to daily values, modifying `dly` in place.
 
@@ -45,5 +43,3 @@ function daily(mly::Vector{T}) where {T <: Real}
 
     return dly
 end
-
-end # module

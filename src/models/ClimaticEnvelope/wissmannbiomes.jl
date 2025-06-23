@@ -1,6 +1,6 @@
 using Statistics
 
-function run(m::WissmannModel, vars_in::Vector{Union{T, U}}, output::Vector{T}) where {T <: Real, U <: Int}
+function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
     # Define Wissmann climate zones
     WI = Dict(
         :IA  => 1, #("I A", "Rainforest, equatorial"),
@@ -51,85 +51,83 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}, output::Vector{T}) 
 
     # VI - Polar frost
     if temp_max < 0
-        output[1] = WI[:VI]
-        return output
+        return WI[:VI]
     # V - Polar tundra
     elseif temp_max < 10
-        output[1] = WI[:V]
-        return output
+        return WI[:V]
     end
 
     # IV - Boreal climates
     if temp_mean < 4
         if precip_sum > 2.5 * t_threshold
-            output[1] = WI[:IV_F]
-            return output
+            return WI[:IV_F]
+
         elseif precip_sum > 2.0 * t_threshold
-            output[1] = WI[:IV_T]
-            return output
+            return WI[:IV_T]
+
         elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:IV_S]
-            return output
+            return WI[:IV_S]
+
         else
-            output[1] = WI[:IV_D]
-            return output
+            return WI[:IV_D]
+
         end
     end
 
     # III - Cool temperate
     if temp_min < 2
         if precip_sum > 2.5 * t_threshold
-            output[1] = WI[:III_F]
-            return output
+            return WI[:III_F]
+
         elseif precip_sum > 2.0 * t_threshold
-            output[1] = winter_precip < summer_precip ? WI[:III_Tw] : WI[:III_Ts]
-            return output
+            return winter_precip < summer_precip ? WI[:III_Tw] : WI[:III_Ts]
+
         elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:III_S]
-            return output
+            return WI[:III_S]
+
         else
-            output[1] = WI[:III_D]
-            return output
+            return WI[:III_D]
+
         end
     end
 
     # II - Warm temperate
     if temp_min < 13
         if precip_sum > 2.5 * t_threshold
-            output[1] = temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb]
-            return output
+            return temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb]
+
         elseif precip_sum > 2.0 * t_threshold
-            output[1] = winter_precip < summer_precip ? WI[:II_Tw] : WI[:II_Ts]
-            return output
+            return winter_precip < summer_precip ? WI[:II_Tw] : WI[:II_Ts]
+
         elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:IS]
-            return output
+            return WI[:IS]
+
         else
-            output[1] = WI[:ID]
-            return output
+            return WI[:ID]
+
         end
     end
 
     # I - Tropical
     if temp_min >= 13
         if precip_min >= 60
-            output[1] = WI[:IA]
-            return output
+            return WI[:IA]
+
         elseif precip_sum > 2.5 * t_threshold
-            output[1] = WI[:IF]
-            return output
+            return WI[:IF]
+
         elseif precip_sum > 2.0 * t_threshold
-            output[1] = WI[:IT]
-            return output
+            return WI[:IT]
+
         elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:IS]
-            return output
+            return WI[:IS]
+
         else
-            output[1] = WI[:ID]
-            return output
+            return WI[:ID]
+
         end
     end
 
-    return output
+    return 0 # Default case, should not happen
 
 end

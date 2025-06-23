@@ -1,22 +1,5 @@
-module Hydrology
-
-struct HydrologyResults{T <: Real}
-    meanfvc::AbstractArray{T}
-    meangc::AbstractArray{T}
-    meanwr::Vector{Vector{T}}
-    meanaet::AbstractArray{T}
-    runoffmonth::AbstractArray{T}
-    wet::AbstractArray{T}
-    dayfvc::AbstractArray{T}
-    annaet::T
-    sumoff::T
-    greendays::Int
-    runnoff::T
-    wilt::Bool
-end
-
 """
-    hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtemp, grass, emax, pftpar) :: HydrologyResults
+hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtemp, sapwood, emax, pftpar) :: HydrologyResults
 
 Calculate the actual values of canopy conductance (gc), soil moisture, and other hydrological variables.
 
@@ -34,24 +17,23 @@ Arguments:
 - `mgmin`: Minimum canopy conductance modifier (scalar).
 - `dphen`: Phenology data (365x2 matrix).
 - `dtemp`: Daily temperature (365-element vector).
-- `grass`: Presence of sapwood respiration.
+- `sapwood`: Presence of sapwood respiration.
 - `emax`: Maximum evapotranspiration efficiency (scalar).
 - `pftpar`: PFT parameters (2x5 matrix).
 
 Returns:
-- `HydrologyResults`: A struct containing:
-  - `meanfvc`: Mean monthly foliar vegetation cover.
-  - `meangc`: Mean monthly canopy conductance.
-  - `meanwr`: Mean monthly soil water reservoir (root zone, layer 1, and layer 2).
-  - `meanaet`: Mean monthly actual evapotranspiration.
-  - `runoffmonth`: Monthly runoff values.
-  - `wet`: Daily soil water reservoir values.
-  - `dayfvc`: Daily foliar vegetation cover.
-  - `annaet`: Annual actual evapotranspiration.
-  - `sumoff`: Total runoff and drainage.
-  - `greendays`: Number of days with active vegetation.
-  - `runnoff`: Final runoff value.
-  - `wilt`: Boolean indicating whether wilting occurred.
+- `meanfvc`: Mean monthly foliar vegetation cover.
+- `meangc`: Mean monthly canopy conductance.
+- `meanwr`: Mean monthly soil water reservoir (root zone, layer 1, and layer 2).
+- `meanaet`: Mean monthly actual evapotranspiration.
+- `runoffmonth`: Monthly runoff values.
+- `wet`: Daily soil water reservoir values.
+- `dayfvc`: Daily foliar vegetation cover.
+- `annaet`: Annual actual evapotranspiration.
+- `sumoff`: Total runoff and drainage.
+- `greendays`: Number of days with active vegetation.
+- `runnoff`: Final runoff value.
+- `wilt`: Boolean indicating whether wilting occurred.
 """
 function hydrology(
     dprec::AbstractArray{T},
@@ -67,18 +49,18 @@ function hydrology(
     mgmin::T,
     dphen::AbstractArray{T},
     dtemp::AbstractArray{T},
-    grass::U,
+    sapwood::U,
     emax::T,
     pftpar
 
-)::HydrologyResults where {T <: Real, U <: Int}
+    )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{Vector{T}}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
     days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     alfam = T(1.4)
     gm = T(5.0)
     onnw = pftpar[pft].main_params.sw_drop
     offw = pftpar[pft].main_params.sw_drop
 
-    # fvc is folicar vegetation cover, normal to be 0 for grasses
+    # Initializations
     runoffmonth = zeros(T, 12)
     meanfvc = zeros(T, 12)
     meangc = zeros(T, 12)
@@ -129,10 +111,10 @@ function hydrology(
                     fvc = maxfvc
 
                 elseif phentype == 2  # Cold deciduous
-                    fvc = maxfvc * dphen[d, grass]
+                    fvc = maxfvc * dphen[d, sapwood]
 
-                elseif grass == 2  # Grass cold deciduous
-                    fvc = maxfvc * dphen[d, grass]
+                elseif sapwood == 2  # sapwood cold deciduous
+                    fvc = maxfvc * dphen[d, sapwood]
                     if fvc > T(0.01) && wr > offw
                         fvc = fvc
                     elseif fvc < T(0.01) && wr > onnw
@@ -259,20 +241,16 @@ function hydrology(
         end
     end
 
-    return HydrologyResults(
-        meanfvc,
-        meangc,
-        meanwr,
-        meanaet,
-        runoffmonth,
-        wet,
-        dayfvc,
-        annaet,
-        sumoff,
-        greendays,
-        runnoff,
-        wilt
-    )
+    return  meanfvc, 
+            meangc, 
+            meanwr, 
+            meanaet, 
+            runoffmonth, 
+            wet, 
+            dayfvc, 
+            annaet, 
+            sumoff, 
+            greendays, 
+            runnoff, 
+            wilt
 end
-
-end # module
