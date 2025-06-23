@@ -40,11 +40,10 @@ function respiration(
     lai::T,
     monthlyfpar::AbstractArray{T},
     pft::U,
-    pftdict
-    )::Tuple{T, T, T, Vector{T}, Vector{T}} where {T <: Real, U <: Int}
-
-    allocfact = pftdict[pft].additional_params.allocfact
-    respfact = pftdict[pft].additional_params.respfact
+    BIOME4PFTS::AbstractPFTList
+    )::Tuple{T, T, T, Vector{T}, Vector{T}, Vector{T}} where {T <: Real, U <: Int}
+    allocfact = get_allocfact(BIOME4PFTS.pft_list[pft])
+    respfact = get_respfact(BIOME4PFTS.pft_list[pft])
 
     # Calculate leafmass and litterfall
     litterfall = lai * LN * allocfact

@@ -9,7 +9,7 @@ mutable struct Characteristics{T <: Real, U <: Int} <: AbstractPFTCharacteristic
     leaf_longevity::T
     GDD5_full_leaf_out::T
     GDD0_full_leaf_out::T
-    sapwood_respiration::T
+    sapwood_respiration::U
     optratioa::T
     kk::T
     c4::Bool
@@ -88,7 +88,7 @@ WoodyDesert() = WoodyDesert(Characteristics(
     12.0,    # leaf_longevity
     -99.9, # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.70,   # optratioa
     0.3,   # kk
     true,  # c4
@@ -113,7 +113,7 @@ TropicalEvergreen() = TropicalEvergreen(Characteristics(
     18.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.95,   # optratioa
     0.7,    # kk
     false,  # c4
@@ -138,7 +138,7 @@ TropicalDroughtDeciduous() = TropicalDroughtDeciduous(Characteristics(
     9.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.9,   # optratioa
     0.7,    # kk
     false,  # c4
@@ -163,7 +163,7 @@ TemperateBroadleavedEvergreen() = TemperateBroadleavedEvergreen(Characteristics(
     18.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.8,   # optratioa
     0.6,    # kk
     false,  # c4
@@ -188,7 +188,7 @@ TemperateDeciduous() = TemperateDeciduous(Characteristics(
     7.0,   # leaf_longevity
     200.0,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.8,   # optratioa
     0.6,    # kk
     false,  # c4
@@ -213,7 +213,7 @@ CoolConifer() = CoolConifer(Characteristics(
     30.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.9,   # optratioa
     0.5,    # kk
     false,  # c4
@@ -238,7 +238,7 @@ BorealEvergreen() = BorealEvergreen(Characteristics(
     24.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.8,   # optratioa
     0.5,    # kk
     false,  # c4
@@ -263,7 +263,7 @@ BorealDeciduous() = BorealDeciduous(Characteristics(
     24.0,   # leaf_longevity
     200.0,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.9,   # optratioa
     0.4,    # kk
     false,  # c4
@@ -288,7 +288,7 @@ LichenForb() = LichenForb(Characteristics(
     8.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.80,   # optratioa
     0.6,    # kk
     false,  # c4
@@ -313,7 +313,7 @@ TundraShrubs() = TundraShrubs(Characteristics(
     8.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    1.0,   # sapwood_respiration
+    1,   # sapwood_respiration
     0.90,   # optratioa
     0.5,    # kk
     false,  # c4
@@ -338,7 +338,7 @@ C3C4TemperateGrass() = C3C4TemperateGrass(Characteristics(
     8.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     100.0,  # GDD0_full_leaf_out
-    2.0,   # sapwood_respiration
+    2,   # sapwood_respiration
     0.65,   # optratioa
     0.4,    # kk
     false,  # c4
@@ -363,7 +363,7 @@ C4TropicalGrass() = C4TropicalGrass(Characteristics(
     10.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     -99.9,  # GDD0_full_leaf_out
-    2.0,   # sapwood_respiration
+    2,   # sapwood_respiration
     0.65,   # optratioa
     0.4,    # kk
     true,  # c4
@@ -388,7 +388,7 @@ ColdHerbaceous() = ColdHerbaceous(Characteristics(
     8.0,   # leaf_longevity
     -99.9,  # GDD5_full_leaf_out
     25.0,  # GDD0_full_leaf_out
-    2.0,   # sapwood_respiration
+    2,   # sapwood_respiration
     0.75,   # optratioa
     0.3,    # kk
     false,  # c4

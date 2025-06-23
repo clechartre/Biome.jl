@@ -1,6 +1,19 @@
 # Third-party
 using Statistics: mean
 
+# Import all growth subroutines 
+include("./growth_subroutines/c4photo.jl")
+include("./growth_subroutines/calcphi.jl")
+include("./growth_subroutines/fire.jl")
+include("./growth_subroutines/hetresp.jl")
+include("./growth_subroutines/hydrology.jl")
+include("./growth_subroutines/isotope.jl")
+include("./growth_subroutines/photosynthesis.jl")
+include("./growth_subroutines/respiration.jl")
+
+export c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration
+
+
 function safe_exp(x::T)::T where {T <: Real}
     try
         return exp(x)
@@ -135,11 +148,11 @@ function growth(
             fpar = T(1.0) - T(exp(-kk * maxlai))
 
             if c4
-                alllresp, pgphot, aday = GrowthSubroutines.c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
-                lresp[m] = alllresp[m]
+                alllresp, pgphot, aday = c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                lresp[m] = alllresp
             else
-                alllresp, pgphot, aday  = GrowthSubroutines.photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
-                lresp[m] = alllresp[m]
+                alllresp, pgphot, aday  = photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                lresp[m] = alllresp
             end
     
             if tsecs > 0.0 && aday > 0.0
@@ -155,11 +168,11 @@ function growth(
             maxgc = max(maxgc, optgc[m])
         end
     
-        doptgc = Daily.daily(optgc)
+        doptgc = daily(optgc)
 
-        meanfvc, meangc, meanwr, meanaet, runoffmonth, wet, dayfvc, annaet, sumoff, greendays, runnoff, wilt = GrowthSubroutines.hydrology(
+        meanfvc, meangc, meanwr, meanaet, runoffmonth, wet, dayfvc, annaet, sumoff, greendays, runnoff, wilt = hydrology(
             dprec, dmelt, dpet, root, k, maxfvc, pft, phentype,
-            wst, doptgc, mgmin, dphen, dtemp, sapwood, emax, pftpar)
+            wst, doptgc, mgmin, dphen, dtemp, sapwood, emax, BIOME4PFTS)
 
 
         # Initialize annual variables
@@ -187,15 +200,15 @@ function growth(
                     fpar = meanfvc[m]
     
                     if c4
-                        allleafresp, alligphot, alladay = GrowthSubroutines.c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
-                        leafresp = allleafresp[m]
-                        igphot = alligphot[m]
-                        aday = alladay[m]
+                        allleafresp, alligphot, alladay = c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                        leafresp = allleafresp
+                        igphot = alligphot
+                        aday = alladay
                     else
-                        allleafresp, alligphot, alladay = GrowthSubroutines.photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, pftpar)
-                        leafresp = allleafresp[m]
-                        igphot = alligphot[m]
-                        aday = alladay[m]
+                        allleafresp, alligphot, alladay = photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                        leafresp = allleafresp
+                        igphot = alligphot
+                        aday = alladay
                     end
     
                     gt = 3600 * dayl[m] * meangc[m]
@@ -254,9 +267,9 @@ function growth(
         annualfpar = if annualapar == T(0.0) T(0.0) else T(100.0) * annualapar / annualparr end
     
         # Calculate annual respiration costs to find annual NPP
-        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = GrowthSubroutines.respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft, pftpar)
+        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft, BIOME4PFTS)
 
-        if hwilt
+        if wilt
             npp = -9999.0
         end
     
@@ -285,9 +298,9 @@ function growth(
         end
     
         nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
-            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, pftpar)
+            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, BIOME4PFTS)
     
-        if pftpar[pft].name == "C3_C4_woody_desert"
+        if get_name(BIOME4PFTS.pft_list[pft]) == "C3_C4_woody_desert"
             if c4
                 c4 = false
                 c4_override = false
@@ -307,16 +320,16 @@ function growth(
         end
     
         if gpp > 0.0 
-            if pftpar[pft].additional_params.grass == true || pftpar[pft].name == "C3_C4_woody_desert"
+            if get_grass(BIOME4PFTS.pft_list[pft]) == true || get_name(BIOME4PFTS.pft_list[pft]) == "C3_C4_woody_desert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
-                phi = GrowthSubroutines.calcphi(mgpp)
+                phi = calcphi(mgpp)
             end
-            meanC3, meanC4, C3DA, C4DA = GrowthSubroutines.isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
+            meanC3, meanC4, C3DA, C4DA = isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
         end
     
         moist = map(mean, meanwr)
-        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = GrowthSubroutines.hetresp(pft, npp, temp, tsoil, meanaet, moist, isotope_results.meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, pftpar)
+        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, BIOME4PFTS)
 
         annresp = sum(Rtot)
     
@@ -327,7 +340,7 @@ function growth(
             annnep += cflux[m]
         end
     
-        firedays, wetday, dryday, firefraction, burnfraction = GrowthSubroutines.fire(wet, pft, maxlai, npp, pftpar)
+        firedays, wetday, dryday, firefraction, burnfraction = fire(wet, pft, maxlai, npp, BIOME4PFTS)
     
         outv, realin = output_results(
             meanwr,
@@ -357,7 +370,7 @@ function growth(
             runoffmonth,
             mgpp,
             annnep,
-            iredays,
+            firedays,
             greendays,
             tendaylai,
             meanKlit,
@@ -387,19 +400,19 @@ function compare_c3_c4_npp(
     c4leafresp::AbstractArray{T},
     nppsum::T,
     c4::Bool,
-    pftpar
+    BIOME4PFTS::AbstractPFTList
 ) where {T <: Real}
     c4months = 0
     annc4npp = T(0.0)
     c4month = fill(false, 12)
     
     for m in 1:12
-        if pftpar[pft].name == "C4_tropical_grass"
+        if get_name(BIOME4PFTS.pft_list[pft]) == "C4_tropical_grass"
             c4month[m] = true
         end
     end
 
-    if pftpar[pft].name == "C3_C4_woody_desert"
+    if get_name(BIOME4PFTS.pft_list[pft]) == "C3_C4_woody_desert"
         for m in 1:12
             if c4mnpp[m] > mnpp[m]
                 c4months += 1

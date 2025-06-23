@@ -1,7 +1,5 @@
-module Ppeett
-
 include("./table.jl")
-using .Table
+export table
 using Printf
 
 function safe_exp(x::T)::T where {T <: Real}
@@ -44,7 +42,7 @@ function ppeett(
         for _ in 1:daysinmonth[month]
             day += 1
 
-            psi, l = Table.table(dtemp[day])
+            psi, l = table(dtemp[day])
 
             rl = (b + (T(1) - b) * (dclou[day] / T(100.0))) * (radup - dtemp[day])
             rl *= radanom[month]
@@ -110,4 +108,3 @@ function ppeett(
     return dpet, dayl, sun, rad0, ddayl
 end
 
-end # module Ppeett

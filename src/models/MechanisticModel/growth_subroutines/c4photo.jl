@@ -1,8 +1,4 @@
-include("./photosynthesis.jl")
-include("../../constants.jl")
 using Base.Math: exp
-using .Photosynthesis: PhotosynthesisResults
-using .Constants: MAXTEMP, TAO25, TAOQ10, SLO2, JTOE, OPTRATIO, CMASS, TWIGLOSS, TUNE
 """
     c4photo(ratio, dsun, daytime, temp, age, fpar, p, ca, pft) :: PhotosynthesisResults
 Calculate C4 photosynthesis based on environmental and plant functional type (PFT) parameters.
@@ -39,9 +35,9 @@ function c4photo(
 
     # Determine qeffc4 and tune based on PFT
     # FIXME this is a bit of a hack, we should have a better way to handle PFT-specific parameters - ask if C4 and then define these parameters in C4 plants
-    qeffc4, tune = if get_name(BIOME4PFTS, pft) in ["C3_C4_temperate_grass", "C4_tropical_grass"]
+    qeffc4, tune = if get_name(BIOME4PFTS.pft_list[pft]) in ["C3C4TemperateGrass", "C4TropicalGrass"]
         (T(0.0633), T(1.0))
-    elseif get_name(BIOME4PFTS, pft) == "C3_C4_woody_desert"
+    elseif get_name(BIOME4PFTS.pft_list[pft]) == "C3C4WoodyDesert"
         (T(0.0565), T(0.75))
     else
         println("Running the c4 photosynthesis routine with a non-c4 PFT")
@@ -49,13 +45,13 @@ function c4photo(
 
     # Derived parameters
     leafcost = (age / T(12.0)) ^ T(0.25)
-    mfo2 = slo2 / T(1e5)
+    mfo2 = SLO2 / T(1e5)
     o2 = p * mfo2
     daytime = max(daytime, T(4.0))
 
     # Temperature stress calculation
     mintemp = t0
-    tstress = if mintemp + T(1) < temp < maxtemp
+    tstress = if mintemp + T(1) < temp < MAXTEMP
         exp(-T(10.0) / (temp - mintemp))
     else
         T(0.0)
@@ -63,23 +59,23 @@ function c4photo(
     tstress = min(tstress, T(1.0))
 
     # Temperature adjusted values
-    tao = tao25 * (taoq10 ^ ((temp - T(25.0)) / T(10.0)))
+    tao = TAO25 * (TAOQ10 ^ ((temp - T(25.0)) / T(10.0)))
 
-    s = drespc4 * (T(24.0) / daytime)
+    s = DRESPC4 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
-    z = cmass * jtoe * dsun * fpar * twigloss * tune
+    z = CMASS * JTOE * dsun * fpar * TWIGLOSS * TUNE
 
     # Optimal pi value and non-co2-dependent parameters
-    pi = optratio * ca * p
+    pi = OPTRATIO * ca * p
     c1 = qeffc4 * tstress
     c2 = T(1.0)
-    oc = sqrt((s - teta * s) / (c2 - teta * s))
+    oc = sqrt((s - TETA * s) / (c2 - TETA * s))
 
     # Estimate the optimal value of Vm at ratio = 0.8 g(C).m-2.day-1
     vmaxc4 = if z == T(0.0)
         T(0.0)
     else
-        (z / drespc4) * (c1 / c2) * ((T(2.0) * teta - T(1.0)) * s - (T(2.0) * teta * s - c2) * oc)
+        (z / DRESPC4) * (c1 / c2) * ((T(2.0) * TETA - T(1.0)) * s - (T(2.0) * TETA * s - c2) * oc)
     end
 
     # Actual photosynthesis calculation
@@ -99,22 +95,22 @@ function c4photo(
         end
 
         damage = ratio < T(0.4) ? ratio / T(0.4) : T(1.0)
-        wif = damage * daytime / (T(2.0) * teta)
+        wif = damage * daytime / (T(2.0) * TETA)
 
         if je == T(0.0) && jc == T(0.0)
             T(0.0)
         else
-            wif * (je + jc - sqrt((je + jc) ^ T(2.0) - T(4.0) * teta * je * jc))
+            wif * (je + jc - sqrt((je + jc) ^ T(2.0) - T(4.0) * TETA * je * jc))
         end
     end
 
-    adaygcc4 = grossphotc4 - (daytime / T(24.0)) * drespc4 * vmaxc4
-    leafrespc4 = drespc4 * vmaxc4 * leafcost
+    adaygcc4 = grossphotc4 - (daytime / T(24.0)) * DRESPC4 * vmaxc4
+    leafrespc4 = DRESPC4 * vmaxc4 * leafcost
 
     adayc4 = if grossphotc4 == T(0.0) && vmaxc4 == T(0.0)
         T(0.0)
     else
-        (adaygcc4 / cmass) * (T(8.314) * (temp + T(273.3)) / p) * T(1000.0)
+        (adaygcc4 / CMASS) * (T(8.314) * (temp + T(273.3)) / p) * T(1000.0)
     end
 
     return T(leafrespc4), T(grossphotc4), T(adayc4)

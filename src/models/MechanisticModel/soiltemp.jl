@@ -1,5 +1,3 @@
-module SoilTemperature
-
 """
 Calculate monthly mean soil temperature
 based on monthly mean air temperature assuming a thermal
@@ -43,4 +41,3 @@ function soiltemp(tair::AbstractArray{T})::AbstractArray{T} where {T <: Real}
     return tsoil
 end
 
-end # module

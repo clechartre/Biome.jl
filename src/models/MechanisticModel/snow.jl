@@ -1,5 +1,3 @@
-module Snow
-
 using Dates
 
 function snow(dtemp::AbstractArray{T}, dprecin::AbstractArray{T})::Tuple{AbstractArray{T}, AbstractArray{T}, T} where {T <: Real}
@@ -44,5 +42,3 @@ function snow(dtemp::AbstractArray{T}, dprecin::AbstractArray{T})::Tuple{Abstrac
 
     return dprec, dmelt, maxdepth
 end
-
-end # module

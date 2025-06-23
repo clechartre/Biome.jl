@@ -1,5 +1,3 @@
-module Table
-
 """
 Extract Gamma and Lambda based on temperature.
 
@@ -64,5 +62,3 @@ function table(tc::T)::Tuple{T, T} where {T <: Real}
     # If the temperature doesn't fall within the table, return nothing
     return nothing, nothing
 end
-
-end # module

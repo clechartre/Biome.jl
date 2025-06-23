@@ -10,21 +10,21 @@ export growth
 function findnpp(
     pft::U,
     annp::T,
-    dtemp::Array{T,1},
-    sun::Array{T,1},
-    temp::Array{T,1},
-    dprec::Array{T,1},
-    dmelt::Array{T,1},
-    dpet::Array{T,1},
-    dayl::Array{T,1},
+    dtemp::AbstractArray{T,1},
+    sun::AbstractArray{T,1},
+    temp::AbstractArray{T,1},
+    dprec::AbstractArray{T,1},
+    dmelt::AbstractArray{T,1},
+    dpet::AbstractArray{T,1},
+    dayl::AbstractArray{T,1},
     k::AbstractArray,
     BIOME4PFTS::AbstractPFTList,
     optdata,
     dphen::AbstractArray{T},
     co2::AbstractFloat,
     p::AbstractFloat,
-    tsoil::Array{T,1},
-    realout::Array{T,2}
+    tsoil::AbstractArray{T,1},
+    realout::AbstractArray{T,2}
 ) where {T <: Real, U <: Int}
     """Run NPP optimization model for one pft"""
 

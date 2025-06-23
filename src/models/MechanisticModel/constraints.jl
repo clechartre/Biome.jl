@@ -12,8 +12,8 @@ function constraints(
     rad0::T,
     gdd0::T,
     maxdepth::T,
-    BIOME4PFTS
-)::Tuple{T, T, AbstractArray{T}, Vector{Int}} where{T <: Real}
+    BIOME4PFTS::AbstractPFTList
+)::Tuple{T, AbstractPFTList} where{T <: Real}
     nclin = 6
     undefined_value = -99.9
     
@@ -25,7 +25,7 @@ function constraints(
     for ip in 1:length(BIOME4PFTS.pft_list)
         valid = true
         for (iv, key) in enumerate([:tcm, :min, :gdd, :gdd0, :twm, :snow]) # FIXME. Also de-hardcode this? We need to see how we go about wetness later on since we need intermediate values before we compute it
-            constraint_values =  BIOME4.get_constraints(BIOME4PFTS.pft_list[ip])[key]
+            constraint_values =  get_constraints(BIOME4PFTS.pft_list[ip])[key]
             lower_limit, upper_limit = constraint_values[1], constraint_values[2]
             
             if !(
@@ -41,6 +41,6 @@ function constraints(
         edit_presence(BIOME4PFTS.pft_list[ip], valid)
     end
 
-    return tmin, ts, clindex, BIOME4PFTS
+    return tmin, BIOME4PFTS
 end
 

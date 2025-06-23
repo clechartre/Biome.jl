@@ -51,14 +51,14 @@ function hydrology(
     dtemp::AbstractArray{T},
     sapwood::U,
     emax::T,
-    pftpar
+    BIOME4PFTS::AbstractPFTList,
 
     )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{Vector{T}}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
     days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     alfam = T(1.4)
     gm = T(5.0)
-    onnw = pftpar[pft].main_params.sw_drop
-    offw = pftpar[pft].main_params.sw_drop
+    onnw = get_sw_drop(BIOME4PFTS.pft_list[pft])
+    offw = get_sw_drop(BIOME4PFTS.pft_list[pft])
 
     # Initializations
     runoffmonth = zeros(T, 12)

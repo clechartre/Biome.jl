@@ -1,7 +1,7 @@
 
 include("./newassignbiome.jl")
+export mock_assign_biome, newassignbiome
 
-using .BiomeAssignment
 using LinearAlgebra: norm
 using Statistics: mean
 using Printf: @sprintf
@@ -15,7 +15,6 @@ function competition2(
     optlai::AbstractArray{T},
     tmin::T,
     tprec::T,
-    pfts::AbstractArray{U}, 
     optdata,
     output,      
     diagmode::Bool,
@@ -44,7 +43,7 @@ function competition2(
     grass = vcat(grass, false)
 
     # Choose the dominant woody PFT on the basis of NPP - for all PFTs but LichenForbs
-    for pft in 1:length(BIOME4PFTS) # FIXME just get the number of PFTs?
+    for pft in 1:length(BIOME4PFTS.pft_list) # FIXME just get the number of PFTs?
 
         if get_name(BIOME4PFTS.pft_list[pft])== "LichenForb"
             continue  # Skip iteration for LichenForbs
@@ -92,7 +91,6 @@ function competition2(
         tprec,
         wetness,
         optdata,
-        present,
         BIOME4PFTS
     )
 
@@ -100,7 +98,6 @@ function competition2(
     if diagmode
         output_diagnostics(
             numofpfts,
-            pfts,
             drymonth,
             driest,
             wetness,
@@ -110,7 +107,8 @@ function competition2(
             optlai,
             grasspft,
             grassnpp,
-            subpft
+            subpft,
+            BIOME4PFTS
         )
     end
 
@@ -120,7 +118,7 @@ function competition2(
     )
 
     # Call the newassignbiome function
-    biome = BiomeAssignment.mock_assign_biome(
+    biome = mock_assign_biome(
         optpft,
         wdom,
         subpft,
@@ -130,7 +128,6 @@ function competition2(
         gdd0,
         gdd5,
         tcm,
-        present,
         woodylai,
         grasslai,
         tmin,
@@ -172,7 +169,9 @@ function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T}, BIOME4PF
             edit_presence(BIOME4PFTS.pft_list[pft], true)
         end
     end
-    cold_herb_index = findfirst(pft -> isa(pft, BIOME4.ColdHerbaceous), BIOME4PFTS.pft_list)
+
+    # Find ColdHerbaceous PFT by type checking
+    cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
     
     if cold_herb_index !== nothing
         edit_presence(BIOME4PFTS.pft_list[cold_herb_index], true) # Special case
@@ -254,7 +253,6 @@ function determine_optimal_pft(
     tprec::T,
     wetness::AbstractArray{T},
     optdata::AbstractArray{},
-    present::Dict{String, Bool},
     BIOME4PFTS::AbstractPFTList
 )::Tuple{U, T, T, U, T, T, U, U} where {T <: Real, U <: Int}
     flop = false
@@ -288,27 +286,27 @@ function determine_optimal_pft(
 
         # Mimicking Fortran conditions and goto-like behavior
         # if (wdom == 3 || wdom == 5) && tmin > T(0.0)
-        if wdom != 0 && (get_name(BIOME4PFTs.pft_list[wdom])  == "TemperateBroadleavedEvergreen" || get_name(BIOME4PFTs.pft_list[wdom]) == "CoolConifer") && tmin > T(0.0)
+        if wdom != 0 && (get_name(BIOME4PFTS.pft_list[wdom])  == "TemperateBroadleavedEvergreen" || get_name(BIOME4PFTS.pft_list[wdom]) == "CoolConifer") && tmin > T(0.0)
             if gdd5 > T(5000.0)
-                wdom = findfirst(pft -> isa(pft, BIOME4.TropicalDroughtDeciduous), BIOME4PFTS.pft_list)
+                wdom = findfirst(pft -> isa(pft, TropicalDroughtDeciduous), BIOME4PFTS.pft_list)
                 continue
             end
         end
 
         # if wdom == 1
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "TropicalEvergreen"
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TropicalEvergreen"
             if optnpp[wdom+1] < T(2000.0)
-                wdom = findfirst(pft -> isa(pft, BIOME4.TropicalDroughtDeciduous), BIOME4PFTS.pft_list)
-                subpft = findfirst(pft -> isa(pft, BIOME4.TropicalEvergreen), BIOME4PFTS.pft_list)
+                wdom = findfirst(pft -> isa(pft, TropicalDroughtDeciduous), BIOME4PFTS.pft_list)
+                subpft = findfirst(pft -> isa(pft, TropicalEvergreen), BIOME4PFTS.pft_list)
                 continue
             end
         end
 
         # if wdom == 2
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "TropicalDroughtDeciduous"
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TropicalDroughtDeciduous"
             if woodylai < T(2.0)
                 optpft = grasspft
-            elseif grasspft != 0 && get_name(BIOME4PFTs.pft_list[grasspft]) == "C4TropicalGrass" && woodylai < T(3.6)
+            elseif grasspft != 0 && get_name(BIOME4PFTS.pft_list[grasspft]) == "C4TropicalGrass" && woodylai < T(3.6)
                 optpft = 14 # FIXME should we change this to numofpfts + 1?
             elseif greendays < 270 && tcm > T(21.0)&& tprec < T(1700.0)
                 optpft = 14
@@ -318,7 +316,7 @@ function determine_optimal_pft(
         end
 
         # if wdom == 3
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "TemperateBroadleavedEvergreen"
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TemperateBroadleavedEvergreen"
             if optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.0)
@@ -331,13 +329,13 @@ function determine_optimal_pft(
         end
 
         # if wdom == 4
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "TemperateDeciduous"
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TemperateDeciduous"
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
                 if !flop && subpft != 0
                     wdom = subpft
-                    subpft = findfirst(pft -> isa(pft, BIOME4.TemperateDeciduous), BIOME4PFTS.pft_list)
+                    subpft = findfirst(pft -> isa(pft, TemperateDeciduous), BIOME4PFTS.pft_list)
                     flop = true
                     continue
                 else
@@ -348,7 +346,7 @@ function determine_optimal_pft(
                     optpft = 14
                 elseif !flop && subpft != 0
                     wdom = subpft
-                    subpft = findfirst(pft -> isa(pft, BIOME4.TemperateDeciduous), BIOME4PFTS.pft_list)
+                    subpft = findfirst(pft -> isa(pft, TemperateDeciduous), BIOME4PFTS.pft_list)
                     flop = true
                     continue
                 end
@@ -358,10 +356,11 @@ function determine_optimal_pft(
         end
 
         # if wdom == 5
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "CoolConifer"
-            if present["TemperateBroadleavedEvergreen"]
-                wdom = findfirst(pft -> isa(pft, BIOME4.TemperateBroadleavedEvergreen), BIOME4PFTS.pft_list)
-                subpft = findfirst(pft -> isa(pft, BIOME4.CoolConifer), BIOME4PFTS.pft_list)
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "CoolConifer"
+            tbe_index = findfirst(pft -> isa(pft, TemperateBroadleavedEvergreen), BIOME4PFTS.pft_list)
+            if get_presence(BIOME4PFTS.pft_list[tbe_index]) == true
+                wdom = findfirst(pft -> isa(pft, TemperateBroadleavedEvergreen), BIOME4PFTS.pft_list)
+                subpft = findfirst(pft -> isa(pft, CoolConifer), BIOME4PFTS.pft_list)
                 continue
             elseif optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
@@ -373,13 +372,13 @@ function determine_optimal_pft(
         end
 
         # if wdom == 6
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "BorealEvergreen"
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "BorealEvergreen"
             if optnpp[wdom+1] < T(140.0)
                 optpft = grasspft
             elseif firedays > U(90)
                 if !flop && subpft != 0
                     wdom = subpft
-                    subpft = findfirst(pft -> isa(pft, BIOME4.BorealEvergreen), BIOME4PFTS.pft_list)
+                    subpft = findfirst(pft -> isa(pft, BorealEvergreen), BIOME4PFTS.pft_list)
                     flop = true
                     continue
                 else
@@ -389,7 +388,7 @@ function determine_optimal_pft(
         end
 
         # if wdom == 7
-        if wdom != 0 && get_name(BIOME4PFTs.pft_list[wdom]) == "BorealDeciduous"
+        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "BorealDeciduous"
             if optnpp[wdom+1] < T(120.0)
                 optpft = grasspft
             elseif wetness[wdom+1] < T(30.0) && nppdif < T(0.0)
@@ -400,40 +399,42 @@ function determine_optimal_pft(
         end
 
         if wdom == 0
-            index = findfirst(pft -> isa(pft, BIOME4.LichenForb), BIOME4PFTS.pft_list)
+            index = findfirst(pft -> isa(pft, LichenForb), BIOME4PFTS.pft_list)
             if grasspft != 0
                 optpft = grasspft
             elseif optnpp[index+1] != 0.0
-                optpft = findfirst(pft -> isa(pft, BIOME4.LichenForb), BIOME4PFTS.pft_list)
+                optpft = findfirst(pft -> isa(pft, LichenForb), BIOME4PFTS.pft_list)
             else
                 optpft = 0
             end
         end
 
-        if optpft == 0 && present["WoodyDesert"]
-            optpft = findfirst(pft -> isa(pft, BIOME4.WoodyDesert), BIOME4PFTS.pft_list)
+        woody_desert_index = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
+        if optpft == 0 && woody_desert_index !== nothing && get_presence(BIOME4PFTS.pft_list[woody_desert_index])
+            optpft = woody_desert_index
         end
 
-        if optpft ∉ [0, 14] && get_name(BIOME4PFTs.pft_list[optpft]) == "WoodyDesert"
-            index = findfirst(pft -> isa(pft, BIOME4.WoodyDesert), BIOME4PFTS.pft_list)
-            if (grasspft == 0 || get_name(BIOME4PFTs.pft_list[grasspft]) != "C4TropicalGrass") && optnpp[grasspft+1] > optnpp[index+1] 
+        if optpft ∉ [0, 14] && get_name(BIOME4PFTS.pft_list[optpft]) == "WoodyDesert"
+            index = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
+            if (grasspft == 0 || get_name(BIOME4PFTS.pft_list[grasspft]) != "C4TropicalGrass") && optnpp[grasspft+1] > optnpp[index+1] 
                 optpft = grasspft
             else
-                optpft = findfirst(pft -> isa(pft, BIOME4.WoodyDesert), BIOME4PFTS.pft_list)
+                optpft = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
             end
         end
 
         if optpft == grasspft
-            if optlai[grasspft+1] < 1.8 && present["WoodyDesert"]
-                optpft = findfirst(pft -> isa(pft, BIOME4.WoodyDesert), BIOME4PFTS.pft_list)
+            if optlai[grasspft+1] < 1.8 && get_presence(BIOME4PFTS.pft_list[woody_desert_index])
+                optpft = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
             else
                 optpft = grasspft
             end
         end
 
-        if optpft ∉ [0, 14]  && get_name(BIOME4PFTs.pft_list[optpft]) == "TundraShrubs"
-            if wetness[optpft+1] <= 25.0 && present["ColdHerbaceous"]
-                optpft = findfirst(pft -> isa(pft, BIOME4.ColdHerbaceous), BIOME4PFTS.pft_list)
+        if optpft ∉ [0, 14]  && get_name(BIOME4PFTS.pft_list[optpft]) == "TundraShrubs"
+            cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
+            if wetness[optpft+1] <= 25.0 && get_presence(BIOME4PFTS.pft_list[cold_herb_index])
+                optpft = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
             end
         end
 
@@ -447,7 +448,6 @@ end
 
 function output_diagnostics(
     numofpfts::U,
-    pfts::AbstractArray{U},
     drymonth::AbstractArray{U},
     driest::AbstractArray{T},
     wetness::AbstractArray{T},
@@ -457,10 +457,11 @@ function output_diagnostics(
     optlai::AbstractArray{T},
     grasspft::U,
     grassnpp::T,
-    subpft::U
+    subpft::U,
+    BIOME4PFTS::AbstractPFTList
 )::Nothing where {T <: Real, U <: Int}
     for pft in 1:numofpfts+1
-        if pfts[pft] != 0
+        if get_presence(BIOME4PFTS.pft_list[pft]) != 0
             println(@sprintf("%5d%5d%6.2f%6.2f%5d%5d",
                 pft, drymonth[pft+1], driest[pft+1], wetness[pft+1], optdata[pft+1, 199], optdata[pft+1, 200]))
         end

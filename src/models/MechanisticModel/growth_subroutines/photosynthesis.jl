@@ -29,11 +29,11 @@ function photosynthesis(
     p::T,
     ca::T,
     pft::U,
-    pftdict
+    BIOME4PFTS::AbstractPFTList,
     )::Tuple{T,T,T} where {T <: Real, U <: Int}
     # PFT specific parameters
-    t0 = pftdict[pft].additional_params.t0
-    tcurve = pftdict[pft].additional_params.tcurve
+    t0 = get_t0(BIOME4PFTS.pft_list[pft])
+    tcurve = get_tcurve(BIOME4PFTS.pft_list[pft])
 
     # Derived parameters
     leafcost = (age / T(12.0)) ^ T(0.25)
@@ -56,14 +56,14 @@ function photosynthesis(
     kc = KC25 * (KOQ10 ^ ((temp - T(25.0)) / T(10.0)))
     tao = TAO25 * (TAOQ10 ^ ((temp - T(25.0)) / T(10.0)))
 
-    s = DRESP3 * (T(24.0) / daytime)
+    s = DRESPC3 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
     kk = kc * (T(1.0) + (o2 / ko))
     z = CMASS * JTOE * dsun * fpar * TWIGLOSS * TUNE
 
     # Calculate optimal vm value based on a ratio of 0.95
-    pi = optratio * ca * p
-    c1 = tstress * QUEFF3 * ((pi - ts) / (pi + T(2.0) * ts))
+    pi = OPTRATIO * ca * p
+    c1 = tstress * QEFFC3 * ((pi - ts) / (pi + T(2.0) * ts))
     c2 = (pi - ts) / (pi + kk)
     numerator = s - TETA * s
     denominator = c2 - TETA * s
@@ -82,7 +82,7 @@ function photosynthesis(
     vmax = if z == T(0.0)
         T(0.0)
     else
-        (z / DRESP3) * (c1 / c2) * ((T(2.0) * TETA - T(1.0)) * s - (T(2.0) * TETA * s - c2) * oc)
+        (z / DRESPC3) * (c1 / c2) * ((T(2.0) * TETA - T(1.0)) * s - (T(2.0) * TETA * s - c2) * oc)
     end
 
     # Actual photosynthesis calculation
@@ -115,8 +115,8 @@ function photosynthesis(
         end
     end
 
-    adaygc = grossphot - (daytime / T(24.0)) * DRESP3 * vmax
-    leafresp = DRESP3 * vmax * leafcost
+    adaygc = grossphot - (daytime / T(24.0)) * DRESPC3 * vmax
+    leafresp = DRESPC3 * vmax * leafcost
     leafresp = max(leafresp, T(0.0))
 
     aday = if adaygc == T(0.0)

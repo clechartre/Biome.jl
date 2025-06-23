@@ -7,7 +7,7 @@ Linearly interpolate the mid-month values (mly) to daily values, modifying `dly`
 - `mly`: A vector of 12 T values representing mid-month values.
 - `dly`: A pre-allocated vector of 365 T values to store daily interpolated values.
 """
-function daily(mly::Vector{T}) where {T <: Real}
+function daily(mly::AbstractArray{T}) where {T <: Real}
     # Ensure mly has 12 elements
     if length(mly) != 12
         error("mly must be of length 12")

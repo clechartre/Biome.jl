@@ -39,7 +39,7 @@ include("../models/MechanisticModel/pfts.jl")
 # Objects 
 include("../models/MechanisticModel/constants.jl")
 using .Constants: T, P0, CP, T0, G, M, R0,
-    QEFFC3, DRESPC3, ABS1, TETA, SLO2, JTOE, OPTRATIO,
+    QEFFC3, DRESPC3, DRESPC4, ABS1, TETA, SLO2, JTOE, OPTRATIO,
     KO25, KC25, TAO25, CMASS, KCQ10, KOQ10, TAOQ10,
     TWIGLOSS, TUNE, LEAFRESP,
     MAXTEMP,
@@ -357,7 +357,7 @@ function process_cell(
 )where {T <:Real}
 
     # Convert local indices to global indices
-    x_global_index = strx + x
+    x_global_index = x
     y_global_index = y
 
     if biome_var[x_global_index, y_global_index] != -9999

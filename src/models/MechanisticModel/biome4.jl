@@ -10,6 +10,8 @@ include("./climdata.jl")
 export climdata
 include("./constraints.jl")
 export constraints
+include("./competition2.jl")
+export competition2
 include("./findnpp.jl")
 export findnpp
 include("./growth_subroutines/daily.jl")
@@ -135,7 +137,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     for pft in 1:numofpfts
         if get_presence(BIOME4PFTS.pft_list[pft]) == true
             if get_phenological_type(BIOME4PFTS.pft_list[pft]) >= 2
-                dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl, pftpar)
+                dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl, BIOME4PFTS)
             end
 
             optdata[pft+1, :], optlai[pft+1], optnpp[pft+1], realout = findnpp(
@@ -165,7 +167,6 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
         optlai,
         tmin,
         tprec,
-        pfts,
         optdata,
         realout,
         diagmode,
@@ -184,7 +185,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     for pft in 1:numofpfts
         output[300 + pft] = round(Int, optnpp[pft+1])
         output[300 + numofpfts + pft] = round(Int, optlai[pft+1] * 100.0)
-        if pfts[pft] != 0 && diagmode
+        if get_presence(BIOME4PFTS.pft_list[pft]) != 0 && diagmode
             formatted_output = @sprintf("%3d %5.2f %7.1f %6.1f", pft, optlai[pft+1], optnpp[pft+1], wetness[pft+1])
             formatted_output *= join(@sprintf(" %6.1f", optdata[pft+1, i] / 10.0) for i in 37:48)
             println(formatted_output)

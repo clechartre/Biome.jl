@@ -22,10 +22,11 @@ function fire(wet::AbstractVector{T},
     pft::U,
     lai::T,
     npp::T,
-    pftdict)::Tuple{T, T, T, T, T} where {T <: Real, U <: Int}
+    BIOME4PFTS::AbstractPFTList
+)::Tuple{T, T, T, T, T} where {T <: Real, U <: Int}
 
     # Threshold values per PFT
-    threshold = pftdict[pft].additional_params.threshold
+    threshold = get_threshold(BIOME4PFTS.pft_list[pft])
 
     # Initialize variables
     firedays = T(0.0)
