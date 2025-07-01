@@ -15,7 +15,7 @@ using NCDatasets
 using DataStructures: OrderedDict
 using JSON3
 using Plots
-using Rasters
+using DimensionalData
 gr()
 
 # First-party
@@ -80,15 +80,16 @@ function main(
     end
 
     # Open the first dataset just to get the dimensions for the output, then close again
-    temp_ds = Raster(tempfile, name = "temp", lazy = true) 
-    lon_full = lookup(temp_ds, X)
-    lat_full = lookup(temp_ds, Y)
+    temp_ds = NCDataset(tempfile, "a")
+    lon_full = temp_ds["lon"][:]  # Keep lon and lat as they are, cut according to bbox
+    lat_full = temp_ds["lat"][:]
     # Now hardcoded will be determined by whc
     xlen = length(lon_full)
     ylen = length(lat_full)
     llen = 2
     tlen = 12
-    dz = T[5, 10, 15, 30, 40, 100]
+    close(temp_ds)
+    dz = T[5, 10, 15, 30, 40, 100 ]
 
     if coordstring == "alldata"
         strx = 1
@@ -120,7 +121,7 @@ function main(
     outfile = "./output_$(year).nc"
     if isfile(outfile)
         println("File $outfile already exists. Resuming from last processed row.")
-        output_dataset = NCDataset(outfile, "a")  # Open in append mode FIXME change to rasters
+        output_dataset = NCDataset(outfile, "a")  # Open in append mode
 
         # Extract existing variables
         biome_var = output_dataset["biome"]      # Extract the biome variable
@@ -192,49 +193,72 @@ function main(
 
         println("Processing x indices from $x_chunk_start to $x_chunk_end")
 
-        # Define missing value
-        missval_sp = T(-9999.0)
+        # Initialize variables for this chunk
+        temp_chunk = zeros(T, (current_chunk_size, cnty, 12))
+        tmin_chunk = zeros(T, (current_chunk_size, cnty))
+        prec_chunk = zeros(T, (current_chunk_size, cnty, 12))
+        cldp_chunk = zeros(T, (current_chunk_size, cnty, 12))
+        ksat_chunk = zeros(T, (current_chunk_size, cnty, 2))
+        whc_chunk = zeros(T, (current_chunk_size, cnty, 2))
+        elv_chunk = zeros(T, (current_chunk_size, cnty))
 
         # Read longitude for this chunk
         lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
-        temp_chunk = Raster(tempfile, name = "temp", lazy = true)[x_chunk_start:x_chunk_end, stry:endy, :]
-        temp_chunk = coalesce.(temp_chunk, missval_sp)
+        Dataset(tempfile) do ds
+            temp_chunk = ds["temp"][x_chunk_start:x_chunk_end, stry:endy, :]
+            temp_chunk = uniform_fill_value(temp_chunk)
+        end
 
         # Compute tcm_chunk as the minimum of temp_chunk over months
-        tcm_chunk = minimum(temp_chunk, dims = Ti)
-        tcm_chunk = dropdims(tcm_chunk, dims=3)
-        # Replace missing values with missval_sp before computation
-        tcm_chunk = coalesce.(tcm_chunk, missval_sp)
+        tcm_chunk = minimum(temp_chunk, dims=3)
+
+        # Define missing value
+        missval_sp = T(-9999.0)
 
         # Ensure the calculation is applied element-wise, skipping -9999
         tmin_chunk = ifelse.(tcm_chunk .!= missval_sp, T(0.006) .* tcm_chunk.^2 .+ T(1.316) .* tcm_chunk .- T(21.9), missval_sp)
 
-        prec_chunk = Raster(precfile, name = "prec", lazy = true)[x_chunk_start:x_chunk_end, stry:endy, :]
-        prec_chunk = coalesce.(prec_chunk, missval_sp)
 
-        cldp_chunk = Raster(sunfile, name = "sun", lazy = true)[x_chunk_start:x_chunk_end, stry:endy, :]
-        cldp_chunk = coalesce.(cldp_chunk, missval_sp)
+        Dataset(precfile) do ds
+            prec_chunk = ds["prec"][x_chunk_start:x_chunk_end, stry:endy, :]
+            prec_chunk = uniform_fill_value(prec_chunk)
+        end
 
-        ksat_chunk = Raster(soilfile, name = "Ksat", lazy = true)[x_chunk_start:x_chunk_end, stry:endy, :]
-        ksat_chunk = coalesce.(ksat_chunk, missval_sp)
-        
-        whc_chunk = Raster(soilfile, name = "whc", lazy = true)[x_chunk_start:x_chunk_end, stry:endy, :]
-        whc_chunk = coalesce.(whc_chunk, missval_sp)
-        
+        Dataset(sunfile) do ds
+            cldp_chunk = ds["sun"][x_chunk_start:x_chunk_end, stry:endy, :]
+            cldp_chunk = uniform_fill_value(cldp_chunk)
+        end
+
+        Dataset(soilfile) do ds
+            ksat_chunk = ds["Ksat"][x_chunk_start:x_chunk_end, stry:endy, :]
+            ksat_chunk = uniform_fill_value(ksat_chunk)
+            whc_chunk = ds["whc"][x_chunk_start:x_chunk_end, stry:endy, :]
+            whc_chunk = uniform_fill_value(whc_chunk)
+            dz = ds["dz"][:] # is a list
+        end
+
+
         # Read elevation data if available
         if @isdefined(elvfile) && isfile(elvfile)
-            elv_chunk = Raster(elvfile, name = "elv", lazy = true)[x_chunk_start:x_chunk_end, stry:endy]
-            elv_chunk = coalesce.(elv_chunk, missval_sp)
+            Dataset(elvfile) do ds
+                elv_chunk = ds["elv"][x_chunk_start:x_chunk_end, stry:endy]
+                elv_chunk = uniform_fill_value(elv_chunk)
+            end
         else
             elv_chunk = zeros(T, (current_chunk_size, cnty))
         end
 
-        co2_dim = Dim{:CO2}([1])
-        # Create a CO2 raster with this new dimension
-        co2_raster = Raster([co2], (co2_dim,))
+        # Flip the data arrays along the latitude axis if necessary
+        # Adjust this section based on your data's orientation
+        temp_chunk = temp_chunk[:, :, :]
+        tmin_chunk = tmin_chunk[:, :]
+        prec_chunk = prec_chunk[:, :, :]
+        cldp_chunk = cldp_chunk[:, :, :]
+        ksat_chunk = ksat_chunk[:, :, :]
+        whc_chunk = whc_chunk[:, :, :]
+        elv_chunk = elv_chunk[:, :]
 
-        # Diagnostics, check whether the values make sense
         println("max temp: ", maximum(temp_chunk), ", min temp: ", minimum(temp_chunk))
         println("max tmin: ", maximum(tmin_chunk), ", min tmin: ", minimum(tmin_chunk))
         println("max prec: ", maximum(prec_chunk), ", min prec: ", minimum(prec_chunk))
@@ -242,22 +266,20 @@ function main(
         println("max ksat: ", maximum(ksat_chunk), ", min ksat: ", minimum(ksat_chunk))
         println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
 
-        # Put the environmental values together into a single raster stack that shares the X, Y and Ti dimensions 
-        # Ksat and WHC share the depth dimension called Z 
-        files = (temp = temp_chunk, 
-                 tmin = tmin_chunk, 
-                 prec = prec_chunk, 
-                 cldp = cldp_chunk, 
-                 ksat = ksat_chunk, 
-                 whc = whc_chunk,
-                 co2 = co2_raster)
-        env_variables = RasterStack(files)
-                
         # Process the data in this chunk
         process_chunk(
             current_chunk_size,
             cnty,
-            env_variables,
+            temp_chunk,
+            elv_chunk,
+            lat_chunk,
+            co2,
+            tmin_chunk,
+            prec_chunk,
+            cldp_chunk,
+            ksat_chunk,
+            whc_chunk,
+            dz, 
             lon_chunk,
             diagnosticmode,
             biome_var,
@@ -283,7 +305,9 @@ end
 
 function process_chunk(
     current_chunk_size, cnty,
-    env_variables, diag, biome_var, wdom_var, gdom_var, 
+    temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
+    prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
+    lon_chunk, diag, biome_var, wdom_var, gdom_var, 
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
     output_dataset, strx, model_instance::BiomeModel
 )where {T <: Real}
@@ -299,12 +323,14 @@ function process_chunk(
 
         for x in 1:current_chunk_size
 
-            if env_variables[:temp][x, y, :] == -9999.0 || (env_variables[:whc][x, y, :] == -9999.0)
+            if temp_chunk[x, y, 1] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
                 continue
             end
 
             process_cell(
-                x, y, strx, env_variables,
+                x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
+                prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
+                dz, lon_chunk,
                 diag, biome_var, wdom_var, gdom_var, npp_var, 
                 tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, model_instance
             )
@@ -323,40 +349,95 @@ In charge of slicing the inputs
 """
 function process_cell(
     x, y, strx,
-    env_variables, diag,
+    temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
+    prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
+    lon_chunk, diag,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
     gdd5_var, subpft_var, wetness_var,  model::BiomeModel
 )where {T <:Real}
 
-    if biome_var[x, y] != -9999
-        println("Cell ($x, $y) already processed, skipping.")
+    # Convert local indices to global indices
+    x_global_index = x
+    y_global_index = y
+
+    if biome_var[x_global_index, y_global_index] != -9999
+        println("Cell ($x_global_index, $y_global_index) already processed, skipping.")
         return
     end
 
-    # FIXME reorder this later after selecting only our pixel
-    if  env_variables[:temp][x, y, :] == -9999.0 ||  env_variables[:whc][x, y, :] == -9999.0
+    if temp_chunk[x, y, :] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
         return
     end    
 
-    if haskey(env_variables, :elv)
-        elv = env_variables[:elv][x, y]
-    else
-        elv = 0
-    end
+    elv = elv_chunk[x, y]
     p = P0 * (1.0 - (G * elv) / (CP * T0))^(CP * M / R0) #FIXME: should be in a modular function
 
-    # Add p to env_variables
-    p_dims = Dim{:p}([1])
-    p_raster = Raster([p], (p_dims,))
-    # Add it to your RasterStack
-    env_variables = merge(env_variables, (p = p_raster,))
+    # FIXME: this should be indexed with DimensionalData semantics 
+    # Transform all data into DimArray before stacking
 
-    # Get only the environmental variables for x and y to pass into the model
-    # Select X = x and Y = y
-    env_variables_pixel = env_variables[X = x, Y = y]
+    # FIXME edit: use Rasters.jl instead
 
+    # # Climate variables
+    # prec_da = DimArray(prec_chunk[x, y, :], (:time))
+    # temp_da = DimArray(temp_chunk[x, y, :], (:time))
+    # cldp_da = DimArray(cldp_chunk[x, y, :], (:time))
 
-    output = run(model, env_variables_pixel) # Run the model with the provided environmental variables
+    # # Soil Variables
+    # ksat1 = sum(ksat_chunk[x, y, 1:3] .* dz[1:3]) / sum(dz[1:3])
+    # ksat2 = sum(ksat_chunk[x, y, 4:6] .* dz[4:6]) / sum(dz[4:6])
+    # whc1 = sum(whc_chunk[x, y, 1:3])  # in mm/cm
+    # whc2 = sum(whc_chunk[x, y, 4:6])  # in mm/cm
+
+    # ksat1_da = DimArray([ksat1], (:ksat1))
+    # ksat2_da = DimArray([ksat2], (:ksat2))
+    # whc1_da = DimArray([whc1], (:whc1))
+    # whc2_da = DimArray([whc2], (:whc2))
+
+    # # Single Variables
+    # co2_da = DimArray([co2], (:co2))
+    # lon_da = DimArray([lon_chunk[x]], (:lon))
+    # lat_da = DimArray([lat_chunk[y]], (:lat))
+    # tmin_da = DimArray(tmin_chunk[x, y], (:tmin))
+    # p_da = DimArray([p], (:p))
+    # diag_da = DimArray([diag ? 1.0 : 0.0], (:diag))
+
+    # Stack all the DimArrays into a single DimStack
+    # input = DimStack(
+    #     lon=lon_da,
+    #     lat=lat_da,
+    #     co2=co2_da,
+    #     p=p_da,
+    #     tmin=tmin_da,
+    #     temp=temp_da,
+    #     prec=prec_da,
+    #     cldp=cldp_da,
+    #     ksat1=ksat1_da,
+    #     ksat2=ksat2_da,
+    #     whc1=whc1_da,
+    #     whc2=whc2_da,
+    #     diag=diag_da
+    # )
+    input = zeros(T, 50)
+
+    input[1] = lat_chunk[y]
+    input[2] = co2
+    input[3] = p
+    input[4] = tmin_chunk[x, y]
+    input[5:16] .= temp_chunk[x, y, :]
+    input[17:28] .= prec_chunk[x, y, :]
+    input[29:40] .= cldp_chunk[x, y, :]
+    input[41] = sum(ksat_chunk[x, y, 1:3] .* dz[1:3]) / sum(dz[1:3])
+    input[42] = sum(ksat_chunk[x, y, 4:6] .* dz[4:6]) / sum(dz[4:6])
+    input[43] = sum(whc_chunk[x, y, 1:3] .* dz[1:3])  # in mm/cm
+    input[44] = sum(whc_chunk[x, y, 4:6] .* dz[4:6])  # in mm/cm    
+    input[49] = lon_chunk[x]
+
+    input[46] = diag ? 1.0 : 0.0  # diagnostic mode
+
+    # Run the model 
+    # FIXME: will change with refactoring
+
+    output = run(model, input)
 
     # Write results to the output variables
     # use DimensionalData
