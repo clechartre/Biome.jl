@@ -25,8 +25,11 @@ relationships.
 
 module BIOME 
 
-include("AbstractTypes.jl")
+include("pfts.jl")
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractPFTList
+
+include("biomes.jl")
+export AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList
 
 include("models/MechanisticModel/biome4.jl")
 export BIOME4 

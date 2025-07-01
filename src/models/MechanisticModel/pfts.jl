@@ -1,3 +1,5 @@
+using Distributions
+
 mutable struct Characteristics{T <: Real, U <: Int} <: AbstractPFTCharacteristics
     name::String
     phenological_type::U
@@ -21,6 +23,7 @@ mutable struct Characteristics{T <: Real, U <: Int} <: AbstractPFTCharacteristic
     grass::Bool
     constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow), NTuple{6, Vector{Float64}}}
     present::Bool
+    dominance::T
 end
 
 # Define the PFT structures
@@ -77,7 +80,7 @@ struct ColdHerbaceous <: AbstractPFT
 end
 
 # Default constructors for the PFTs
-WoodyDesert() = WoodyDesert(Characteristics(
+WoodyDesert(clt, prec, temp) = WoodyDesert(Characteristics(
     "C3C4WoodyDesert",
     1,      # phenological_type (evergreen)
     0.1,    # max_min_canopy_conductance
@@ -99,10 +102,11 @@ WoodyDesert() = WoodyDesert(Characteristics(
     1.0,    # allocfact
     false,  # grass
     (tcm=[-99.9, -99.9], min=[-45.0, -99.9], gdd=[500.0, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true
+    true, # present
+    dominance_environment(clt, 9.2, 2.2) * dominance_environment(prec, 2.5, 2.8) * dominance_environment(temp, 23.9, 2.7)
 ))
 
-TropicalEvergreen() = TropicalEvergreen(Characteristics(
+TropicalEvergreen(clt, prec, temp) = TropicalEvergreen(Characteristics(
     "TropicalEvergreen",
     1,      # phenological_type (evergreen)
     0.5,    # max_min_canopy_conductance
@@ -124,10 +128,11 @@ TropicalEvergreen() = TropicalEvergreen(Characteristics(
     1.0,    # allocfact
     false,  # grass
     (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 50.2, 4.9) * dominance_environment(prec, 169.6, 41.9) * dominance_environment(temp, 24.7, 1.2)# dominance
 ))
 
-TropicalDroughtDeciduous() = TropicalDroughtDeciduous(Characteristics(
+TropicalDroughtDeciduous(clt, prec, temp) = TropicalDroughtDeciduous(Characteristics(
     "TropicalDroughtDeciduous",
     3,      # phenological_type (deciduous)
     0.5,    # max_min_canopy_conductance
@@ -149,10 +154,11 @@ TropicalDroughtDeciduous() = TropicalDroughtDeciduous(Characteristics(
     1.0,    # allocfact
     false,  # grass
     (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 44.0, 12.9) * dominance_environment(prec, 163.3, 85.1) * dominance_environment(temp, 23.7, 2.3) # dominance
 ))
 
-TemperateBroadleavedEvergreen() = TemperateBroadleavedEvergreen(Characteristics(
+TemperateBroadleavedEvergreen(clt, prec, temp) = TemperateBroadleavedEvergreen(Characteristics(
     "TemperateBroadleavedEvergreen",
     1,      # phenological_type (evergreen)
     0.2,    # max_min_canopy_conductance
@@ -174,10 +180,11 @@ TemperateBroadleavedEvergreen() = TemperateBroadleavedEvergreen(Characteristics(
     1.2,    # allocfact
     false,  # grass
     (tcm=[-99.9, -99.9], min=[-8.0, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 33.4, 13.3) * dominance_environment(prec, 106.3, 83.6) * dominance_environment(temp, 18.7, 3.2) # dominance
 ))
 
-TemperateDeciduous() = TemperateDeciduous(Characteristics(
+TemperateDeciduous(clt, prec, temp) = TemperateDeciduous(Characteristics(
     "TemperateDeciduous",
     2,      # phenological_type
     0.8,    # max_min_canopy_conductance
@@ -199,10 +206,11 @@ TemperateDeciduous() = TemperateDeciduous(Characteristics(
     1.2,    # allocfact
     false,  # grass
     (tcm=[-15.0, -99.9], min=[-99.9, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 40.9, 8.6) * dominance_environment(prec, 70.2, 41.9) * dominance_environment(temp, 8.4, 4.7)
 ))
 
-CoolConifer() = CoolConifer(Characteristics(
+CoolConifer(clt, prec, temp) = CoolConifer(Characteristics(
     "CoolConifer",
     1,      # phenological_type (evergreen)
     0.2,    # max_min_canopy_conductance
@@ -224,10 +232,11 @@ CoolConifer() = CoolConifer(Characteristics(
     1.2,    # allocfact
     false,  # grass
     (tcm=[-2.0, -99.9], min=[-99.9, 10.0], gdd=[900, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 28.1, 8.6) * dominance_environment(prec, 54.5, 49.9) * dominance_environment(temp, 13.9, 3.4)
     ))  
 
-BorealEvergreen() = BorealEvergreen(Characteristics(
+BorealEvergreen(clt, prec, temp) = BorealEvergreen(Characteristics(
     "BorealEvergreen",
     1,      # phenological_type (evergreen)
     0.5,    # max_min_canopy_conductance
@@ -249,10 +258,11 @@ BorealEvergreen() = BorealEvergreen(Characteristics(
     1.2,    # allocfact
     false,  # grass
     (tcm=[-32.5, -2.0], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),  # constraints
-    true # present
+    true, # present
+    dominance_environment(clt, 48.1, 7.6) * dominance_environment(prec, 58.7, 35.7) * dominance_environment(temp, -2.7, 4.0)
 ))
 
-BorealDeciduous() = BorealDeciduous(Characteristics(
+BorealDeciduous(clt, prec, temp) = BorealDeciduous(Characteristics(
     "BorealDeciduous",
     2,      # phenological_type (deciduous)
     0.8,    # max_min_canopy_conductance
@@ -274,10 +284,11 @@ BorealDeciduous() = BorealDeciduous(Characteristics(
     1.2,    # allocfact
     false,  # grass
     (tcm=[-99.9, 5.0], min=[-99.9, -10.0], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 47.4, 8.3) * dominance_environment(prec, 65.0, 83.6) * dominance_environment(temp, -6.4, 7.7)
 ))
 
-LichenForb() = LichenForb(Characteristics(
+LichenForb(clt, prec, temp) = LichenForb(Characteristics(
     "LichenForb",
     1,      # phenological_type (evergreen)
     0.8,    # max_min_canopy_conductance
@@ -299,10 +310,11 @@ LichenForb() = LichenForb(Characteristics(
     1.5,    # allocfact
     false,  # grass
     (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),  # constraints
-    true    # present
+    true,    # present
+    dominance_environment(clt, 43.9, 9.0) * dominance_environment(prec, 53.3, 52.1) * dominance_environment(temp, -18.4, 4.1)
     ))
 
-TundraShrubs() = TundraShrubs(Characteristics(
+TundraShrubs(clt, prec, temp) = TundraShrubs(Characteristics(
     "TundraShrubs",
     1,      # phenological_type (evergreen)
     0.8,    # max_min_canopy_conductance
@@ -324,10 +336,11 @@ TundraShrubs() = TundraShrubs(Characteristics(
     1.0,    # allocfact
     true,  # grass
     (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[15.0, -99.9]),  # constraints
-    true
+    true,
+    dominance_environment(clt, 51.4, 9.0) * dominance_environment(prec, 50.0, 43.3) * dominance_environment(temp, -10.8, 5.1)
 ))
 
-C3C4TemperateGrass() = C3C4TemperateGrass(Characteristics(
+C3C4TemperateGrass(clt, prec, temp) = C3C4TemperateGrass(Characteristics(
     "C3C4TemperateGrass",
     3,      # phenological_type
     0.8,    # max_min_canopy_conductance
@@ -349,10 +362,12 @@ C3C4TemperateGrass() = C3C4TemperateGrass(Characteristics(
     1.0,    # allocfact
     true,  # grass
     (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true
+    true,
+    dominance_environment(clt, 16.6, 6.9) * dominance_environment(prec, 12.2, 13.4) * dominance_environment(temp, 21.3, 6.2)
+
 ))
 
-C4TropicalGrass() = C4TropicalGrass(Characteristics(
+C4TropicalGrass(clt, prec, temp) = C4TropicalGrass(Characteristics(
     "C4TropicalGrass",
     3,      # phenological_type
     0.8,    # max_min_canopy_conductance
@@ -374,10 +389,11 @@ C4TropicalGrass() = C4TropicalGrass(Characteristics(
     1.0,    # allocfact
     true,  # grass
     (tcm=[-99.9, -99.9], min=[-3.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true   # present
+    true,   # present
+    dominance_environment(clt, 9.4, 1.4) * dominance_environment(prec, 1.7, 2.1) * dominance_environment(temp, 23.2, 2.2)
 ))
 
-ColdHerbaceous() = ColdHerbaceous(Characteristics(
+ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
     "ColdHerbaceous",
     2,      # phenological_type
     0.8,    # max_min_canopy_conductance
@@ -399,7 +415,8 @@ ColdHerbaceous() = ColdHerbaceous(Characteristics(
     1.0,    # allocfact
     true,  # grass
     (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),  # constraints
-    true   # present
+    true,   # present
+    dominance_environment(clt, 10.4, 2.5) * dominance_environment(prec, 2.0, 1.6) * dominance_environment(temp, 23.5, 2.3)
 ))
 
 
@@ -408,19 +425,19 @@ struct BiomeClassification <: AbstractPFTList
 end
 
 # TOFIX: not sure this is needed, but could be used to define functions that are uniquely defined for specific biome classifications
-BiomeClassification() = BiomeClassification([WoodyDesert(),
-                                            TropicalEvergreen(),
-                                            TropicalDroughtDeciduous(),
-                                            TemperateBroadleavedEvergreen(),
-                                            TemperateDeciduous(),
-                                            CoolConifer(),
-                                            BorealEvergreen(),
-                                            BorealDeciduous(),
-                                            LichenForb(),
-                                            TundraShrubs(),
-                                            C3C4TemperateGrass(),
-                                            C4TropicalGrass(),
-                                            ColdHerbaceous()]) # place all other Biome4 PFTs here
+BiomeClassification(clt, prec, temp) = BiomeClassification([WoodyDesert(clt, prec, temp),
+                                            TropicalEvergreen(clt, prec, temp),
+                                            TropicalDroughtDeciduous(clt, prec, temp),
+                                            TemperateBroadleavedEvergreen(clt, prec, temp),
+                                            TemperateDeciduous(clt, prec, temp),
+                                            CoolConifer(clt, prec, temp),
+                                            BorealEvergreen(clt, prec, temp),
+                                            BorealDeciduous(clt, prec, temp),
+                                            LichenForb(clt, prec, temp),
+                                            TundraShrubs(clt, prec, temp),
+                                            C3C4TemperateGrass(clt, prec, temp),
+                                            C4TropicalGrass(clt, prec, temp),
+                                            ColdHerbaceous(clt, prec, temp)]) # place all other Biome4 PFTs here
 
 # Define the functions to get all PFT characteristics easily
 get_name(pft::AbstractPFT) = pft.characteristics.name
@@ -446,6 +463,21 @@ get_grass(pft::AbstractPFT) = pft.characteristics.grass
 get_constraints(pft::AbstractPFT) = pft.characteristics.constraints
 edit_presence(pft::AbstractPFT, present::Bool) = pft.characteristics.present = present
 get_presence(pft::AbstractPFT) = pft.characteristics.present
+get_dominance(pft::AbstractPFT) = pft.characteristics.dominance
+
+function dominance_environment(clt, mean, std)
+    # Draw the normal distribution around the mean and std 
+    distribution = Normal(mean, std)
+
+    # Pick the distribution at the clt value
+    value = pdf(distribution, clt)
+
+    # Normalize the value to be between 0 and 1, 1 is the mean and it decreases according to the standard deviation
+    normalized_value = value / pdf(distribution, mean)
+
+    return normalized_value
+
+end
 
 # export Characteristics, PFT, BiomeClassification,  get_name, get_phenological_type, get_max_min_canopy_conductance, get_Emax,
 # get_sw_drop, get_sw_appear, get_root_fraction_top_soil, get_leaf_longevity,
