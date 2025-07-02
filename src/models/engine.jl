@@ -13,7 +13,6 @@ using ArgParse
 using ComponentArrays
 using NCDatasets
 using DataStructures: OrderedDict
-using JSON3
 using Plots
 using DimensionalData
 gr()
@@ -21,6 +20,9 @@ gr()
 # First-party
 include("../pfts.jl")
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT
+
+include("../biomes.jl")
+export AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList
 
 # Models
 include("../abstractmodel.jl")
@@ -54,7 +56,6 @@ using .Constants: T, P0, CP, T0, G, M, R0,
 function main(
     coordstring::String,
     co2::T,
-    diagnosticmode::Bool,
     tempfile::String,
     precfile::String,
     sunfile::String,
@@ -143,7 +144,7 @@ function main(
         defDim(output_dataset, "lat", size(lat, 1))
         defDim(output_dataset, "time", llen)
         defDim(output_dataset, "months", tlen)
-        defDim(output_dataset, "pft", 13)
+        defDim(output_dataset, "pft", 15)
 
         # Define variables with appropriate types and dimensions
         lon_var = defVar(output_dataset, "lon", T, ("lon",), attrib = OrderedDict("units" => "degrees_east"))
@@ -169,7 +170,7 @@ function main(
         biome_var[:, :] = fill(T(-9999.0), cntx, cnty)
         wdom_var[:, :] = fill(T(-9999.0), cntx, cnty)
         gdom_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        npp_var[:, :, :] = fill(T(-9999.0), cntx, cnty, 13)
+        npp_var[:, :, :] = fill(T(-9999.0), cntx, cnty, 15)
         tcm_var[:, :] = fill(T(-9999.0), cntx, cnty)
         gdd0_var[:, :] = fill(T(-9999.0), cntx, cnty)
         gdd5_var[:, :] = fill(T(-9999.0), cntx, cnty)
@@ -281,7 +282,6 @@ function main(
             whc_chunk,
             dz, 
             lon_chunk,
-            diagnosticmode,
             biome_var,
             wdom_var,
             gdom_var,
@@ -307,7 +307,7 @@ function process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, diag, biome_var, wdom_var, gdom_var, 
+    lon_chunk, biome_var, wdom_var, gdom_var, 
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
     output_dataset, strx, model_instance::BiomeModel
 )where {T <: Real}
@@ -330,8 +330,7 @@ function process_chunk(
             process_cell(
                 x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk,
-                diag, biome_var, wdom_var, gdom_var, npp_var, 
+                dz, lon_chunk, biome_var, wdom_var, gdom_var, npp_var, 
                 tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, model_instance
             )
         end
@@ -351,7 +350,7 @@ function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, diag,
+    lon_chunk,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
     gdd5_var, subpft_var, wetness_var,  model::BiomeModel
 )where {T <:Real}
@@ -432,8 +431,6 @@ function process_cell(
     input[44] = sum(whc_chunk[x, y, 4:6] .* dz[4:6])  # in mm/cm    
     input[49] = lon_chunk[x]
 
-    input[46] = diag ? 1.0 : 0.0  # diagnostic mode
-
     # Run the model 
     # FIXME: will change with refactoring
 
@@ -443,14 +440,8 @@ function process_cell(
     # use DimensionalData
 
     biome_var[x_global_index, y_global_index] = output[1] # bad idea to have hardcoded index; abstract if to work with any pft property
-    wdom_var[x_global_index, y_global_index] = output[12]
-    gdom_var[x_global_index, y_global_index] = output[13]
-    npp_var[x_global_index, y_global_index, :] = output[60:72]
-    tcm_var[x_global_index, y_global_index] = output[452]
-    gdd0_var[x_global_index, y_global_index] = output[453]
-    gdd5_var[x_global_index, y_global_index] = output[454]
-    subpft_var[x_global_index, y_global_index] = output[455]
-    wetness_var[x_global_index, y_global_index] = output[10]
+    wdom_var[x_global_index, y_global_index] = output[2]
+    npp_var[x_global_index, y_global_index, :] = output[3:17]  # Assuming 14 PFTs
 
 end
 
@@ -526,11 +517,6 @@ function parse_command_line()
         arg_type = T
         default = 400.0
 
-        "--diagnosticmode"
-        help = "Diagnostic mode"
-        arg_type = Bool
-        default = true
-
         "--tempfile"
         help = "Path to the temperature file"
         arg_type = String
@@ -567,7 +553,6 @@ function main()
     Biome4Driver.main(
         args["coordstring"],
         args["co2"],
-        args["diagnosticmode"],
         args["tempfile"],
         args["precfile"],
         args["sunfile"],

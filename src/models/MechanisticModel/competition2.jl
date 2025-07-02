@@ -11,59 +11,52 @@ Classic BIOME4 Competition function.
 """
 
 function competition2(
-    optnpp::AbstractArray{T},
-    optlai::AbstractArray{T},
     tmin::T,
     tprec::T,
-    optdata,
-    output,      
-    diagmode::Bool,
     numofpfts::U,
     gdd0::T,
     gdd5::T,
     tcm::T,
     BIOME4PFTS::AbstractPFTList,  
-)::Tuple{T, AbstractArray{Union{T, U}}} where {T <: Real, U <: Int}
+)::Tuple{T, AbstractPFT, T} where {T <: Real, U <: Int}
 
     # Initialize all of the variables that index an array
-    optpft = U(0)
-    subpft = U(0)
-    grasspft = U(0)
-    pftmaxnpp = U(0)
-    pftmaxlai = U(0)
-    dom = U(0)
-    wdom = U(0)
-
+    optpft   = Default()
+    subpft   = Default()
+    grasspft = Default()
+    pftmaxnpp = Default()
+    pftmaxlai = Default()
+    dom      = Default()
+    wdom     = Default()
+    
     maxnpp = T(0.0)
     maxlai = T(0.0)
     grassnpp = T(0.0)
 
-    BIOME4PFTS = initialize_presence(numofpfts, optnpp, BIOME4PFTS)
-    grass = [get_grass(BIOME4PFTS.pft_list[pft]) for pft in 1:numofpfts]
+    BIOME4PFTS = initialize_presence(numofpfts, BIOME4PFTS)
+    grass = [get_characteristic(BIOME4PFTS.pft_list[pft], :grass) for pft in 1:numofpfts]
     grass = vcat(grass, false)
 
     # Choose the dominant woody PFT on the basis of NPP - for all PFTs but LichenForbs
-    for pft in 1:length(BIOME4PFTS.pft_list) # FIXME just get the number of PFTs?
-
-        if get_name(BIOME4PFTS.pft_list[pft])== "LichenForb"
+    for pft in BIOME4PFTS.pft_list 
+        if get_characteristic(pft, :name)== "LichenForb"
             continue  # Skip iteration for LichenForbs
         end
-
-        if grass[pft]
-            if optnpp[pft+1] > grassnpp
-                grassnpp = optnpp[pft+1]
+        if get_characteristic(pft, :grass)
+            if get_characteristic(pft, :npp) > grassnpp
+                grassnpp = get_characteristic(pft, :npp)
                 grasspft = pft
             end
         else
-            if optnpp[pft+1] > maxnpp
-                maxnpp = optnpp[pft+1]
+            if get_characteristic(pft, :npp) > maxnpp
+                maxnpp = get_characteristic(pft, :npp)
                 pftmaxnpp = pft
             end
-            if optlai[pft+1] > maxlai
-                maxlai = optlai[pft+1]
+            if get_characteristic(pft, :lai) > maxlai
+                maxlai = get_characteristic(pft, :lai)
                 pftmaxlai = pft
-            elseif optlai[pft+1] == maxlai
-                maxlai = optlai[pftmaxnpp+1]
+            elseif get_characteristic(pft, :lai) == maxlai
+                maxlai = pftmaxnpp !== Default ? get_characteristic(pftmaxnpp, :lai) : T(0)
                 pftmaxlai = pftmaxnpp
             end
         end
@@ -71,50 +64,30 @@ function competition2(
 
     # Find average annual soil moisture value for all PFTs
     # FIXME we need to get an Indexed DimensionalData structure for optdata
-    wetlayer, drymonth, wettest, driest, wetness = calculate_soil_moisture(numofpfts, optdata)
+    wetness = calculate_soil_moisture(numofpfts, BIOME4PFTS)
 
     # Determine the subdominant woody PFT
-    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, optnpp, BIOME4PFTS)
+    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, BIOME4PFTS)
 
 
     # Determine the optimal PFT based on various conditions
-    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
+    # FIXME, make sure that optpft is of type AbstractPFT - also base this on the BIOME4PFTS.pft_list[pft].dominance
+    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft_Kaplan(
         optpft,
         wdom,
         subpft,
-        optnpp,
-        optlai,
         grasspft,
         tmin,
         gdd5,
         tcm,
         tprec,
         wetness,
-        optdata,
         BIOME4PFTS
     )
 
-    # Output some diagnostics if diagmode is on
-    if diagmode
-        output_diagnostics(
-            numofpfts,
-            drymonth,
-            driest,
-            wetness,
-            optdata,
-            wdom,
-            optnpp,
-            optlai,
-            grasspft,
-            grassnpp,
-            subpft,
-            BIOME4PFTS
-        )
-    end
-
     # Format values for output
-    dom, npp, lai, grasslai, optpft = format_values_for_output(
-        optpft, wdom, grasspft, optnpp, optlai, grassnpp, optdata, woodnpp, woodylai, grasslai
+    dom, npp, lai, grasslai, optpft = calculate_vegetation_dominance(
+        optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, BIOME4PFTS
     )
 
     # Call the newassignbiome function
@@ -134,47 +107,21 @@ function competition2(
         BIOME4PFTS
     )
 
-
-    output = assign_output_values(
-        output,
-        dom,
-        lai,
-        npp,
-        optlai,
-        optnpp,
-        grasspft,
-        wetness,
-        wetlayer,
-        optdata,
-        optpft,
-        tprec,
-        BIOME4PFTS,
-        wdom,
-        tcm,
-        gdd0,
-        gdd5,
-        subpft,
-        nppdif
-    )
-
-    return biome, output
+    return biome, optpft, npp
 end
 
-function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T}, BIOME4PFTS::AbstractPFTList)::AbstractPFTList where T <: Real
+function initialize_presence(numofpfts::U, BIOME4PFTS::AbstractPFTList)::AbstractPFTList where {T <: Real, U <: Int}
     # Initialize present dynamically based on optnpp
     for pft in 1:numofpfts
-        if optnpp[pft+1] > 0.0
-            edit_presence(BIOME4PFTS.pft_list[pft], true)
-        else
-            edit_presence(BIOME4PFTS.pft_list[pft], true)
+        if get_characteristic(BIOME4PFTS.pft_list[pft], :npp) > 0.0
+            set_characteristic(BIOME4PFTS.pft_list[pft], :present, true)
         end
     end
 
     # Find ColdHerbaceous PFT by type checking
     cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
-    
     if cold_herb_index !== nothing
-        edit_presence(BIOME4PFTS.pft_list[cold_herb_index], true) # Special case
+        set_characteristic(BIOME4PFTS.pft_list[cold_herb_index], :present, true) # Special case
     else
         @warn "ColdHerbaceous not found in pft_list"
     end
@@ -183,170 +130,266 @@ function initialize_presence(numofpfts::Int, optnpp::AbstractVector{T}, BIOME4PF
 end
 
 
+"""
+Compute annual mean soil wetness for each PFT.
+Returns a vector `wetness` of length `numofpfts+1` where
+`wetness[i+1]` is the mean of the 12 monthly wetness values
+for PFT `i`.
+"""
 function calculate_soil_moisture(
     numofpfts::U,
-    optdata::AbstractArray{T}
-)::Tuple{AbstractArray{T}, Vector{U}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}} where {T <: Real, U <: Int}
-    wetlayer = zeros(T, numofpfts+1, 2)
-    drymonth = zeros(U, 15)
-    wettest = fill(T(-1.0), numofpfts+1)
-    driest = fill(T(101.0), numofpfts+1)
-    wetness = zeros(T, numofpfts+1)
+    BIOME4PFTS::AbstractPFTList
+) where {T<:Real, U<:Int}
+    # pre‐allocate the output
+    wetness = zeros(Float64, numofpfts+1)
 
-    for pft in 1:numofpfts
-        wetness[pft+1] = T(0.0)
-        wetlayer[pft+1, 1] = T(0.0)
-        wetlayer[pft+1, 2] = T(0.0)
-        drymonth[pft+1] = U(0)
-        wettest[pft+1] = T(-1.0)
-        driest[pft+1] = T(101.0)
+    # for each PFT, average its 12 monthly mwet values
+    for i in 1:numofpfts
+        total = sum(get_characteristic(BIOME4PFTS.pft_list[i], :mwet))
+        wetness[i+1] = total / 12.0
+    end
+    return wetness
+end
 
-        for m in 1:12
-            mwet = optdata[pft+1, m + 412]
-            wetness[pft+1] += (mwet / T(12.0))
-            wetlayer[pft+1, 1] += optdata[pft+1, m + 412] / T(12.0)
-            wetlayer[pft+1, 2] += optdata[pft+1, m + 424] / T(12.0)
-            if mwet > wettest[pft+1]
-                wettest[pft+1] = mwet
+
+function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4PFTS::AbstractPFTList)
+    optpft = pftmaxnpp === nothing ? Default() : pftmaxnpp
+    wdom   = optpft
+    subnpp = 0.0
+    subpft = Default()
+
+    for pft in BIOME4PFTS.pft_list
+        # skip the max‐NPP one by identity
+        if pft !== pftmaxnpp && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
+            let npp = get_characteristic(pft,:npp)
+                if npp > subnpp
+                    subnpp = npp
+                    subpft  = pft
+                end
             end
-            if mwet < driest[pft+1]
-                drymonth[pft+1] = U(m)
-                driest[pft+1] = mwet
+         end
+     end
+
+     return optpft, wdom, subpft, subnpp
+ end
+
+# function determine_optimal_pft(BIOME4PFTS::AbstractPFTList)
+#     # Take all that are present 
+
+#     # Multiply the NPP by the dominance factor 
+
+#     # Whichever PFT has the most winds up being the optimal PFT optpft, second highest is subpft
+
+#     # Wdom is the non-grass the has the highest value 
+
+#     # gdom is the grass that has the highest value
+
+#     # Woodnpp is the NPP of the woody PFT and woodlai is the LAI of the woody PFT
+
+#     # Nppdif is the difference between woodnpp and grassnpp
+
+
+#     return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
+
+# end
+
+function determine_optimal_pft(optpft::AbstractPFT, subpft::AbstractPFT, BIOME4PFTS::AbstractPFTList)
+    # Initialize variables
+    wdom = Default()
+    gdom = Default()
+    woodnpp = 0.0
+    woodylai = 0.0
+    grasslai = 0.0
+    greendays = 0
+    nppdif = 0.0
+    
+    # Calculate weighted NPP (NPP * dominance) for all present PFTs
+    weighted_npps = Float64[]
+    pfts = AbstractPFT[]
+    
+    for pft in BIOME4PFTS.pft_list
+        if get_characteristic(pft, :present)
+            weighted_npp = get_characteristic(pft, :npp) * get_characteristic(pft, :dominance)
+            push!(weighted_npps, weighted_npp)
+            push!(pfts, pft)
+        end
+    end
+    
+    # Find PFT with highest weighted NPP (optpft)
+    if !isempty(weighted_npps)
+        max_idx = argmax(weighted_npps)
+        optpft = pfts[max_idx]
+        
+        # Find second highest (subpft)
+        if length(weighted_npps) > 1
+            # Remove the max value and find second max
+            remaining_npps = copy(weighted_npps)
+            remaining_pfts = copy(pfts)
+            deleteat!(remaining_npps, max_idx)
+            deleteat!(remaining_pfts, max_idx)
+            
+            if !isempty(remaining_npps)
+                second_max_idx = argmax(remaining_npps)
+                subpft = remaining_pfts[second_max_idx]
             end
         end
     end
-
-    return wetlayer, drymonth, wettest, driest, wetness
-end
-
-function determine_subdominant_pft(pftmaxnpp::U, optnpp::AbstractArray{T}, BIOME4PFTS::AbstractPFTList)::Tuple{U, U, U, T} where {T <: Real, U <: Int}
-    optpft = pftmaxnpp
-    wdom = optpft
-
-    subnpp = T(0.0)
-    subpft = U(0)
-
-    for pft in 1:length(BIOME4PFTS.pft_list)
-        if pft != wdom && (get_grass(BIOME4PFTS.pft_list[pft]) == false && get_c4(BIOME4PFTS.pft_list[pft]) == false)
-            if optnpp[pft+1] > subnpp
-                subnpp = optnpp[pft+1]
-                subpft = pft # FIXME we probable need to save names instead of just random indices?
+    
+    # Find dominant woody PFT (wdom) - highest weighted NPP among non-grass PFTs
+    max_woody_weighted_npp = 0.0
+    for pft in BIOME4PFTS.pft_list
+        if get_characteristic(pft, :present) && !get_characteristic(pft, :grass)
+            weighted_npp = get_characteristic(pft, :npp) * get_characteristic(pft, :dominance)
+            if weighted_npp > max_woody_weighted_npp
+                max_woody_weighted_npp = weighted_npp
+                wdom = pft
             end
         end
     end
-
-    return optpft, wdom, subpft, subnpp
+    
+    # Find dominant grass PFT (gdom) - highest weighted NPP among grass PFTs
+    max_grass_weighted_npp = 0.0
+    for pft in BIOME4PFTS.pft_list
+        if get_characteristic(pft, :present) && get_characteristic(pft, :grass)
+            weighted_npp = get_characteristic(pft, :npp) * get_characteristic(pft, :dominance)
+            if weighted_npp > max_grass_weighted_npp
+                max_grass_weighted_npp = weighted_npp
+                gdom = pft
+            end
+        end
+    end
+    
+    # Get woody PFT values
+    if wdom !== Default
+        woodnpp = get_characteristic(wdom, :npp)
+        woodylai = get_characteristic(wdom, :lai)
+        greendays = get_characteristic(wdom, :greendays)
+    end
+    
+    # Get grass LAI
+    if gdom !== Default
+        grasslai = get_characteristic(gdom, :lai)
+        grassnpp = get_characteristic(gdom, :npp)
+        nppdif = woodnpp - grassnpp
+    end
+    
+    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
 end
 
-# NOTE we are changing this but we'll be using the Dominance-based function anyways too.
-# Keep this one still for pure BIOME4
-function determine_optimal_pft(
-    optpft::U,
-    wdom::U,
-    subpft::U,
-    optnpp::AbstractArray{T},
-    optlai::AbstractArray{T},
-    grasspft::U,
+
+function determine_optimal_pft_Kaplan(
+    optpft::Union{AbstractPFT},
+    wdom::Union{AbstractPFT},
+    subpft::Union{AbstractPFT},
+    grasspft::Union{AbstractPFT},
     tmin::T,
     gdd5::T,
     tcm::T,
     tprec::T,
     wetness::AbstractArray{T},
-    optdata::AbstractArray{},
     BIOME4PFTS::AbstractPFTList
-)::Tuple{U, T, T, U, T, T, U, U} where {T <: Real, U <: Int}
+) where {T <: Real, U <: Int} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
+    
     flop = false
 
+    # Helper function to find PFT by type
+    function find_pft_by_type(pft_type::Type{<:AbstractPFT})
+        return findfirst(pft -> isa(pft, pft_type), BIOME4PFTS.pft_list)
+    end
+
+    # Helper function to get PFT by type
+    function get_pft_by_type(pft_type::Type{<:AbstractPFT})
+        idx = find_pft_by_type(pft_type)
+        return idx !== nothing ? BIOME4PFTS.pft_list[idx] : nothing
+    end
+
     # Initialize variables
-    woodylai = optlai[wdom+1]
-    woodnpp = optnpp[wdom+1]
-    grasslai = optlai[grasspft+1]
-    firedays = optdata[wdom+1, 199]
-    subfiredays = optdata[subpft+1, 199]
-    greendays = optdata[wdom+1, 200]
-    nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
+    woodylai = isa(wdom, Default) ? T(0) : get_characteristic(wdom, :lai)
+    woodnpp  = isa(wdom, Default) ? T(0) : get_characteristic(wdom, :npp)
+    grasslai = isa(grasspft, Default) ? T(0) : get_characteristic(grasspft, :lai)
+    greendays = isa(wdom, Default) ? 0 : get_characteristic(wdom, :greendays)
+    nppdif    = woodnpp - (isa(grasspft, Default) ? T(0) : get_characteristic(grasspft, :npp))
     
     while true
         # Update variables dynamically if wdom changes
-        woodylai = optlai[wdom+1]
-        woodnpp = optnpp[wdom+1]
-        grasslai = optlai[grasspft+1]
+        woodylai = wdom !== Default ? get_characteristic(wdom, :lai) : T(0.0)
+        woodnpp = wdom !== Default ? get_characteristic(wdom, :npp) : T(0.0)
+        grasslai = grasspft !== Default ? get_characteristic(grasspft, :lai) : T(0.0)
 
-        if wdom != 0
-            firedays = optdata[wdom+1, 199]
-            subfiredays = optdata[subpft+1, 199]
-            greendays = optdata[wdom+1, 200]
+        if wdom !== Default
+            firedays = get_characteristic(wdom, :firedays)
+            subfiredays = subpft !== Default ? get_characteristic(subpft, :firedays) : 0
+            greendays = get_characteristic(wdom, :greendays)
         else
             firedays = 0
             subfiredays = 0
             greendays = 0
         end
 
-        nppdif = optnpp[wdom+1] - optnpp[grasspft+1]
+        nppdif = woodnpp - (grasspft !== Default ? get_characteristic(grasspft, :npp) : T(0.0))
 
-        # Mimicking Fortran conditions and goto-like behavior
-        # if (wdom == 3 || wdom == 5) && tmin > T(0.0)
-        if wdom != 0 && (get_name(BIOME4PFTS.pft_list[wdom])  == "TemperateBroadleavedEvergreen" || get_name(BIOME4PFTS.pft_list[wdom]) == "CoolConifer") && tmin > T(0.0)
+        # Temperate broadleaved evergreen or cool conifer with warm conditions
+        if wdom !== Default && (isa(wdom, TemperateBroadleavedEvergreen) || isa(wdom, CoolConifer)) && tmin > T(0.0)
             if gdd5 > T(5000.0)
-                wdom = findfirst(pft -> isa(pft, TropicalDroughtDeciduous), BIOME4PFTS.pft_list)
+                wdom = get_pft_by_type(TropicalDroughtDeciduous)
                 continue
             end
         end
 
-        # if wdom == 1
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TropicalEvergreen"
-            if optnpp[wdom+1] < T(2000.0)
-                wdom = findfirst(pft -> isa(pft, TropicalDroughtDeciduous), BIOME4PFTS.pft_list)
-                subpft = findfirst(pft -> isa(pft, TropicalEvergreen), BIOME4PFTS.pft_list)
+        # Tropical evergreen
+        if wdom !== Default && isa(wdom, TropicalEvergreen)
+            if get_characteristic(wdom, :npp) < T(2000.0)
+                wdom = get_pft_by_type(TropicalDroughtDeciduous)
+                subpft = get_pft_by_type(TropicalEvergreen)
                 continue
             end
         end
 
-        # if wdom == 2
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TropicalDroughtDeciduous"
+        # Tropical drought deciduous
+        if wdom !== Default && isa(wdom, TropicalDroughtDeciduous)
             if woodylai < T(2.0)
                 optpft = grasspft
-            elseif grasspft != 0 && get_name(BIOME4PFTS.pft_list[grasspft]) == "C4TropicalGrass" && woodylai < T(3.6)
-                optpft = 14 # FIXME should we change this to numofpfts + 1?
-            elseif greendays < 270 && tcm > T(21.0)&& tprec < T(1700.0)
-                optpft = 14
+            elseif grasspft !== Default && isa(grasspft, C4TropicalGrass) && woodylai < T(3.6)
+                optpft = Default # Mixed woody/grass (equivalent to index 14)
+            elseif greendays < (270) && tcm > T(21.0) && tprec < T(1700.0)
+                optpft = Default # Mixed woody/grass
             else
                 optpft = wdom
             end
         end
 
-        # if wdom == 3
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TemperateBroadleavedEvergreen"
-            if optnpp[wdom+1] < T(140.0)
+        # Temperate broadleaved evergreen
+        if wdom !== Default && isa(wdom, TemperateBroadleavedEvergreen)
+            if get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.0)
                 optpft = grasspft
             elseif woodylai < T(2.0)
-                optpft = 14
+                optpft = Default # Mixed woody/grass
             else
                 optpft = wdom
             end
         end
 
-        # if wdom == 4
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "TemperateDeciduous"
+        # Temperate deciduous
+        if wdom !== Default && isa(wdom, TemperateDeciduous)
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
-                if !flop && subpft != 0
+                if !flop && subpft !== Default
                     wdom = subpft
-                    subpft = findfirst(pft -> isa(pft, TemperateDeciduous), BIOME4PFTS.pft_list)
+                    subpft = get_pft_by_type(TemperateDeciduous)
                     flop = true
                     continue
                 else
                     optpft = grasspft
                 end
-            elseif woodylai < T(3.0) || firedays > U(180)
+            elseif woodylai < T(3.0) || firedays > 180
                 if nppdif < 0.0
-                    optpft = 14
-                elseif !flop && subpft != 0
+                    optpft = Default # Mixed woody/grass
+                elseif !flop && subpft !== Default
                     wdom = subpft
-                    subpft = findfirst(pft -> isa(pft, TemperateDeciduous), BIOME4PFTS.pft_list)
+                    subpft = get_pft_by_type(TemperateDeciduous)
                     flop = true
                     continue
                 end
@@ -355,30 +398,30 @@ function determine_optimal_pft(
             end
         end
 
-        # if wdom == 5
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "CoolConifer"
-            tbe_index = findfirst(pft -> isa(pft, TemperateBroadleavedEvergreen), BIOME4PFTS.pft_list)
-            if get_presence(BIOME4PFTS.pft_list[tbe_index]) == true
-                wdom = findfirst(pft -> isa(pft, TemperateBroadleavedEvergreen), BIOME4PFTS.pft_list)
-                subpft = findfirst(pft -> isa(pft, CoolConifer), BIOME4PFTS.pft_list)
+        # Cool conifer
+        if wdom !== Default && isa(wdom, CoolConifer)
+            temperate_broadleaved = get_pft_by_type(TemperateBroadleavedEvergreen)
+            if temperate_broadleaved !== Default && get_characteristic(temperate_broadleaved, :present)
+                wdom = temperate_broadleaved
+                subpft = get_pft_by_type(CoolConifer)
                 continue
-            elseif optnpp[wdom+1] < T(140.0)
+            elseif get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.2)
-                optpft = 14
+                optpft = Default # Mixed woody/grass
             else
                 optpft = wdom
             end
         end
 
-        # if wdom == 6
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "BorealEvergreen"
-            if optnpp[wdom+1] < T(140.0)
+        # Boreal evergreen
+        if wdom !== Default && isa(wdom, BorealEvergreen)
+            if get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
-            elseif firedays > U(90)
-                if !flop && subpft != 0
+            elseif firedays > 90
+                if !flop && subpft !== Default
                     wdom = subpft
-                    subpft = findfirst(pft -> isa(pft, BorealEvergreen), BIOME4PFTS.pft_list)
+                    subpft = get_pft_by_type(BorealEvergreen)
                     flop = true
                     continue
                 else
@@ -387,54 +430,67 @@ function determine_optimal_pft(
             end
         end
 
-        # if wdom == 7
-        if wdom != 0 && get_name(BIOME4PFTS.pft_list[wdom]) == "BorealDeciduous"
-            if optnpp[wdom+1] < T(120.0)
+        # Boreal deciduous
+        if wdom !== Default && isa(wdom, BorealDeciduous)
+            if get_characteristic(wdom, :npp) < T(120.0)
                 optpft = grasspft
-            elseif wetness[wdom+1] < T(30.0) && nppdif < T(0.0)
+            elseif wetness[findfirst(pft -> pft === wdom, BIOME4PFTS.pft_list)] < T(30.0) && nppdif < T(0.0)
                 optpft = grasspft
             else
                 optpft = wdom
             end
         end
 
-        if wdom == 0
-            index = findfirst(pft -> isa(pft, LichenForb), BIOME4PFTS.pft_list)
-            if grasspft != 0
+        # No woody PFT
+        if wdom === Default
+            lichen_forb = get_pft_by_type(LichenForb)
+            if grasspft !== Default
                 optpft = grasspft
-            elseif optnpp[index+1] != 0.0
-                optpft = findfirst(pft -> isa(pft, LichenForb), BIOME4PFTS.pft_list)
+            elseif lichen_forb !== Default && get_characteristic(lichen_forb, :npp) != 0.0
+                optpft = lichen_forb
             else
-                optpft = 0
+                optpft = Default
             end
         end
 
-        woody_desert_index = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
-        if optpft == 0 && woody_desert_index !== nothing && get_presence(BIOME4PFTS.pft_list[woody_desert_index])
-            optpft = woody_desert_index
-        end
-
-        if optpft ∉ [0, 14] && get_name(BIOME4PFTS.pft_list[optpft]) == "WoodyDesert"
-            index = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
-            if (grasspft == 0 || get_name(BIOME4PFTS.pft_list[grasspft]) != "C4TropicalGrass") && optnpp[grasspft+1] > optnpp[index+1] 
-                optpft = grasspft
-            else
-                optpft = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
+        # Fallback to woody desert
+        if optpft === Default
+            woody_desert = get_pft_by_type(WoodyDesert)
+            if woody_desert !== Default && get_characteristic(woody_desert, :present)
+                optpft = woody_desert
             end
         end
 
-        if optpft == grasspft
-            if optlai[grasspft+1] < 1.8 && get_presence(BIOME4PFTS.pft_list[woody_desert_index])
-                optpft = findfirst(pft -> isa(pft, WoodyDesert), BIOME4PFTS.pft_list)
+        # Woody desert specific conditions
+        if optpft !== Default && isa(optpft, WoodyDesert)
+            woody_desert = get_pft_by_type(WoodyDesert)
+            if (grasspft === Default || !isa(grasspft, C4TropicalGrass)) && 
+               grasspft !== Default && woody_desert !== Default &&
+               get_characteristic(grasspft, :npp) > get_characteristic(woody_desert, :npp)
+                optpft = grasspft
+            else
+                optpft = woody_desert
+            end
+        end
+
+        # Grass conditions
+        if optpft === grasspft && grasspft !== Default
+            woody_desert = get_pft_by_type(WoodyDesert)
+            if get_characteristic(grasspft, :lai) < 1.8 && 
+               woody_desert !== Default && get_characteristic(woody_desert, :present)
+                optpft = woody_desert
             else
                 optpft = grasspft
             end
         end
 
-        if optpft ∉ [0, 14]  && get_name(BIOME4PFTS.pft_list[optpft]) == "TundraShrubs"
-            cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
-            if wetness[optpft+1] <= 25.0 && get_presence(BIOME4PFTS.pft_list[cold_herb_index])
-                optpft = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
+        # Tundra shrubs conditions
+        if optpft !== Default && isa(optpft, TundraShrubs)
+            cold_herb = get_pft_by_type(ColdHerbaceous)
+            optpft_idx = findfirst(pft -> pft === optpft, BIOME4PFTS.pft_list)
+            if optpft_idx !== Default && wetness[optpft_idx] <= 25.0 && 
+               cold_herb !== Default && get_characteristic(cold_herb, :present)
+                optpft = cold_herb
             end
         end
 
@@ -444,54 +500,21 @@ function determine_optimal_pft(
     return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
 end
 
-
-
-function output_diagnostics(
-    numofpfts::U,
-    drymonth::AbstractArray{U},
-    driest::AbstractArray{T},
-    wetness::AbstractArray{T},
-    optdata::AbstractArray{T},
-    wdom::U,
-    optnpp::AbstractArray{T},
-    optlai::AbstractArray{T},
-    grasspft::U,
+# FIXME what does this function do and can we detangle the output stuff from the calculations
+function calculate_vegetation_dominance(
+    optpft::Union{AbstractPFT},
+    wdom::Union{AbstractPFT},
+    grasspft::Union{AbstractPFT},
     grassnpp::T,
-    subpft::U,
+    woodnpp::T,
+    woodylai::T,
+    grasslai::T,
     BIOME4PFTS::AbstractPFTList
-)::Nothing where {T <: Real, U <: Int}
-    for pft in 1:numofpfts+1
-        if get_presence(BIOME4PFTS.pft_list[pft]) != 0
-            println(@sprintf("%5d%5d%6.2f%6.2f%5d%5d",
-                pft, drymonth[pft+1], driest[pft+1], wetness[pft+1], optdata[pft+1, 199], optdata[pft+1, 200]))
-        end
-    end
-
-    woodylai = optlai[wdom+1]
-    woodnpp = optnpp[wdom+1]
-
-    println(" wpft  woodynpp   woodylai gpft grassnpp subpft phi")
-    println(@sprintf("%5d%10.2f%10.2f%5d%10.2f%5d%8.2f",
-    wdom, woodnpp, woodylai, grasspft, grassnpp, subpft, optdata[8, 52] / 100
-    ))
-end
-
-function format_values_for_output(
-    optpft::U,
-    wdom::U,
-    grasspft::U,
-    optnpp::AbstractArray{T},
-    optlai::AbstractArray{T},
-    grassnpp::T,
-    optdata::AbstractArray{},
-    woodnpp,
-    woodylai,
-    grasslai,
-)::Tuple{U, T, T, T, U} where {T <: Real, U <: Int}
+) where {T <: Real, U <: Int} # ::Tuple{AbstractPFT, T, T, T, U} 
 
     dom = optpft
-    
-    if optpft == 14
+
+    if isa(optpft, Default)
 
         npprat = woodnpp / grassnpp
         treepct = ((8.0 / 5.0) * npprat) - 0.54
@@ -509,205 +532,26 @@ function format_values_for_output(
         lai = (woodylai + (2.0 * grasslai)) / 3.0
         npp = (woodnpp + (2.0 * grassnpp)) / 3.0
 
-        for pos in 137:148
-            optdata[dom+1, pos] = (optdata[wdom+1, pos] + (2.0 * optdata[grasspft+1, pos])) / 3.0
+        if !isa(dom, Default)
+            npp = get_characteristic(dom, :npp)
+            lai = get_characteristic(dom, :lai)
+        else
+            npp = T(0.0)
+            lai = T(0.0)
         end
-
-        for pos in 80:91
-            optdata[dom+1, pos] = (optdata[wdom+1, pos] + (2.0 * optdata[grasspft+1, pos])) / 3.0
+        
+        if !isa(grasspft, Default)
+            grasslai = get_characteristic(grasspft, :lai)
+        else
+            grasslai = T(0.0)
         end
-
-        for pos in 37:48
-            optdata[dom+1, pos] = (optdata[wdom+1, pos] + (2.0 * optdata[grasspft+1, pos])) / 3.0
-        end
-
-        for pos in 123:124
-            optdata[dom+1, pos] = (optdata[wdom+1, pos] + (2.0 * optdata[grasspft+1, pos])) / 3.0
-        end
-
-        optdata[dom+1, 50] = treepct * optdata[wdom+1, 50] + grasspct * optdata[grasspft+1, 50]
-        optdata[dom+1, 98] = (optdata[wdom+1, 98] + (2.0 * optdata[grasspft+1, 98])) / 3.0
     end
 
-    if optlai[dom+1] == 0.0
-        optpft = 0
-    end
 
-    
-    npp = optnpp[dom+1]
-    lai = optlai[dom+1]
-    grasslai = optlai[grasspft+1]
-
+    npp = get_characteristic(optpft, :npp)
+    lai = get_characteristic(optpft, :lai)
+    grasslai = get_characteristic(grasspft, :lai)
 
     return dom, npp, lai, grasslai, optpft
 end
-
-function assign_output_values(
-    output::AbstractArray{},
-    dom::U,
-    lai::T,
-    npp::T,
-    optlai::AbstractArray{T},
-    optnpp::AbstractArray{T},
-    grasspft::U,
-    wetness::AbstractArray{T},
-    wetlayer::AbstractArray{T},
-    optdata::AbstractArray{},
-    optpft::U,
-    tprec::T,
-    BIOME4PFTS::AbstractPFTList,
-    wdom::U,
-    tcm::T,
-    gdd0::T,
-    gdd5::T,
-    subpft,
-    nppdif
-)::AbstractArray{T} where {T <: Real, U <: Int}
-    output[2] = round(lai * 100.0)
-    output[3] = round(npp)
-    output[4] = round(optlai[wdom+1] * 100.0)
-    output[5] = round(optnpp[wdom+1])
-    output[6] = round(optlai[grasspft+1] * 100.0)
-    output[7] = round(optnpp[grasspft+1])
-
-    # Annual APAR / annual PAR expressed as a percentage:
-    output[8] = optdata[dom+1, 8]
-
-    # Respiration costs (for dom plant type, wood or grass):
-    output[9] = optdata[dom+1, 9]
-
-    # Soil moisture for dominant pft:
-    output[10] = round(wetness[dom+1] * 10.0)
-
-    # Predicted runoff (for dom plant type, wood or grass):
-    output[11] = optdata[wdom+1, 6]
-
-    # Number of the dominant (woody) pft:
-    output[12] = optpft
-
-    # Total annual precipitation (hopefully < 9999mm):
-    output[13] = min(round(tprec), 9999)
-
-    # Total annual PAR MJ.m-2.yr-1
-    output[14] = optdata[dom+1, 7]
-
-    # lairatio is estimated, the original code does not say where it is from
-    output[15] = 0.0 # optlai[dom+1] != 0 ? round(100.0 * (lai / optlai[dom+1])) : 0
-    output[16] = nppdif
-
-    if lai < 2.0
-        output[17] = round((lai / 2.0) * 100.0)
-    else
-        output[17] = 100
-    end
-
-    output[18] = dom == 0 ? 0.0 : round(get_root_fraction_top_soil(BIOME4PFTS.pft_list[dom])* 100.0)
-
-    for month in 1:12
-        output[24 + month] = optdata[dom+1, 24 + month]
-    end
-
-    # total deltaA
-    output[50] = optdata[dom+1, 50] / 10.0
-    # Average delaA for mixed ecosystems
-    output[51] = optdata[dom+1, 51]
-    # phi value
-    output[52] = optdata[8+1, 52]
-
-    # Optimized NPP for all PFTs
-    for i in 1:14
-        output[59 + i] = optnpp[i]
-    end
-
-    # monthly discrimination for one pft
-    for pos in 80:91
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly npp, one pft
-    for pos in 37:48
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly delta e, dominant PFT
-    for pos in 101:112
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly het resp, dom pft
-    for pos in 113:124
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly isoresp (product)
-    for pos in 125:136
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly net C flux (npp-resp)
-    for pos in 137:148
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly mean gc
-    for pos in 160:172
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly LAI
-    for pos in 173:184
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # monthly runoff
-    for pos in 185:196
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    # Annual NEP
-    output[149] = optdata[dom+1, 149]
-    # Annual mean A/g
-    output[150] = optdata[dom+1, 150]
-    # Mean annual hetresp scalar
-    output[97] = optdata[dom+1, 97]
-    # pct of NPP that is C4
-    output[98] = optdata[dom+1, 98]
-    # annual het resp
-    output[99] = optdata[dom+1, 99]
-    # firedays
-    output[199] = optdata[wdom+1, 199]
-    # greendays
-    output[200] = optdata[dom+1, 200]
-
-    # Ten-day LAI * 100
-    for pos in 201:241
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    for pos in 389:400
-        output[pos] = optdata[dom+1, pos - 376]
-    end
-
-    for pos in 413:424
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    for pos in 425:436
-        output[pos] = optdata[dom+1, pos]
-    end
-
-    output[425] = round(wetlayer[dom+1, 1])
-    output[426] = round(wetlayer[dom+1, 2])
-    output[427] = 0.0 # wetlayer[dom+1, 2] != 0 ? round((wetlayer[dom+1, 1] / wetlayer[dom+1, 2]) * 100.0) : 0
-
-    output[450] = optdata[dom+1, 450]
-    output[451] = optdata[dom+1, 451]
-    output[452] = tcm
-    output[453] = gdd0
-    output[454] = gdd5
-    output[455] = subpft
-
-    return output
-end
-
 

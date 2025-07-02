@@ -11,8 +11,8 @@ function phenology(
     # Days in each month
     daysinmonth = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     dphen = ones(T, 365, 2)
-    ramp = T[get_GDD5_full_leaf_out(BIOME4PFTS.pft_list[pft]), get_GDD0_full_leaf_out(BIOME4PFTS.pft_list[pft])]
-    ont = get_name(BIOME4PFTS.pft_list[pft]) == "BorealDeciduous" ? T(0.0) : T(5.0)
+    ramp = T[get_characteristic(BIOME4PFTS.pft_list[pft], :GDD5_full_leaf_out), get_characteristic(BIOME4PFTS.pft_list[pft], :GDD0_full_leaf_out)]
+    ont = get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "BorealDeciduous" ? T(0.0) : T(5.0)
 
     # Initialize variables
     warm = tcm

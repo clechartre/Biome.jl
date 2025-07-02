@@ -44,7 +44,7 @@ function determine_c4_and_optratio(BIOME4PFTS::AbstractPFTList, pft::U, optratio
     if c4_override != nothing
         c4 = c4_override
     else
-        if get_c4(BIOME4PFTS.pft_list[pft]) == true 
+        if get_characteristic(BIOME4PFTS.pft_list[pft], :c4) == true 
             c4 = true
         else
             c4 = false
@@ -69,15 +69,13 @@ function growth(
     pft::U,
     dayl::AbstractArray{T},
     dtemp::AbstractArray{T},
-    outv,
     dphen::AbstractArray{T},
     co2::T,
     p::T,
     tsoil::AbstractArray{T},
-    realin::Vector{},
     mnpp::Vector{T},
     c4mnpp::Vector{T}
-)::Tuple{T, AbstractArray{Union{T, U}}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}} where {T <: Real, U <: Int}
+)::Tuple{T, AbstractArray{T}, AbstractArray{T}} where {T <: Real, U <: Int}
 
     # Initialize variables
     c4_override = nothing
@@ -88,22 +86,23 @@ function growth(
 
         # Initialize set values
         midday, days= initialize_arrays(T, U)
-        optratioa = get_optratioa(BIOME4PFTS.pft_list[pft])
-        kk = get_kk(BIOME4PFTS.pft_list[pft])
+        optratioa = get_characteristic(BIOME4PFTS.pft_list[pft], :optratioa)
+        kk = get_characteristic(BIOME4PFTS.pft_list[pft], :kk)
         ca = co2 * T(1e-6)
         rainscalar = T(1000.0)
         wst = annp / rainscalar
         wst = min(wst, T(1.0))
 
-        phentype = get_phenological_type(BIOME4PFTS.pft_list[pft])
-        mgmin = get_max_min_canopy_conductance(BIOME4PFTS.pft_list[pft])
-        root = get_root_fraction_top_soil(BIOME4PFTS.pft_list[pft])
-        age = get_leaf_longevity(BIOME4PFTS.pft_list[pft])
-        sapwood = get_sapwood_respiration(BIOME4PFTS.pft_list[pft])
-        emax = get_Emax(BIOME4PFTS.pft_list[pft])
+        phentype = get_characteristic(BIOME4PFTS.pft_list[pft], :phenological_type)
+        mgmin = get_characteristic(BIOME4PFTS.pft_list[pft], :max_min_canopy_conductance)
+        root = get_characteristic(BIOME4PFTS.pft_list[pft], :root_fraction_top_soil)
+        age = get_characteristic(BIOME4PFTS.pft_list[pft], :leaf_longevity)
+        sapwood = get_characteristic(BIOME4PFTS.pft_list[pft], :sapwood_respiration)
+        emax = get_characteristic(BIOME4PFTS.pft_list[pft], :Emax)
         maxfvc = one(T) - T(exp(-kk * maxlai))
 
         # Initialize values 
+        # FIXME hopefully there is a better way
         phi = T(0.0)
         Rmean = T(0.0)
         meanKlit = T(0.0)
@@ -174,6 +173,8 @@ function growth(
             dprec, dmelt, dpet, root, k, maxfvc, pft, phentype,
             wst, doptgc, mgmin, dphen, dtemp, sapwood, emax, BIOME4PFTS)
 
+        set_characteristic(BIOME4PFTS.pft_list[pft], :greendays, greendays)
+        set_characteristic(BIOME4PFTS.pft_list[pft], :mwet, meanwr)
 
         # Initialize annual variables
         alresp = T(0.0)
@@ -300,7 +301,7 @@ function growth(
         nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
             pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, BIOME4PFTS)
     
-        if get_name(BIOME4PFTS.pft_list[pft]) == "C3_C4_woody_desert"
+        if get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C3C4WoodyDesert"
             if c4
                 c4 = false
                 c4_override = false
@@ -316,11 +317,11 @@ function growth(
         end
     
         if npp <= T(0.0)
-            return T(npp), outv, realin, mnpp, c4mnpp
+            return T(npp), mnpp, c4mnpp
         end
     
         if gpp > 0.0 
-            if get_grass(BIOME4PFTS.pft_list[pft]) == true || get_name(BIOME4PFTS.pft_list[pft]) == "C3_C4_woody_desert"
+            if get_characteristic(BIOME4PFTS.pft_list[pft], :grass) == true || get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C3_C4_woody_desert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
                 phi = calcphi(mgpp)
@@ -328,8 +329,7 @@ function growth(
             meanC3, meanC4, C3DA, C4DA = isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
         end
     
-        moist = map(mean, meanwr)
-        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, BIOME4PFTS)
+        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, meanwr, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, BIOME4PFTS)
 
         annresp = sum(Rtot)
     
@@ -340,46 +340,10 @@ function growth(
             annnep += cflux[m]
         end
     
-        firedays, wetday, dryday, firefraction, burnfraction = fire(wet, pft, maxlai, npp, BIOME4PFTS)
+        BIOME4PFTS = fire(wet, pft, maxlai, npp, BIOME4PFTS)
     
-        outv, realin = output_results(
-            meanwr,
-            monthlyfpar,
-            npp,
-            annaet,
-            maxgc,
-            stemresp,
-            sumoff,
-            annualparr,
-            annualfpar,
-            percentcost,
-            meanC3,
-            meanC4,
-            phi,
-            Rmean,
-            c4pct,
-            annresp,
-            mnpp,
-            C3DA,
-            isoR,
-            Rtot,
-            isoflux,
-            cflux,
-            meangc,
-            monthlylai,
-            runoffmonth,
-            mgpp,
-            annnep,
-            firedays,
-            greendays,
-            tendaylai,
-            meanKlit,
-            meanKsoil,
-            outv,
-            realin
-        )
     
-        return npp, outv, realin, mnpp, c4mnpp
+        return npp, mnpp, c4mnpp
     
 end
 end 
@@ -407,12 +371,12 @@ function compare_c3_c4_npp(
     c4month = fill(false, 12)
     
     for m in 1:12
-        if get_name(BIOME4PFTS.pft_list[pft]) == "C4_tropical_grass"
+        if get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C4_tropical_grass"
             c4month[m] = true
         end
     end
 
-    if get_name(BIOME4PFTS.pft_list[pft]) == "C3_C4_woody_desert"
+    if get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C3_C4_woody_desert"
         for m in 1:12
             if c4mnpp[m] > mnpp[m]
                 c4months += 1
@@ -451,95 +415,3 @@ function compare_c3_c4_npp(
 
     return nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp
 end
-
-
-function output_results(
-    meanwr,
-    monthlyfpar,
-    npp,
-    annaet,
-    maxgc,
-    stemresp,
-    runoff,
-    annualparr,
-    annualfpar,
-    fr,
-    isoC3,
-    isoC4,
-    phi::T,
-    Rmean,
-    c4pct,
-    annresp,
-    mnpp,
-    C3DA,
-    riso,
-    rtot,
-    riflux,
-    cflux,
-    meangc,
-    monthlylai,
-    runoffmo,
-    mgpp,
-    annnep,
-    firedays,
-    greendays::U,
-    tendaylai,
-    meanKlit,
-    meanKsoil,
-    outv,
-    realin
-)::Tuple{Vector{Union{T, U}}, Array{T, 1}} where {T <: Real, U <: Int}
-    anngasum = 0.0
-    mcount = 0
-
-    for m in 1:12
-        outv[12 + m] = safe_round_to_int(100 * meanwr[m][1])
-        outv[412 + m] = safe_round_to_int(100 * meanwr[m][2])
-        outv[424 + m] = safe_round_to_int(100 * meanwr[m][3])
-        outv[24 + m] = safe_round_to_int(100 * monthlyfpar[m])
-    end
-
-    outv[1] = safe_round_to_int(npp)
-    outv[3] = safe_round_to_int(annaet)
-    outv[4] = safe_round_to_int(maxgc)
-    outv[5] = safe_round_to_int(stemresp)
-    outv[6] = safe_round_to_int(runoff)
-    outv[7] = safe_round_to_int(annualparr)
-    outv[8] = safe_round_to_int(annualfpar)
-    outv[9] = safe_round_to_int(fr)
-    outv[50] = safe_round_to_int(isoC3 * 10)
-    outv[51] = safe_round_to_int(isoC4 * 10)
-    outv[52] = safe_round_to_int(phi * 100)
-    outv[97] = safe_round_to_int(Rmean * 100)
-    outv[98] = safe_round_to_int(c4pct * 100)
-    outv[99] = safe_round_to_int(annresp * 10)
-
-    for m in 1:12
-        realin[36 + m] = safe_round_to_int(mnpp[m])
-        outv[79 + m] = safe_round_to_int(C3DA[m] * 100)
-        outv[36 + m] = safe_round_to_int(mnpp[m] * 10)
-        outv[100 + m] = safe_round_to_int(riso[m] * 10)
-        outv[112 + m] = safe_round_to_int(rtot[m] * 10)
-        outv[124 + m] = safe_round_to_int(riflux[m] * 10)
-        outv[136 + m] = safe_round_to_int(cflux[m] * 10)
-        outv[160 + m] = safe_round_to_int(meangc[m])
-        outv[172 + m] = safe_round_to_int(monthlylai[m] * 100)
-        outv[184 + m] = safe_round_to_int(runoffmo[m])
-
-        if meangc[m] != 0
-            mcount += 1
-            anngasum += mgpp[m] / meangc[m]
-        end
-    end
-
-    outv[150] = (mcount != 0) ? safe_round_to_int((anngasum / mcount) * 100) : 0
-    outv[149] = safe_round_to_int(annnep * 10)
-    outv[199] = safe_round_to_int(firedays)
-    outv[200] = greendays
-
-    outv[450] = safe_round_to_int(meanKlit * 100)
-    outv[451] = safe_round_to_int(meanKsoil * 100)
-
-    return outv, realin
-end
-

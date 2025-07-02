@@ -1,14 +1,13 @@
 """Find NPP subroutine."""
 # Third-party
 using LinearAlgebra
-using ComponentArrays: ComponentArray
 
 # First-party
 include("growth.jl")
 export growth
 
 function findnpp(
-    pft::U,
+    pft::U, # FIXME this should be an AbstractPFT and then set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1]) can become set_characteristic(pft, :lai, alai[1])
     annp::T,
     dtemp::AbstractArray{T,1},
     sun::AbstractArray{T,1},
@@ -19,21 +18,14 @@ function findnpp(
     dayl::AbstractArray{T,1},
     k::AbstractArray,
     BIOME4PFTS::AbstractPFTList,
-    optdata,
     dphen::AbstractArray{T},
     co2::AbstractFloat,
     p::AbstractFloat,
-    tsoil::AbstractArray{T,1},
-    realout::AbstractArray{T,2}
+    tsoil::AbstractArray{T,1}
 ) where {T <: Real, U <: Int}
     """Run NPP optimization model for one pft"""
 
     # Initialize variables
-    realin = zeros(U, 200)
-    inv = Union{T, U}[zero(T) for _ in 1:500] # FIXME this is so ugly
-    realin = Union{T, U}[zero(T) for _ in 1:200]
-    optnpp = 0
-    optlai = 0
     mnpp = zeros(T, 12)
     c4mnpp = zeros(T, 12)
 
@@ -47,7 +39,7 @@ function findnpp(
         alai[1] = lowbound + (1.0 / 4.0) * range_val
         alai[2] = lowbound + (3.0 / 4.0) * range_val
 
-        npp, inv, realin, mnpp, c4mnpp = growth(
+        npp, mnpp, c4mnpp = growth(
             alai[1],
             annp,
             sun, # wst in fortran
@@ -60,24 +52,20 @@ function findnpp(
             pft,
             dayl,
             dtemp,
-            inv,
             dphen,
             co2,
             p,
             tsoil,
-            realin,
             mnpp,
             c4mnpp
         )
 
-        if npp >= optnpp
-            optlai = alai[1]
-            optnpp = npp
-            optdata[1:500] = inv[1:500]
-            # realout[pft+1, 1:200] = realin[1:200]
+        if npp >= get_characteristic(BIOME4PFTS.pft_list[pft], :npp)
+            set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1])
+            set_characteristic(BIOME4PFTS.pft_list[pft], :npp, npp)
         end
 
-        npp, inv, realin, mnpp, c4mnpp = growth(
+        npp, mnpp, c4mnpp = growth(
             alai[2],
             annp,
             sun,
@@ -90,30 +78,25 @@ function findnpp(
             pft,
             dayl,
             dtemp,
-            inv,
             dphen,
             co2,
             p,
             tsoil,
-            realin,
             mnpp,
             c4mnpp
         )
 
-        # Find the leaf area which gives the highest NPP
-        if npp >= optnpp
-            optlai = alai[2]
-            optnpp = npp
-            optdata[1:500] = inv[1:500]
-            # realout[pft+1, 1:200] = realin[1:200]
+        if npp >= get_characteristic(BIOME4PFTS.pft_list[pft], :npp)
+            set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1])
+            set_characteristic(BIOME4PFTS.pft_list[pft], :npp, npp)
         end
 
         range_val /= T(2.0)
-        lowbound = optlai - range_val / T(2.0)
+        lowbound = get_characteristic(BIOME4PFTS.pft_list[pft], :lai) - range_val / T(2.0)
         if lowbound <= 0.0
             lowbound = T(0.01)
         end
     end
     
-    return optdata, optlai, optnpp, realout
+    return BIOME4PFTS
 end

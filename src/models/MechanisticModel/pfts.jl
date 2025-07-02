@@ -22,8 +22,14 @@ mutable struct Characteristics{T <: Real, U <: Int} <: AbstractPFTCharacteristic
     allocfact::T
     grass::Bool
     constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow), NTuple{6, Vector{Float64}}}
+    # Values that will get filled through the code
     present::Bool
     dominance::T
+    greendays::U
+    firedays::T
+    mwet::Vector{T}
+    npp::T
+    lai::T
 end
 
 # Define the PFT structures
@@ -79,6 +85,42 @@ struct ColdHerbaceous <: AbstractPFT
     characteristics::Characteristics
 end
 
+struct Default <: AbstractPFT
+    characteristics::Characteristics
+end
+
+# Default Characteristics
+Characteristics() = Characteristics(
+    "Default",                      # name
+    0,                             # phenological_type
+    0.0,                           # max_min_canopy_conductance
+    0.0,                           # Emax
+    0.0,                           # sw_drop
+    0.0,                           # sw_appear
+    0.0,                           # root_fraction_top_soil
+    0.0,                           # leaf_longevity
+    0.0,                           # GDD5_full_leaf_out
+    0.0,                           # GDD0_full_leaf_out
+    0,                             # sapwood_respiration
+    0.0,                           # optratioa
+    0.0,                           # kk
+    false,                         # c4
+    0.0,                           # threshold
+    0.0,                           # t0
+    0.0,                           # tcurve
+    0.0,                           # respfact
+    0.0,                           # allocfact
+    false,                         # grass
+    (tcm=[0.0, 0.0], min=[0.0, 0.0], gdd=[0.0, 0.0], gdd0=[0.0, 0.0], twm=[0.0, 0.0], snow=[0.0, 0.0]), # constraints
+    false,                         # present
+    0.0,                           # dominance
+    0,                             # greendays
+    0.0,                             # firedays
+    zeros(Float64, 12),            # mwet
+    0.0,                           # npp
+    0.0                            # lai
+)
+
 # Default constructors for the PFTs
 WoodyDesert(clt, prec, temp) = WoodyDesert(Characteristics(
     "C3C4WoodyDesert",
@@ -103,321 +145,388 @@ WoodyDesert(clt, prec, temp) = WoodyDesert(Characteristics(
     false,  # grass
     (tcm=[-99.9, -99.9], min=[-45.0, -99.9], gdd=[500.0, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
     true, # present
-    dominance_environment(clt, 9.2, 2.2) * dominance_environment(prec, 2.5, 2.8) * dominance_environment(temp, 23.9, 2.7)
+    dominance_environment(clt, 9.2, 2.2) * dominance_environment(prec, 2.5, 2.8) * dominance_environment(temp, 23.9, 2.7),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0, # npp
+    0.0  # lai
+    
 ))
 
 TropicalEvergreen(clt, prec, temp) = TropicalEvergreen(Characteristics(
     "TropicalEvergreen",
-    1,      # phenological_type (evergreen)
-    0.5,    # max_min_canopy_conductance
-    10.0,   # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.69,   # root_fraction_top_soil
-    18.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.95,   # optratioa
-    0.7,    # kk
-    false,  # c4
-    0.25,   # threshold
-    10.0,    # t0
-    1.0,    # tcurve
-    0.8,    # respfact
-    1.0,    # allocfact
-    false,  # grass
-    (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 50.2, 4.9) * dominance_environment(prec, 169.6, 41.9) * dominance_environment(temp, 24.7, 1.2)# dominance
+    1,
+    0.5,
+    10.0,
+    -99.9,
+    -99.9,
+    0.69,
+    18.0,
+    -99.9,
+    -99.9,
+    1,
+    0.95,
+    0.7,
+    false,
+    0.25,
+    10.0,
+    1.0,
+    0.8,
+    1.0,
+    false,
+    (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 50.2, 4.9) * dominance_environment(prec, 169.6, 41.9) * dominance_environment(temp, 24.7, 1.2),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 TropicalDroughtDeciduous(clt, prec, temp) = TropicalDroughtDeciduous(Characteristics(
     "TropicalDroughtDeciduous",
-    3,      # phenological_type (deciduous)
-    0.5,    # max_min_canopy_conductance
-    10.0,    # Emax
-    0.5,  # sw_drop
-    0.6,  # sw_appear
-    0.7,   # root_fraction_top_soil
-    9.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.9,   # optratioa
-    0.7,    # kk
-    false,  # c4
-    0.20,   # threshold
-    10.0,    # t0
-    1.0,    # tcurve
-    0.8,    # respfact
-    1.0,    # allocfact
-    false,  # grass
-    (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 44.0, 12.9) * dominance_environment(prec, 163.3, 85.1) * dominance_environment(temp, 23.7, 2.3) # dominance
+    3,
+    0.5,
+    10.0, 
+    0.5,
+    0.6,
+    0.7,
+    9.0,
+    -99.9,
+    -99.9,
+    1,
+    0.9,
+    0.7,
+    false,
+    0.20,
+    10.0,
+    1.0,
+    0.8,
+    1.0,
+    false,
+    (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 44.0, 12.9) * dominance_environment(prec, 163.3, 85.1) * dominance_environment(temp, 23.7, 2.3),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 TemperateBroadleavedEvergreen(clt, prec, temp) = TemperateBroadleavedEvergreen(Characteristics(
     "TemperateBroadleavedEvergreen",
-    1,      # phenological_type (evergreen)
-    0.2,    # max_min_canopy_conductance
-    4.8,   # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.67,   # root_fraction_top_soil
-    18.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.8,   # optratioa
-    0.6,    # kk
-    false,  # c4
-    0.40,   # threshold
-    5.0,    # t0
-    1.0,    # tcurve
-    1.4,    # respfact
-    1.2,    # allocfact
-    false,  # grass
-    (tcm=[-99.9, -99.9], min=[-8.0, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 33.4, 13.3) * dominance_environment(prec, 106.3, 83.6) * dominance_environment(temp, 18.7, 3.2) # dominance
+    1,
+    0.2,
+    4.8,
+    -99.9,
+    -99.9,
+    0.67,
+    18.0,
+    -99.9,
+    -99.9,
+    1,
+    0.8,
+    0.6,
+    false,
+    0.40,
+    5.0,
+    1.0,
+    1.4,
+    1.2,
+    false,
+    (tcm=[-99.9, -99.9], min=[-8.0, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 33.4, 13.3) * dominance_environment(prec, 106.3, 83.6) * dominance_environment(temp, 18.7, 3.2),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 TemperateDeciduous(clt, prec, temp) = TemperateDeciduous(Characteristics(
     "TemperateDeciduous",
-    2,      # phenological_type
-    0.8,    # max_min_canopy_conductance
-    10.0,   # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.65,   # root_fraction_top_soil
-    7.0,   # leaf_longevity
-    200.0,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.8,   # optratioa
-    0.6,    # kk
-    false,  # c4
-    0.33,   # threshold
-    4.0,    # t0
-    1.0,    # tcurve
-    1.6,    # respfact
-    1.2,    # allocfact
-    false,  # grass
-    (tcm=[-15.0, -99.9], min=[-99.9, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 40.9, 8.6) * dominance_environment(prec, 70.2, 41.9) * dominance_environment(temp, 8.4, 4.7)
+    2,
+    0.8,
+    10.0,
+    -99.9,
+    -99.9,
+    0.65,
+    7.0,
+    200.0,
+    -99.9,
+    1,
+    0.8,
+    0.6,
+    false,
+    0.33,
+    4.0,
+    1.0,
+    1.6,
+    1.2,
+    false,
+    (tcm=[-15.0, -99.9], min=[-99.9, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 40.9, 8.6) * dominance_environment(prec, 70.2, 41.9) * dominance_environment(temp, 8.4, 4.7),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 CoolConifer(clt, prec, temp) = CoolConifer(Characteristics(
     "CoolConifer",
-    1,      # phenological_type (evergreen)
-    0.2,    # max_min_canopy_conductance
-    4.8,    # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.52,   # root_fraction_top_soil
-    30.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.9,   # optratioa
-    0.5,    # kk
-    false,  # c4
-    0.40,   # threshold
-    3.0,    # t0
-    0.9,    # tcurve
-    0.8,    # respfact
-    1.2,    # allocfact
-    false,  # grass
-    (tcm=[-2.0, -99.9], min=[-99.9, 10.0], gdd=[900, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 28.1, 8.6) * dominance_environment(prec, 54.5, 49.9) * dominance_environment(temp, 13.9, 3.4)
-    ))  
+    1,
+    0.2,
+    4.8, 
+    -99.9,
+    -99.9,
+    0.52,
+    30.0,
+    -99.9,
+    -99.9,
+    1,
+    0.9,
+    0.5,
+    false,
+    0.40,
+    3.0,
+    0.9,
+    0.8,
+    1.2,
+    false,
+    (tcm=[-2.0, -99.9], min=[-99.9, 10.0], gdd=[900, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 28.1, 8.6) * dominance_environment(prec, 54.5, 49.9) * dominance_environment(temp, 13.9, 3.4),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
+))  
 
 BorealEvergreen(clt, prec, temp) = BorealEvergreen(Characteristics(
     "BorealEvergreen",
-    1,      # phenological_type (evergreen)
-    0.5,    # max_min_canopy_conductance
-    4.5,    # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.83,   # root_fraction_top_soil
-    24.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.8,   # optratioa
-    0.5,    # kk
-    false,  # c4
-    0.33,   # threshold
-    0.0,    # t0
-    0.8,    # tcurve
-    4.0,    # respfact
-    1.2,    # allocfact
-    false,  # grass
-    (tcm=[-32.5, -2.0], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),  # constraints
-    true, # present
-    dominance_environment(clt, 48.1, 7.6) * dominance_environment(prec, 58.7, 35.7) * dominance_environment(temp, -2.7, 4.0)
+    1,
+    0.5,
+    4.5, 
+    -99.9,
+    -99.9,
+    0.83,
+    24.0,
+    -99.9,
+    -99.9,
+    1,
+    0.8,
+    0.5,
+    false,
+    0.33,
+    0.0,
+    0.8,
+    4.0,
+    1.2,
+    false,
+    (tcm=[-32.5, -2.0], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 48.1, 7.6) * dominance_environment(prec, 58.7, 35.7) * dominance_environment(temp, -2.7, 4.0),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 BorealDeciduous(clt, prec, temp) = BorealDeciduous(Characteristics(
     "BorealDeciduous",
-    2,      # phenological_type (deciduous)
-    0.8,    # max_min_canopy_conductance
-    10.0,    # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.83,   # root_fraction_top_soil
-    24.0,   # leaf_longevity
-    200.0,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.9,   # optratioa
-    0.4,    # kk
-    false,  # c4
-    0.33,   # threshold
-    0.0,    # t0
-    0.8,    # tcurve
-    4.0,    # respfact
-    1.2,    # allocfact
-    false,  # grass
-    (tcm=[-99.9, 5.0], min=[-99.9, -10.0], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 47.4, 8.3) * dominance_environment(prec, 65.0, 83.6) * dominance_environment(temp, -6.4, 7.7)
+    2,
+    0.8,
+    10.0, 
+    -99.9,
+    -99.9,
+    0.83,
+    24.0,
+    200.0,
+    -99.9,
+    1,
+    0.9,
+    0.4,
+    false,
+    0.33,
+    0.0,
+    0.8,
+    4.0,
+    1.2,
+    false,
+    (tcm=[-99.9, 5.0], min=[-99.9, -10.0], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 47.4, 8.3) * dominance_environment(prec, 65.0, 83.6) * dominance_environment(temp, -6.4, 7.7),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 LichenForb(clt, prec, temp) = LichenForb(Characteristics(
     "LichenForb",
-    1,      # phenological_type (evergreen)
-    0.8,    # max_min_canopy_conductance
-    1.0,    # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.93,    # root_fraction_top_soil
-    8.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.80,   # optratioa
-    0.6,    # kk
-    false,  # c4
-    0.33,    # threshold
-    -12.0,    # t0
-    0.5,    # tcurve
-    4.0,    # respfact
-    1.5,    # allocfact
-    false,  # grass
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),  # constraints
-    true,    # present
-    dominance_environment(clt, 43.9, 9.0) * dominance_environment(prec, 53.3, 52.1) * dominance_environment(temp, -18.4, 4.1)
+    1,
+    0.8,
+    1.0, 
+    -99.9,
+    -99.9,
+    0.93,
+    8.0,
+    -99.9,
+    -99.9,
+    1,
+    0.80,
+    0.6,
+    false,
+    0.33,
+    -12.0,
+    0.5,
+    4.0,
+    1.5,
+    false,
+    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 43.9, 9.0) * dominance_environment(prec, 53.3, 52.1) * dominance_environment(temp, -18.4, 4.1),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
     ))
 
 TundraShrubs(clt, prec, temp) = TundraShrubs(Characteristics(
     "TundraShrubs",
-    1,      # phenological_type (evergreen)
-    0.8,    # max_min_canopy_conductance
-    1.0,    # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.93,   # root_fraction_top_soil
-    8.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.90,   # optratioa
-    0.5,    # kk
-    false,  # c4
-    0.33,    # threshold
-    -7.0,    # t0
-    0.6,    # tcurve
-    4.0,    # respfact
-    1.0,    # allocfact
-    true,  # grass
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[15.0, -99.9]),  # constraints
+    1,
+    0.8,
+    1.0, 
+    -99.9,
+    -99.9,
+    0.93,
+    8.0,
+    -99.9,
+    -99.9,
+    1,
+    0.90,
+    0.5,
+    false,
+    0.33,
+    -7.0,
+    0.6,
+    4.0,
+    1.0,
     true,
-    dominance_environment(clt, 51.4, 9.0) * dominance_environment(prec, 50.0, 43.3) * dominance_environment(temp, -10.8, 5.1)
+    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[15.0, -99.9]),
+    true,
+    dominance_environment(clt, 51.4, 9.0) * dominance_environment(prec, 50.0, 43.3) * dominance_environment(temp, -10.8, 5.1),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 C3C4TemperateGrass(clt, prec, temp) = C3C4TemperateGrass(Characteristics(
     "C3C4TemperateGrass",
-    3,      # phenological_type
-    0.8,    # max_min_canopy_conductance
-    6.5,    # Emax
-    0.2,  # sw_drop
-    0.3,  # sw_appear
-    0.83,   # root_fraction_top_soil
-    8.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    100.0,  # GDD0_full_leaf_out
-    2,   # sapwood_respiration
-    0.65,   # optratioa
-    0.4,    # kk
-    false,  # c4
-    0.40,    # threshold
-    4.5,    # t0
-    1.0,    # tcurve
-    1.6,    # respfact
-    1.0,    # allocfact
-    true,  # grass
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),  # constraints
+    3,
+    0.8,
+    6.5,
+    0.2,
+    0.3,
+    0.83,
+    8.0,
+    -99.9,
+    100.0,
+    2,
+    0.65,
+    0.4,
+    false,
+    0.40,
+    4.5,
+    1.0,
+    1.6,
+    1.0,
     true,
-    dominance_environment(clt, 16.6, 6.9) * dominance_environment(prec, 12.2, 13.4) * dominance_environment(temp, 21.3, 6.2)
-
+    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 16.6, 6.9) * dominance_environment(prec, 12.2, 13.4) * dominance_environment(temp, 21.3, 6.2),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 C4TropicalGrass(clt, prec, temp) = C4TropicalGrass(Characteristics(
     "C4TropicalGrass",
-    3,      # phenological_type
-    0.8,    # max_min_canopy_conductance
-    8.0,    # Emax
-    0.2,  # sw_drop
-    0.3,  # sw_appear
-    0.57,   # root_fraction_top_soil
-    10.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    2,   # sapwood_respiration
-    0.65,   # optratioa
-    0.4,    # kk
-    true,  # c4
-    0.40,    # threshold
-    10.0,    # t0
-    0.8,    # tcurve
-    0.8,    # respfact
-    1.0,    # allocfact
-    true,  # grass
-    (tcm=[-99.9, -99.9], min=[-3.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true,   # present
-    dominance_environment(clt, 9.4, 1.4) * dominance_environment(prec, 1.7, 2.1) * dominance_environment(temp, 23.2, 2.2)
+    3,
+    0.8,
+    8.0,
+    0.2,
+    0.3,
+    0.57,
+    10.0,
+    -99.9,
+    -99.9,
+    2,
+    0.65,
+    0.4,
+    true,
+    0.40,
+    10.0,
+    0.8,
+    0.8,
+    1.0,
+    true,
+    (tcm=[-99.9, -99.9], min=[-3.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 9.4, 1.4) * dominance_environment(prec, 1.7, 2.1) * dominance_environment(temp, 23.2, 2.2),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
 
 ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
     "ColdHerbaceous",
-    2,      # phenological_type
-    0.8,    # max_min_canopy_conductance
-    1.0,    # Emax
-    -99.9,  # sw_drop
-    -99.9,  # sw_appear
-    0.93,   # root_fraction_top_soil
-    8.0,   # leaf_longevity
-    -99.9,  # GDD5_full_leaf_out
-    25.0,  # GDD0_full_leaf_out
-    2,   # sapwood_respiration
-    0.75,   # optratioa
-    0.3,    # kk
-    false,  # c4
-    0.33,    # threshold
-    -7.0,    # t0
-    0.6,    # tcurve
-    4.0,    # respfact
-    1.0,    # allocfact
-    true,  # grass
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),  # constraints
-    true,   # present
-    dominance_environment(clt, 10.4, 2.5) * dominance_environment(prec, 2.0, 1.6) * dominance_environment(temp, 23.5, 2.3)
+    2, 
+    0.8,
+    1.0,
+    -99.9,
+    -99.9,
+    0.93,
+    8.0,
+    -99.9,
+    25.0,
+    2,
+    0.75,
+    0.3,
+    false,
+    0.33,
+    -7.0,
+    0.6,
+    4.0,
+    1.0,
+    true,
+    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),
+    true,
+    dominance_environment(clt, 10.4, 2.5) * dominance_environment(prec, 2.0, 1.6) * dominance_environment(temp, 23.5, 2.3),
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 ))
+
+Default() =  Default(Characteristics())
 
 
 struct BiomeClassification <: AbstractPFTList
@@ -437,33 +546,36 @@ BiomeClassification(clt, prec, temp) = BiomeClassification([WoodyDesert(clt, pre
                                             TundraShrubs(clt, prec, temp),
                                             C3C4TemperateGrass(clt, prec, temp),
                                             C4TropicalGrass(clt, prec, temp),
-                                            ColdHerbaceous(clt, prec, temp)]) # place all other Biome4 PFTs here
+                                            ColdHerbaceous(clt, prec, temp),
+                                            Default()]) # place all other Biome4 PFTs here
 
-# Define the functions to get all PFT characteristics easily
-get_name(pft::AbstractPFT) = pft.characteristics.name
-get_phenological_type(pft::AbstractPFT) = pft.characteristics.phenological_type
-get_max_min_canopy_conductance(pft::AbstractPFT) = pft.characteristics.max_min_canopy_conductance
-get_Emax(pft::AbstractPFT) = pft.characteristics.Emax
-get_sw_drop(pft::AbstractPFT) = pft.characteristics.sw_drop
-get_sw_appear(pft::AbstractPFT) = pft.characteristics.sw_appear
-get_root_fraction_top_soil(pft::AbstractPFT) = pft.characteristics.root_fraction_top_soil
-get_leaf_longevity(pft::AbstractPFT) = pft.characteristics.leaf_longevity
-get_GDD5_full_leaf_out(pft::AbstractPFT) = pft.characteristics.GDD5_full_leaf_out
-get_GDD0_full_leaf_out(pft::AbstractPFT) = pft.characteristics.GDD0_full_leaf_out
-get_sapwood_respiration(pft::AbstractPFT) = pft.characteristics.sapwood_respiration
-get_optratioa(pft::AbstractPFT) = pft.characteristics.optratioa
-get_kk(pft::AbstractPFT) = pft.characteristics.kk
-get_c4(pft::AbstractPFT) = pft.characteristics.c4
-get_threshold(pft::AbstractPFT) = pft.characteristics.threshold
-get_t0(pft::AbstractPFT) = pft.characteristics.t0
-get_tcurve(pft::AbstractPFT) = pft.characteristics.tcurve
-get_respfact(pft::AbstractPFT) = pft.characteristics.respfact
-get_allocfact(pft::AbstractPFT) = pft.characteristics.allocfact
-get_grass(pft::AbstractPFT) = pft.characteristics.grass
-get_constraints(pft::AbstractPFT) = pft.characteristics.constraints
-edit_presence(pft::AbstractPFT, present::Bool) = pft.characteristics.present = present
-get_presence(pft::AbstractPFT) = pft.characteristics.present
-get_dominance(pft::AbstractPFT) = pft.characteristics.dominance
+# FIXME this will become just two much simpler functions - Need to try them in the Replaces
+"""
+    get_characteristic(pft::AbstractPFT, prop::Symbol)
+
+Pulls out any field `prop` from `pft.characteristics`
+"""
+function get_characteristic(pft::AbstractPFT, prop::Symbol)
+    if hasproperty(pft.characteristics, prop)
+        return getproperty(pft.characteristics, prop)
+    else
+        throw(ArgumentError("`$(prop)` is not a field of Characteristics"))
+    end
+end
+
+"""
+    set_characteristic!(pft::AbstractPFT, prop::Symbol, value)
+
+Assigns to any mutable field `prop` in `pft.characteristics`
+"""
+function set_characteristic(pft::AbstractPFT, prop::Symbol, value)
+    if hasproperty(pft.characteristics, prop)
+        setfield!(pft.characteristics, prop, value)
+    else
+        throw(ArgumentError("`$(prop)` is not a field of Characteristics"))
+    end
+end
+
 
 function dominance_environment(clt, mean, std)
     # Draw the normal distribution around the mean and std 
@@ -478,10 +590,3 @@ function dominance_environment(clt, mean, std)
     return normalized_value
 
 end
-
-# export Characteristics, PFT, BiomeClassification,  get_name, get_phenological_type, get_max_min_canopy_conductance, get_Emax,
-# get_sw_drop, get_sw_appear, get_root_fraction_top_soil, get_leaf_longevity,
-# get_GDD5_full_leaf_out, get_GDD0_full_leaf_out, get_sapwood_respiration,
-# get_optratioa, get_kk, get_c4, get_threshold, get_t0, get_tcurve,
-# get_respfact, get_allocfact, get_grass, get_constraints, edit_presence, get_presence
-

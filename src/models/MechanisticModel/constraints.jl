@@ -25,7 +25,7 @@ function constraints(
     for ip in 1:length(BIOME4PFTS.pft_list)
         valid = true
         for (iv, key) in enumerate([:tcm, :min, :gdd, :gdd0, :twm, :snow]) # FIXME. Also de-hardcode this? We need to see how we go about wetness later on since we need intermediate values before we compute it
-            constraint_values =  get_constraints(BIOME4PFTS.pft_list[ip])[key]
+            constraint_values =  get_characteristic(BIOME4PFTS.pft_list[ip], :constraints)[key]
             lower_limit, upper_limit = constraint_values[1], constraint_values[2]
             
             if !(
@@ -38,7 +38,7 @@ function constraints(
                 break
             end
         end
-        edit_presence(BIOME4PFTS.pft_list[ip], valid)
+        set_characteristic(BIOME4PFTS.pft_list[ip], :present, valid)
     end
 
     return tmin, BIOME4PFTS
