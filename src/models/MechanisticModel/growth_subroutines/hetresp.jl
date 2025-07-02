@@ -19,7 +19,7 @@ Returns:
 - A `HetRespResults` struct containing respiration and isotope-related results.
 """
 function hetresp(
-    pft::U,
+    pft::AbstractPFT,
     nppann::T,
     tair::AbstractArray{T},
     tsoil::AbstractArray{T},
@@ -34,8 +34,7 @@ function hetresp(
     isoflux::Vector{T},
     Rmean::T,
     meanKlit::T,
-    meanKsoil::T,
-    BIOME4PFTS::AbstractPFTList,
+    meanKsoil::T
     )::Tuple{Vector{T}, Vector{T}, Vector{T}, Vector{T}, Vector{T}, Vector{T}, T, T, T} where {T <: Real, U <: Int}
 
     # Constants and initializations
@@ -54,7 +53,7 @@ function hetresp(
         return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
     else
         # Partition annual NPP into pools according to Foley strategy
-        if get_name(BIOME4PFTS.pft_list[pft]) == "tropical_evergreen" || get_name(BIOME4PFTS.pft_list[pft]) == "tropical_drought_deciduous"
+        if get_characteristic(pft, :name) == "tropical_evergreen" || get_characteristic(pft, :name) == "tropical_drought_deciduous"
             Plit = T(0.650) * nppann
             Pfst = T(0.980) * T(0.350) * nppann
             Pslo = T(0.020) * T(0.350) * nppann

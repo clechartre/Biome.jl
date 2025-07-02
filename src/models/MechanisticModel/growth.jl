@@ -40,11 +40,11 @@ function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}} wh
     return midday, days
 end
 
-function determine_c4_and_optratio(BIOME4PFTS::AbstractPFTList, pft::U, optratioa::T, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
+function determine_c4_and_optratio(pft::AbstractPFT, optratioa::T, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
     if c4_override != nothing
         c4 = c4_override
     else
-        if get_characteristic(BIOME4PFTS.pft_list[pft], :c4) == true 
+        if get_characteristic(pft, :c4) == true 
             c4 = true
         else
             c4 = false
@@ -65,8 +65,7 @@ function growth(
     dmelt::AbstractArray{T},
     dpet::AbstractArray{T},
     k::AbstractArray{T},
-    BIOME4PFTS::AbstractPFTList,
-    pft::U,
+    pft::AbstractPFT,
     dayl::AbstractArray{T},
     dtemp::AbstractArray{T},
     dphen::AbstractArray{T},
@@ -75,8 +74,9 @@ function growth(
     tsoil::AbstractArray{T},
     mnpp::Vector{T},
     c4mnpp::Vector{T}
-)::Tuple{T, AbstractArray{T}, AbstractArray{T}} where {T <: Real, U <: Int}
+)::Tuple{T, AbstractArray{T}, AbstractArray{T}} where {T <: Real}
 
+    U = Int
     # Initialize variables
     c4_override = nothing
     reprocess = true
@@ -86,19 +86,19 @@ function growth(
 
         # Initialize set values
         midday, days= initialize_arrays(T, U)
-        optratioa = get_characteristic(BIOME4PFTS.pft_list[pft], :optratioa)
-        kk = get_characteristic(BIOME4PFTS.pft_list[pft], :kk)
+        optratioa = get_characteristic(pft, :optratioa)
+        kk = get_characteristic(pft, :kk)
         ca = co2 * T(1e-6)
         rainscalar = T(1000.0)
         wst = annp / rainscalar
         wst = min(wst, T(1.0))
 
-        phentype = get_characteristic(BIOME4PFTS.pft_list[pft], :phenological_type)
-        mgmin = get_characteristic(BIOME4PFTS.pft_list[pft], :max_min_canopy_conductance)
-        root = get_characteristic(BIOME4PFTS.pft_list[pft], :root_fraction_top_soil)
-        age = get_characteristic(BIOME4PFTS.pft_list[pft], :leaf_longevity)
-        sapwood = get_characteristic(BIOME4PFTS.pft_list[pft], :sapwood_respiration)
-        emax = get_characteristic(BIOME4PFTS.pft_list[pft], :Emax)
+        phentype = get_characteristic(pft, :phenological_type)
+        mgmin = get_characteristic(pft, :max_min_canopy_conductance)
+        root = get_characteristic(pft, :root_fraction_top_soil)
+        age = get_characteristic(pft, :leaf_longevity)
+        sapwood = get_characteristic(pft, :sapwood_respiration)
+        emax = get_characteristic(pft, :Emax)
         maxfvc = one(T) - T(exp(-kk * maxlai))
 
         # Initialize values 
@@ -138,7 +138,7 @@ function growth(
         optgc = zeros(T, 12)
     
         # Set the value of optratio depending on whether c4 plant or not.
-        c4, optratio = determine_c4_and_optratio(BIOME4PFTS, pft, optratioa, c4_override)
+        c4, optratio = determine_c4_and_optratio(pft, optratioa, c4_override)
     
 
         maxgc = T(0.0)
@@ -147,10 +147,10 @@ function growth(
             fpar = T(1.0) - T(exp(-kk * maxlai))
 
             if c4
-                alllresp, pgphot, aday = c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                alllresp, pgphot, aday = c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
                 lresp[m] = alllresp
             else
-                alllresp, pgphot, aday  = photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                alllresp, pgphot, aday  = photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
                 lresp[m] = alllresp
             end
     
@@ -171,10 +171,10 @@ function growth(
 
         meanfvc, meangc, meanwr, meanaet, runoffmonth, wet, dayfvc, annaet, sumoff, greendays, runnoff, wilt = hydrology(
             dprec, dmelt, dpet, root, k, maxfvc, pft, phentype,
-            wst, doptgc, mgmin, dphen, dtemp, sapwood, emax, BIOME4PFTS)
+            wst, doptgc, mgmin, dphen, dtemp, sapwood, emax)
 
-        set_characteristic(BIOME4PFTS.pft_list[pft], :greendays, greendays)
-        set_characteristic(BIOME4PFTS.pft_list[pft], :mwet, meanwr)
+        set_characteristic(pft, :greendays, greendays)
+        set_characteristic(pft, :mwet, meanwr)
 
         # Initialize annual variables
         alresp = T(0.0)
@@ -201,12 +201,12 @@ function growth(
                     fpar = meanfvc[m]
     
                     if c4
-                        allleafresp, alligphot, alladay = c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                        allleafresp, alligphot, alladay = c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
                         leafresp = allleafresp
                         igphot = alligphot
                         aday = alladay
                     else
-                        allleafresp, alligphot, alladay = photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft, BIOME4PFTS)
+                        allleafresp, alligphot, alladay = photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
                         leafresp = allleafresp
                         igphot = alligphot
                         aday = alladay
@@ -268,7 +268,7 @@ function growth(
         annualfpar = if annualapar == T(0.0) T(0.0) else T(100.0) * annualapar / annualparr end
     
         # Calculate annual respiration costs to find annual NPP
-        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft, BIOME4PFTS)
+        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft)
 
         if wilt
             npp = -9999.0
@@ -299,9 +299,9 @@ function growth(
         end
     
         nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
-            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4, BIOME4PFTS)
+            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4)
     
-        if get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C3C4WoodyDesert"
+        if get_characteristic(pft, :name) == "C3C4WoodyDesert"
             if c4
                 c4 = false
                 c4_override = false
@@ -321,7 +321,7 @@ function growth(
         end
     
         if gpp > 0.0 
-            if get_characteristic(BIOME4PFTS.pft_list[pft], :grass) == true || get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C3_C4_woody_desert"
+            if get_characteristic(pft, :grass) == true || get_characteristic(pft, :name) == "C3_C4_woody_desert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
                 phi = calcphi(mgpp)
@@ -329,7 +329,7 @@ function growth(
             meanC3, meanC4, C3DA, C4DA = isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
         end
     
-        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, meanwr, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil, BIOME4PFTS)
+        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, meanwr, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
 
         annresp = sum(Rtot)
     
@@ -340,7 +340,7 @@ function growth(
             annnep += cflux[m]
         end
     
-        BIOME4PFTS = fire(wet, pft, maxlai, npp, BIOME4PFTS)
+        pft = fire(wet, pft, maxlai, npp)
     
     
         return npp, mnpp, c4mnpp
@@ -349,7 +349,7 @@ end
 end 
 
 function compare_c3_c4_npp(
-    pft::Int,
+    pft::AbstractPFT,
     mnpp::AbstractArray{T},
     c4mnpp::AbstractArray{T},
     monthlyfpar::AbstractArray{T},
@@ -363,20 +363,19 @@ function compare_c3_c4_npp(
     c4ccratio::AbstractArray{T},
     c4leafresp::AbstractArray{T},
     nppsum::T,
-    c4::Bool,
-    BIOME4PFTS::AbstractPFTList
+    c4::Bool
 ) where {T <: Real}
     c4months = 0
     annc4npp = T(0.0)
     c4month = fill(false, 12)
     
     for m in 1:12
-        if get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C4_tropical_grass"
+        if get_characteristic(pft, :name) == "C4_tropical_grass"
             c4month[m] = true
         end
     end
 
-    if get_characteristic(BIOME4PFTS.pft_list[pft], :name) == "C3_C4_woody_desert"
+    if get_characteristic(pft, :name) == "C3_C4_woody_desert"
         for m in 1:12
             if c4mnpp[m] > mnpp[m]
                 c4months += 1

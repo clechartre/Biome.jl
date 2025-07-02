@@ -28,12 +28,11 @@ function photosynthesis(
     fpar::T,
     p::T,
     ca::T,
-    pft::U,
-    BIOME4PFTS::AbstractPFTList,
+    pft::AbstractPFT
     )::Tuple{T,T,T} where {T <: Real, U <: Int}
     # PFT specific parameters
-    t0 = get_t0(BIOME4PFTS.pft_list[pft])
-    tcurve = get_tcurve(BIOME4PFTS.pft_list[pft])
+    t0 = get_characteristic(pft, :t0)
+    tcurve = get_characteristic(pft, :tcurve)
 
     # Derived parameters
     leafcost = (age / T(12.0)) ^ T(0.25)

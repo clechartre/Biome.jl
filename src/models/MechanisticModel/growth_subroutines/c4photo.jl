@@ -26,8 +26,7 @@ function c4photo(
     fpar::T,
     p::T,
     ca::T,
-    pft::U,
-    BIOME4PFTS::AbstractPFTList,
+    pft::AbstractPFT
 )::Tuple{T,T,T} where {T <: Real, U <: Int}
     # PFT-specific parameters
     # TODO verify that this gives the same result as the original code
@@ -35,9 +34,9 @@ function c4photo(
 
     # Determine qeffc4 and tune based on PFT
     # FIXME this is a bit of a hack, we should have a better way to handle PFT-specific parameters - ask if C4 and then define these parameters in C4 plants
-    qeffc4, tune = if get_name(BIOME4PFTS.pft_list[pft]) in ["C3C4TemperateGrass", "C4TropicalGrass"]
+    qeffc4, tune = if get_characteristic(pft, :name) in ["C3C4TemperateGrass", "C4TropicalGrass"]
         (T(0.0633), T(1.0))
-    elseif get_name(BIOME4PFTS.pft_list[pft]) == "C3C4WoodyDesert"
+    elseif get_characteristic(pft, :name) == "C3C4WoodyDesert"
         (T(0.0565), T(0.75))
     else
         println("Running the c4 photosynthesis routine with a non-c4 PFT")

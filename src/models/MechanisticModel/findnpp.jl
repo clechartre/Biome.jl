@@ -7,7 +7,7 @@ include("growth.jl")
 export growth
 
 function findnpp(
-    pft::U, # FIXME this should be an AbstractPFT and then set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1]) can become set_characteristic(pft, :lai, alai[1])
+    pft::AbstractPFT, # FIXME this should be an AbstractPFT and then set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1]) can become set_characteristic(pft, :lai, alai[1])
     annp::T,
     dtemp::AbstractArray{T,1},
     sun::AbstractArray{T,1},
@@ -17,12 +17,11 @@ function findnpp(
     dpet::AbstractArray{T,1},
     dayl::AbstractArray{T,1},
     k::AbstractArray,
-    BIOME4PFTS::AbstractPFTList,
     dphen::AbstractArray{T},
     co2::AbstractFloat,
     p::AbstractFloat,
     tsoil::AbstractArray{T,1}
-) where {T <: Real, U <: Int}
+)::AbstractPFT where {T <: Real, U <: Int}
     """Run NPP optimization model for one pft"""
 
     # Initialize variables
@@ -48,7 +47,6 @@ function findnpp(
             dmelt,
             dpet,
             k,
-            BIOME4PFTS,
             pft,
             dayl,
             dtemp,
@@ -60,9 +58,9 @@ function findnpp(
             c4mnpp
         )
 
-        if npp >= get_characteristic(BIOME4PFTS.pft_list[pft], :npp)
-            set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1])
-            set_characteristic(BIOME4PFTS.pft_list[pft], :npp, npp)
+        if npp >= get_characteristic(pft, :npp)
+            set_characteristic(pft, :lai, alai[1])
+            set_characteristic(pft, :npp, npp)
         end
 
         npp, mnpp, c4mnpp = growth(
@@ -74,7 +72,6 @@ function findnpp(
             dmelt,
             dpet,
             k,
-            BIOME4PFTS,
             pft,
             dayl,
             dtemp,
@@ -86,17 +83,17 @@ function findnpp(
             c4mnpp
         )
 
-        if npp >= get_characteristic(BIOME4PFTS.pft_list[pft], :npp)
-            set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1])
-            set_characteristic(BIOME4PFTS.pft_list[pft], :npp, npp)
+        if npp >= get_characteristic(pft, :npp)
+            set_characteristic(pft, :lai, alai[1])
+            set_characteristic(pft, :npp, npp)
         end
 
         range_val /= T(2.0)
-        lowbound = get_characteristic(BIOME4PFTS.pft_list[pft], :lai) - range_val / T(2.0)
+        lowbound = get_characteristic(pft, :lai) - range_val / T(2.0)
         if lowbound <= 0.0
             lowbound = T(0.01)
         end
     end
     
-    return BIOME4PFTS
+    return pft
 end

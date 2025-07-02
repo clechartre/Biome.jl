@@ -42,7 +42,7 @@ function hydrology(
     root::T,
     k::AbstractArray{T},
     maxfvc::T,
-    pft::U,
+    pft::AbstractPFT,
     phentype::U,
     wst::T,
     gcopt::AbstractArray{T},
@@ -50,15 +50,14 @@ function hydrology(
     dphen::AbstractArray{T},
     dtemp::AbstractArray{T},
     sapwood::U,
-    emax::T,
-    BIOME4PFTS::AbstractPFTList,
+    emax::T
 
-    )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{Vector{T}}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
+    )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
     days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     alfam = T(1.4)
     gm = T(5.0)
-    onnw = get_sw_drop(BIOME4PFTS.pft_list[pft])
-    offw = get_sw_drop(BIOME4PFTS.pft_list[pft])
+    onnw = get_characteristic(pft, :sw_drop)
+    offw = get_characteristic(pft, :sw_drop)
 
     # Initializations
     runoffmonth = zeros(T, 12)
@@ -240,6 +239,8 @@ function hydrology(
             end
         end
     end
+
+    meanwr = map(mean, meanwr)
 
     return  meanfvc, 
             meangc, 

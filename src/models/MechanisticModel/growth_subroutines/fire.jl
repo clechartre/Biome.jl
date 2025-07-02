@@ -19,14 +19,13 @@ Calculate the number of potential fire days in a year based on threshold values 
 - `burnfraction`: Fraction of litter burned based on fire potential.
 """
 function fire(wet::AbstractVector{T},
-    pft::U,
+    pft::AbstractPFT,
     lai::T,
-    npp::T,
-    BIOME4PFTS::AbstractPFTList
-)::Tuple{T, T, T, T, T} where {T <: Real, U <: Int}
+    npp::T
+)::AbstractPFT where {T <: Real, U <: Int}
 
     # Threshold values per PFT
-    threshold = get_threshold(BIOME4PFTS.pft_list[pft])
+    threshold = get_characteristic(pft, :threshold)
 
     # Initialize variables
     firedays = T(0.0)
@@ -62,6 +61,8 @@ function fire(wet::AbstractVector{T},
         firedays *= npp / T(1000.0)
     end
 
+    set_characteristic(pft, :firedays, firedays)
+
     # Return results as a FireResult
-    return firedays, wetday, dryday, firefraction, burnfraction
+    return pft
 end

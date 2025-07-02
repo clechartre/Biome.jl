@@ -14,7 +14,6 @@ function ppeett(
     lat::T,
     dtemp::AbstractArray{T},
     dclou::AbstractArray{T},
-    radanom::AbstractArray{T},
     temp::AbstractArray{T}
 )::Tuple{AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, AbstractArray{T}} where {T <: Real}
     midday = Int[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
@@ -45,11 +44,11 @@ function ppeett(
             psi, l = table(dtemp[day])
 
             rl = (b + (T(1) - b) * (dclou[day] / T(100.0))) * (radup - dtemp[day])
-            rl *= radanom[month]
+            rl *= 1 # originally radanom but not used in this version
 
             qo = qoo * (T(1.0) + T(2.0) * T(0.01675) * cos(dip * (T(360.0) * day) / T(365.0)))
             rs = qo * (c + d * (dclou[day] / T(100.0))) * (T(1.0) - albedo)
-            rs *= radanom[month]
+            rs *= 1 # originally radanom but not used in this version
 
             a = -dip * T(23.4) * cos(dip * T(360.0) * (day + T(10.0)) / T(365.0))
             cla = cos(lat * dip) * cos(a)

@@ -112,14 +112,15 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     # set_characteristic(BIOME4PFTS.pft_list[1], :presence, true)
 
     # Calculate optimal LAI and NPP for the selected PFTs
-    for pft in 1:numofpfts
-        if get_characteristic(BIOME4PFTS.pft_list[pft], :present) == true
-            if get_characteristic(BIOME4PFTS.pft_list[pft], :phenological_type) >= 2
-                dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl, BIOME4PFTS)
+    for (iv, pft) in enumerate(BIOME4PFTS.pft_list)
+        if get_characteristic(pft, :present) == true
+            if get_characteristic(pft, :phenological_type) >= 2
+                dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl)
             end
 
             # FIXME instead return BIOME4PFTs with firedays, greendays, mwet, wetlayer in it
-            BIOME4PFTS = findnpp(
+            # Find the index 
+            BIOME4PFTS.pft_list[iv] = findnpp(
                 pft,
                 tprec,
                 dtemp,
@@ -130,7 +131,6 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
                 dpet,
                 dayl,
                 k,
-                BIOME4PFTS,
                 dphen,
                 co2,
                 p,
