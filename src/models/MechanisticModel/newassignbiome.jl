@@ -52,7 +52,7 @@ function assign_biome(optpft::BorealEvergreen, subpft::AbstractPFT, wdom::Abstra
         if temperate_deciduous_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[temperate_deciduous_idx], :present)
             return CoolMixedForest()
         else
-            return ColdMixedForest()
+            return CoolConiferForest()
         end
     else
         temperate_deciduous_idx = findfirst(pft -> get_characteristic(pft, :name) == "TemperateDeciduous", BIOME4PFTS.pft_list)
