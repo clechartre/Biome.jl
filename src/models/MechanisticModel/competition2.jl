@@ -56,7 +56,7 @@ function competition2(
                 maxlai = get_characteristic(pft, :lai)
                 pftmaxlai = pft
             elseif get_characteristic(pft, :lai) == maxlai
-                maxlai = pftmaxnpp !== Default ? get_characteristic(pftmaxnpp, :lai) : T(0)
+                maxlai = get_characteristic(pftmaxnpp, :lai)
                 pftmaxlai = pftmaxnpp
             end
         end
@@ -67,8 +67,6 @@ function competition2(
 
     # Determine the subdominant woody PFT
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, BIOME4PFTS)
-
-
 
     # Determine the optimal PFT based on various conditions
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft_Kaplan(
@@ -274,7 +272,6 @@ function determine_optimal_pft_Kaplan(
     wetness::AbstractArray{T},
     BIOME4PFTS::AbstractPFTList
 ) where {T <: Real, U <: Int} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
-    
     flop = false
 
     # Helper function to find PFT by type
@@ -404,7 +401,7 @@ function determine_optimal_pft_Kaplan(
             if get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
             elseif firedays > 90
-                if !flop && subpft !== Default
+                if !flop && subpft !== None
                     wdom = subpft
                     subpft = get_pft_by_type(BorealEvergreen)
                     flop = true
@@ -427,8 +424,8 @@ function determine_optimal_pft_Kaplan(
         end
 
         # No woody PFT
-        if wdom === None
-            if grasspft !== None
+        if isa(wdom, None)
+            if !isa(grasspft, None)
                 optpft = grasspft
             else
                 lichen_forb = get_pft_by_type(LichenForb)
@@ -441,7 +438,7 @@ function determine_optimal_pft_Kaplan(
         end
 
         # Fallback to woody desert
-        if optpft === None
+        if isa(wdom, None)
             woody_desert = get_pft_by_type(WoodyDesert)
             if woody_desert !== nothing && get_characteristic(woody_desert, :present)
                 optpft = woody_desert
@@ -460,6 +457,7 @@ function determine_optimal_pft_Kaplan(
         # Grass conditions
         if optpft === grasspft
             woody_desert = get_pft_by_type(WoodyDesert)
+
             if get_characteristic(grasspft, :lai) < 1.8 && woody_desert !== nothing && get_characteristic(woody_desert, :present)
                 optpft = woody_desert
             else

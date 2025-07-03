@@ -325,7 +325,7 @@ function growth(
         end
     
         if gpp > 0.0 
-            if get_characteristic(pft, :grass) == true || get_characteristic(pft, :name) == "C3_C4_woody_desert"
+            if get_characteristic(pft, :grass) == true || get_characteristic(pft, :name) == "C3C4WoodyDesert"
             #  calculate the phi term that is used in the C4 13C fractionation
             #  routines
                 phi = calcphi(mgpp)
@@ -375,12 +375,12 @@ function compare_c3_c4_npp(
     c4month = fill(false, 12)
     
     for m in 1:12
-        if get_characteristic(pft, :name) == "C4_tropical_grass"
+        if get_characteristic(pft, :name) == "C4TropicalGrass"
             c4month[m] = true
         end
     end
 
-    if get_characteristic(pft, :name) == "C3_C4_woody_desert"
+    if get_characteristic(pft, :name) == "C3C4WoodyDesert"
         for m in 1:12
             if c4mnpp[m] > mnpp[m]
                 c4months += 1

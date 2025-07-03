@@ -130,7 +130,7 @@ WoodyDesert(clt, prec, temp) = WoodyDesert(Characteristics(
     "C3C4WoodyDesert",
     1,      # phenological_type (evergreen)
     0.1,    # max_min_canopy_conductance
-    1.0,    # EmaxD
+    1.0,    # Emax
     -99.9,    # sw_drop
     -99.9,    # sw_appear
     0.53,    # root_fraction_top_soil
