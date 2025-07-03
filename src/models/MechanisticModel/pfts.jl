@@ -89,6 +89,10 @@ struct Default <: AbstractPFT
     characteristics::Characteristics
 end
 
+struct None <: AbstractPFT
+    characteristics::Characteristics
+end
+
 # Default Characteristics
 Characteristics() = Characteristics(
     "Default",                      # name
@@ -111,7 +115,7 @@ Characteristics() = Characteristics(
     0.0,                           # respfact
     0.0,                           # allocfact
     false,                         # grass
-    (tcm=[0.0, 0.0], min=[0.0, 0.0], gdd=[0.0, 0.0], gdd0=[0.0, 0.0], twm=[0.0, 0.0], snow=[0.0, 0.0]), # constraints
+    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]), # constraints
     false,                         # present
     0.0,                           # dominance
     0,                             # greendays
@@ -237,7 +241,7 @@ TemperateBroadleavedEvergreen(clt, prec, temp) = TemperateBroadleavedEvergreen(C
     1.4,
     1.2,
     false,
-    (tcm=[-99.9, -99.9], min=[-8.0, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    (tcm=[-99.9, -99.9], min=[-8.0, 5.0], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
     true,
     dominance_environment(clt, 33.4, 13.3) * dominance_environment(prec, 106.3, 83.6) * dominance_environment(temp, 18.7, 3.2),
     0,
@@ -268,7 +272,7 @@ TemperateDeciduous(clt, prec, temp) = TemperateDeciduous(Characteristics(
     1.6,
     1.2,
     false,
-    (tcm=[-15.0, -99.9], min=[-99.9, -99.9], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
+    (tcm=[-15.0, -99.9], min=[-99.9, -8.0], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
     true,
     dominance_environment(clt, 40.9, 8.6) * dominance_environment(prec, 70.2, 41.9) * dominance_environment(temp, 8.4, 4.7),
     0,
@@ -454,7 +458,7 @@ C3C4TemperateGrass(clt, prec, temp) = C3C4TemperateGrass(Characteristics(
     1.6,
     1.0,
     true,
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
+    (tcm=[-99.9, -99.9], min=[-99.9, 0.0], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
     true,
     dominance_environment(clt, 16.6, 6.9) * dominance_environment(prec, 12.2, 13.4) * dominance_environment(temp, 21.3, 6.2),
     0,
@@ -527,6 +531,7 @@ ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
 ))
 
 Default() =  Default(Characteristics())
+None() = None(Characteristics())
 
 
 struct BiomeClassification <: AbstractPFTList
@@ -534,20 +539,19 @@ struct BiomeClassification <: AbstractPFTList
 end
 
 # TOFIX: not sure this is needed, but could be used to define functions that are uniquely defined for specific biome classifications
-BiomeClassification(clt, prec, temp) = BiomeClassification([WoodyDesert(clt, prec, temp),
-                                            TropicalEvergreen(clt, prec, temp),
+BiomeClassification(clt, prec, temp) = BiomeClassification([TropicalEvergreen(clt, prec, temp),
                                             TropicalDroughtDeciduous(clt, prec, temp),
                                             TemperateBroadleavedEvergreen(clt, prec, temp),
                                             TemperateDeciduous(clt, prec, temp),
                                             CoolConifer(clt, prec, temp),
                                             BorealEvergreen(clt, prec, temp),
                                             BorealDeciduous(clt, prec, temp),
-                                            LichenForb(clt, prec, temp),
-                                            TundraShrubs(clt, prec, temp),
                                             C3C4TemperateGrass(clt, prec, temp),
                                             C4TropicalGrass(clt, prec, temp),
+                                            WoodyDesert(clt, prec, temp),
+                                            TundraShrubs(clt, prec, temp),
                                             ColdHerbaceous(clt, prec, temp),
-                                            Default()]) # place all other Biome4 PFTs here
+                                            LichenForb(clt, prec, temp)]) # place all other Biome4 PFTs here
 
 # FIXME this will become just two much simpler functions - Need to try them in the Replaces
 """
