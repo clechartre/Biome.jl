@@ -52,7 +52,7 @@ function photosynthesis(
 
     # Temperature adjusted values
     ko = KO25 * (KOQ10 ^ ((temp - T(25.0)) / T(10.0)))
-    kc = KC25 * (KOQ10 ^ ((temp - T(25.0)) / T(10.0)))
+    kc = KC25 * (KCQ10 ^ ((temp - T(25.0)) / T(10.0)))
     tao = TAO25 * (TAOQ10 ^ ((temp - T(25.0)) / T(10.0)))
 
     s = DRESPC3 * (T(24.0) / daytime)

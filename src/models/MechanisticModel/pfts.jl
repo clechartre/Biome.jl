@@ -485,7 +485,7 @@ C4TropicalGrass(clt, prec, temp) = C4TropicalGrass(Characteristics(
     true,
     0.40,
     10.0,
-    0.8,
+    1.0,
     0.8,
     1.0,
     true,
