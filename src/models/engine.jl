@@ -22,7 +22,7 @@ include("../pfts.jl")
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT
 
 include("../biomes.jl")
-export AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList
+export AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList, get_biome_characteristic
 
 # Models
 include("../abstractmodel.jl")
@@ -48,6 +48,7 @@ using .Constants: T, P0, CP, T0, G, M, R0,
     LN, Y, M10, P1, STEMCARBON,
     E0, TREF, TEMP0,
     A, ES, A1, B3, B
+
 
 # Now one could also define his own biome classifcation as a module
 # import .MyCustomBiomeModel
@@ -144,7 +145,7 @@ function main(
         defDim(output_dataset, "lat", size(lat, 1))
         defDim(output_dataset, "time", llen)
         defDim(output_dataset, "months", tlen)
-        defDim(output_dataset, "pft", 15)
+        defDim(output_dataset, "pft", 14)
 
         # Define variables with appropriate types and dimensions
         lon_var = defVar(output_dataset, "lon", T, ("lon",), attrib = OrderedDict("units" => "degrees_east"))
@@ -170,7 +171,7 @@ function main(
         biome_var[:, :] = fill(T(-9999.0), cntx, cnty)
         wdom_var[:, :] = fill(T(-9999.0), cntx, cnty)
         gdom_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        npp_var[:, :, :] = fill(T(-9999.0), cntx, cnty, 15)
+        npp_var[:, :, :] = fill(T(-9999.0), cntx, cnty, 14)
         tcm_var[:, :] = fill(T(-9999.0), cntx, cnty)
         gdd0_var[:, :] = fill(T(-9999.0), cntx, cnty)
         gdd5_var[:, :] = fill(T(-9999.0), cntx, cnty)
@@ -441,7 +442,7 @@ function process_cell(
 
     biome_var[x_global_index, y_global_index] = output[1] # bad idea to have hardcoded index; abstract if to work with any pft property
     wdom_var[x_global_index, y_global_index] = output[2]
-    npp_var[x_global_index, y_global_index, :] = output[3:17]  # Assuming 14 PFTs
+    npp_var[x_global_index, y_global_index, :] = output[3:16]  # Assuming 14 PFTs
 
 end
 

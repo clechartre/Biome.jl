@@ -174,7 +174,11 @@ function growth(
             wst, doptgc, mgmin, dphen, dtemp, sapwood, emax)
 
         set_characteristic(pft, :greendays, greendays)
-        set_characteristic(pft, :mwet, meanwr)
+        meanwrround = Vector{T}(undef, 12)
+        for m in 1:12
+            meanwrround[m] = T(safe_round_to_int(100 * meanwr[m][2]))
+        end
+        set_characteristic(pft, :mwet, meanwrround)
 
         # Initialize annual variables
         alresp = T(0.0)
@@ -329,7 +333,8 @@ function growth(
             meanC3, meanC4, C3DA, C4DA = isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
         end
     
-        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, meanwr, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
+        moist = map(mean, meanwr)
+        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
 
         annresp = sum(Rtot)
     
@@ -342,7 +347,7 @@ function growth(
     
         pft = fire(wet, pft, maxlai, npp)
     
-    
+
         return npp, mnpp, c4mnpp
     
 end

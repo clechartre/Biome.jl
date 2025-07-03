@@ -42,6 +42,7 @@ module Constants
     const TUNE = T(1.0)
     const TWIGLOSS = T(1.0)
 
+
     # C4 Photo 
     const MAXTEMP::T = T(55.0)
 

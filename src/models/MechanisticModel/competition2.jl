@@ -18,16 +18,16 @@ function competition2(
     gdd5::T,
     tcm::T,
     BIOME4PFTS::AbstractPFTList,  
-)::Tuple{T, AbstractPFT, T} where {T <: Real, U <: Int}
+)::Tuple{AbstractBiome, AbstractPFT, T} where {T <: Real, U <: Int}
 
     # Initialize all of the variables that index an array
-    optpft   = Default()
-    subpft   = Default()
-    grasspft = Default()
-    pftmaxnpp = Default()
-    pftmaxlai = Default()
-    dom      = Default()
-    wdom     = Default()
+    optpft   = None()
+    subpft   = None()
+    grasspft = None()
+    pftmaxnpp = None()
+    pftmaxlai = None()
+    dom      = None()
+    wdom     = None()
     
     maxnpp = T(0.0)
     maxlai = T(0.0)
@@ -63,15 +63,14 @@ function competition2(
     end
 
     # Find average annual soil moisture value for all PFTs
-    # FIXME we need to get an Indexed DimensionalData structure for optdata
     wetness = calculate_soil_moisture(numofpfts, BIOME4PFTS)
 
     # Determine the subdominant woody PFT
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, BIOME4PFTS)
 
 
+
     # Determine the optimal PFT based on various conditions
-    # FIXME, make sure that optpft is of type AbstractPFT - also base this on the BIOME4PFTS.pft_list[pft].dominance
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft_Kaplan(
         optpft,
         wdom,
@@ -91,21 +90,7 @@ function competition2(
     )
 
     # Call the newassignbiome function
-    biome = mock_assign_biome(
-        optpft,
-        wdom,
-        subpft,
-        npp,
-        subnpp,
-        greendays,
-        gdd0,
-        gdd5,
-        tcm,
-        woodylai,
-        grasslai,
-        tmin,
-        BIOME4PFTS
-    )
+    biome = assign_biome(optpft, subpft, wdom, gdd0, gdd5, tcm, tmin, BIOME4PFTS)
 
     return biome, optpft, npp
 end
@@ -146,17 +131,17 @@ function calculate_soil_moisture(
     # for each PFT, average its 12 monthly mwet values
     for i in 1:numofpfts
         total = sum(get_characteristic(BIOME4PFTS.pft_list[i], :mwet))
-        wetness[i+1] = total / 12.0
+        wetness[i] = total / 12.0
     end
     return wetness
 end
 
 
 function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4PFTS::AbstractPFTList)
-    optpft = pftmaxnpp === nothing ? Default() : pftmaxnpp
+    optpft = pftmaxnpp
     wdom   = optpft
     subnpp = 0.0
-    subpft = Default()
+    subpft = None()
 
     for pft in BIOME4PFTS.pft_list
         # skip the max‐NPP one by identity
@@ -304,21 +289,21 @@ function determine_optimal_pft_Kaplan(
     end
 
     # Initialize variables
-    woodylai = isa(wdom, Default) ? T(0) : get_characteristic(wdom, :lai)
-    woodnpp  = isa(wdom, Default) ? T(0) : get_characteristic(wdom, :npp)
-    grasslai = isa(grasspft, Default) ? T(0) : get_characteristic(grasspft, :lai)
-    greendays = isa(wdom, Default) ? 0 : get_characteristic(wdom, :greendays)
-    nppdif    = woodnpp - (isa(grasspft, Default) ? T(0) : get_characteristic(grasspft, :npp))
+    woodylai = isa(wdom, None) ? T(0) : get_characteristic(wdom, :lai)
+    woodnpp  = isa(wdom, None) ? T(0) : get_characteristic(wdom, :npp)
+    grasslai = isa(grasspft, None) ? T(0) : get_characteristic(grasspft, :lai)
+    greendays = isa(wdom, None) ? 0 : get_characteristic(wdom, :greendays)
+    nppdif    = woodnpp - (isa(grasspft, None) ? T(0) : get_characteristic(grasspft, :npp))
     
     while true
         # Update variables dynamically if wdom changes
-        woodylai = wdom !== Default ? get_characteristic(wdom, :lai) : T(0.0)
-        woodnpp = wdom !== Default ? get_characteristic(wdom, :npp) : T(0.0)
-        grasslai = grasspft !== Default ? get_characteristic(grasspft, :lai) : T(0.0)
+        woodylai = get_characteristic(wdom, :lai)
+        woodnpp = get_characteristic(wdom, :npp)
+        grasslai = get_characteristic(grasspft, :lai)
 
-        if wdom !== Default
+        if wdom !== None
             firedays = get_characteristic(wdom, :firedays)
-            subfiredays = subpft !== Default ? get_characteristic(subpft, :firedays) : 0
+            subfiredays = get_characteristic(subpft, :firedays)
             greendays = get_characteristic(wdom, :greendays)
         else
             firedays = 0
@@ -326,10 +311,10 @@ function determine_optimal_pft_Kaplan(
             greendays = 0
         end
 
-        nppdif = woodnpp - (grasspft !== Default ? get_characteristic(grasspft, :npp) : T(0.0))
+        nppdif = woodnpp - get_characteristic(grasspft, :npp)
 
         # Temperate broadleaved evergreen or cool conifer with warm conditions
-        if wdom !== Default && (isa(wdom, TemperateBroadleavedEvergreen) || isa(wdom, CoolConifer)) && tmin > T(0.0)
+        if (isa(wdom, TemperateBroadleavedEvergreen) || isa(wdom, CoolConifer)) && tmin > T(0.0)
             if gdd5 > T(5000.0)
                 wdom = get_pft_by_type(TropicalDroughtDeciduous)
                 continue
@@ -337,7 +322,7 @@ function determine_optimal_pft_Kaplan(
         end
 
         # Tropical evergreen
-        if wdom !== Default && isa(wdom, TropicalEvergreen)
+        if isa(wdom, TropicalEvergreen)
             if get_characteristic(wdom, :npp) < T(2000.0)
                 wdom = get_pft_by_type(TropicalDroughtDeciduous)
                 subpft = get_pft_by_type(TropicalEvergreen)
@@ -346,37 +331,37 @@ function determine_optimal_pft_Kaplan(
         end
 
         # Tropical drought deciduous
-        if wdom !== Default && isa(wdom, TropicalDroughtDeciduous)
+        if isa(wdom, TropicalDroughtDeciduous)
             if woodylai < T(2.0)
                 optpft = grasspft
-            elseif grasspft !== Default && isa(grasspft, C4TropicalGrass) && woodylai < T(3.6)
-                optpft = Default # Mixed woody/grass (equivalent to index 14)
+            elseif isa(grasspft, C4TropicalGrass) && woodylai < T(3.6)
+                optpft = Default() # Mixed woody/grass (equivalent to index 14)
             elseif greendays < (270) && tcm > T(21.0) && tprec < T(1700.0)
-                optpft = Default # Mixed woody/grass
+                optpft = Default() # Mixed woody/grass
             else
                 optpft = wdom
             end
         end
 
         # Temperate broadleaved evergreen
-        if wdom !== Default && isa(wdom, TemperateBroadleavedEvergreen)
+        if isa(wdom, TemperateBroadleavedEvergreen)
             if get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.0)
                 optpft = grasspft
             elseif woodylai < T(2.0)
-                optpft = Default # Mixed woody/grass
+                optpft = Default() # Mixed woody/grass
             else
                 optpft = wdom
             end
         end
 
         # Temperate deciduous
-        if wdom !== Default && isa(wdom, TemperateDeciduous)
+        if isa(wdom, TemperateDeciduous)
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
-                if !flop && subpft !== Default
+                if !flop && subpft !== None
                     wdom = subpft
                     subpft = get_pft_by_type(TemperateDeciduous)
                     flop = true
@@ -386,8 +371,8 @@ function determine_optimal_pft_Kaplan(
                 end
             elseif woodylai < T(3.0) || firedays > 180
                 if nppdif < 0.0
-                    optpft = Default # Mixed woody/grass
-                elseif !flop && subpft !== Default
+                    optpft = Default() # Mixed woody/grass - PFT 14
+                elseif !flop && subpft !== None
                     wdom = subpft
                     subpft = get_pft_by_type(TemperateDeciduous)
                     flop = true
@@ -399,23 +384,23 @@ function determine_optimal_pft_Kaplan(
         end
 
         # Cool conifer
-        if wdom !== Default && isa(wdom, CoolConifer)
-            temperate_broadleaved = get_pft_by_type(TemperateBroadleavedEvergreen)
-            if temperate_broadleaved !== Default && get_characteristic(temperate_broadleaved, :present)
-                wdom = temperate_broadleaved
+        if isa(wdom, CoolConifer)
+            temperate_evergreen = get_pft_by_type(TemperateBroadleavedEvergreen)
+            if temperate_evergreen !== nothing && get_characteristic(temperate_evergreen, :present)
+                wdom = temperate_evergreen
                 subpft = get_pft_by_type(CoolConifer)
                 continue
             elseif get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.2)
-                optpft = Default # Mixed woody/grass
+                optpft = Default() # Mixed woody/grass
             else
                 optpft = wdom
             end
         end
 
         # Boreal evergreen
-        if wdom !== Default && isa(wdom, BorealEvergreen)
+        if isa(wdom, BorealEvergreen)
             if get_characteristic(wdom, :npp) < T(140.0)
                 optpft = grasspft
             elseif firedays > 90
@@ -431,7 +416,7 @@ function determine_optimal_pft_Kaplan(
         end
 
         # Boreal deciduous
-        if wdom !== Default && isa(wdom, BorealDeciduous)
+        if isa(wdom, BorealDeciduous)
             if get_characteristic(wdom, :npp) < T(120.0)
                 optpft = grasspft
             elseif wetness[findfirst(pft -> pft === wdom, BIOME4PFTS.pft_list)] < T(30.0) && nppdif < T(0.0)
@@ -442,42 +427,40 @@ function determine_optimal_pft_Kaplan(
         end
 
         # No woody PFT
-        if wdom === Default
-            lichen_forb = get_pft_by_type(LichenForb)
-            if grasspft !== Default
+        if wdom === None
+            if grasspft !== None
                 optpft = grasspft
-            elseif lichen_forb !== Default && get_characteristic(lichen_forb, :npp) != 0.0
-                optpft = lichen_forb
             else
-                optpft = Default
+                lichen_forb = get_pft_by_type(LichenForb)
+                if lichen_forb !== nothing && get_characteristic(lichen_forb, :npp) != 0.0
+                    optpft = lichen_forb
+                else
+                    optpft = None()
+                end
             end
         end
 
         # Fallback to woody desert
-        if optpft === Default
+        if optpft === None
             woody_desert = get_pft_by_type(WoodyDesert)
-            if woody_desert !== Default && get_characteristic(woody_desert, :present)
+            if woody_desert !== nothing && get_characteristic(woody_desert, :present)
                 optpft = woody_desert
             end
         end
 
         # Woody desert specific conditions
-        if optpft !== Default && isa(optpft, WoodyDesert)
-            woody_desert = get_pft_by_type(WoodyDesert)
-            if (grasspft === Default || !isa(grasspft, C4TropicalGrass)) && 
-               grasspft !== Default && woody_desert !== Default &&
-               get_characteristic(grasspft, :npp) > get_characteristic(woody_desert, :npp)
+        if isa(optpft, WoodyDesert)
+            if !isa(grasspft, C4TropicalGrass) && get_characteristic(grasspft, :npp) > get_characteristic(optpft, :npp)
                 optpft = grasspft
             else
-                optpft = woody_desert
+                optpft = get_pft_by_type(WoodyDesert)
             end
         end
 
         # Grass conditions
-        if optpft === grasspft && grasspft !== Default
+        if optpft === grasspft
             woody_desert = get_pft_by_type(WoodyDesert)
-            if get_characteristic(grasspft, :lai) < 1.8 && 
-               woody_desert !== Default && get_characteristic(woody_desert, :present)
+            if get_characteristic(grasspft, :lai) < 1.8 && woody_desert !== nothing && get_characteristic(woody_desert, :present)
                 optpft = woody_desert
             else
                 optpft = grasspft
@@ -485,11 +468,11 @@ function determine_optimal_pft_Kaplan(
         end
 
         # Tundra shrubs conditions
-        if optpft !== Default && isa(optpft, TundraShrubs)
+        if isa(optpft, TundraShrubs)
             cold_herb = get_pft_by_type(ColdHerbaceous)
             optpft_idx = findfirst(pft -> pft === optpft, BIOME4PFTS.pft_list)
-            if optpft_idx !== Default && wetness[optpft_idx] <= 25.0 && 
-               cold_herb !== Default && get_characteristic(cold_herb, :present)
+            if optpft_idx !== nothing && wetness[optpft_idx] <= 25.0 && 
+               cold_herb !== nothing && get_characteristic(cold_herb, :present)
                 optpft = cold_herb
             end
         end
@@ -502,9 +485,9 @@ end
 
 # FIXME what does this function do and can we detangle the output stuff from the calculations
 function calculate_vegetation_dominance(
-    optpft::Union{AbstractPFT},
-    wdom::Union{AbstractPFT},
-    grasspft::Union{AbstractPFT},
+    optpft::AbstractPFT,
+    wdom::AbstractPFT,
+    grasspft::AbstractPFT,
     grassnpp::T,
     woodnpp::T,
     woodylai::T,

@@ -21,10 +21,12 @@ function findnpp(
     co2::AbstractFloat,
     p::AbstractFloat,
     tsoil::AbstractArray{T,1}
-)::AbstractPFT where {T <: Real, U <: Int}
+)::Tuple{AbstractPFT, T, T} where {T <: Real, U <: Int}
     """Run NPP optimization model for one pft"""
 
     # Initialize variables
+    optnpp = 0
+    optlai = 0
     mnpp = zeros(T, 12)
     c4mnpp = zeros(T, 12)
 
@@ -32,6 +34,10 @@ function findnpp(
     lowbound = T(0.01)
     range_val = T(8.0)
     alai = zeros(T, 2)
+
+    if get_characteristic(pft, :present) == false
+        return pft, T(0.0), T(0.0)
+    end
 
     for _ in 1:8
 
@@ -58,9 +64,9 @@ function findnpp(
             c4mnpp
         )
 
-        if npp >= get_characteristic(pft, :npp)
-            set_characteristic(pft, :lai, alai[1])
-            set_characteristic(pft, :npp, npp)
+        if npp >= optnpp
+            optlai = alai[1]
+            optnpp = npp
         end
 
         npp, mnpp, c4mnpp = growth(
@@ -83,17 +89,17 @@ function findnpp(
             c4mnpp
         )
 
-        if npp >= get_characteristic(pft, :npp)
-            set_characteristic(pft, :lai, alai[1])
-            set_characteristic(pft, :npp, npp)
+        if npp >= optnpp
+            optlai = alai[2]
+            optnpp = npp
         end
 
         range_val /= T(2.0)
-        lowbound = get_characteristic(pft, :lai) - range_val / T(2.0)
+        lowbound = optlai - range_val / T(2.0)
         if lowbound <= 0.0
             lowbound = T(0.01)
         end
     end
     
-    return pft
+    return pft, optlai, optnpp
 end

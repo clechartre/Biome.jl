@@ -25,7 +25,12 @@ export snow
 include("./soiltemp.jl")
 export soiltemp
 include("./pfts.jl")
-export BiomeClassification, get_characteristic, set_characteristic
+export BiomeClassification, get_characteristic, set_characteristic, Default, None
+include("./biomes.jl")
+export TropicalEvergreenForest, TropicalSemiDeciduousForest, TropicalDeciduousForestWoodland,
+        TropicalGrassland, TropicalSavanna, TropicalXerophyticShrubland, 
+        TemperateSclerophyllWoodland, TemperateBroadleavedSavanna, OpenConiferWoodland,
+        BorealParkland, Barren, LandIce
 
 """
 Put Doc
@@ -47,7 +52,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     prec = @views vars_in[17:28] # 12 months of precipitation
     clou = @views vars_in[29:40] # 12 months of cloud cover
     soil = @views vars_in[41:44] # soil parameters
-    tminin = vars_in[45] # minimum temperature
+    tminin = vars_in[4] # minimum temperature
 
     lon = vars_in[49]
     lat = vars_in[1]  # vars_in[49] - (vars_in[1] / vars_in[50])
@@ -120,7 +125,7 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
 
             # FIXME instead return BIOME4PFTs with firedays, greendays, mwet, wetlayer in it
             # Find the index 
-            BIOME4PFTS.pft_list[iv] = findnpp(
+            BIOME4PFTS.pft_list[iv], optlai, optnpp = findnpp(
                 pft,
                 tprec,
                 dtemp,
@@ -136,6 +141,10 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
                 p,
                 tsoil,
             )
+            # Set the characteristics of the PFT
+            set_characteristic(BIOME4PFTS.pft_list[iv], :npp, optnpp)
+            set_characteristic(BIOME4PFTS.pft_list[iv], :lai, optlai)
+
         end
     end
 
@@ -152,6 +161,9 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     # Transform optpft into a number that corresponds to its index in the PFT list
     optindex = optpft === nothing ? 0 : (findfirst(pft -> pft == optpft, BIOME4PFTS.pft_list) === nothing ? 0 : findfirst(pft -> pft == optpft, BIOME4PFTS.pft_list))
 
+    # Transform Biome into an integer 
+    biomeindex = get_biome_characteristic(biome, :value)
+
     # Save all NPP for each AbstractPFT in order into a vector 
     nppindex = zeros(T, numofpfts + 1)  # +1 for the case of no PFTs present
     for pft in 1:numofpfts
@@ -165,9 +177,9 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     # Final output biome is given by the integer biome:
     output = Vector{Any}(undef, 50)
     fill!(output, 0.0)
-    output[1] = biome
+    output[1] = biomeindex
     output[2] = optindex  # Now can store AbstractPFT
-    output[3:17] = nppindex
+    output[3:16] = nppindex
     output[48] = lon
     output[49] = lat
 

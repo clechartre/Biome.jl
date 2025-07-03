@@ -52,7 +52,7 @@ function hydrology(
     sapwood::U,
     emax::T
 
-    )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
+    )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{Vector{T}}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
     days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     alfam = T(1.4)
     gm = T(5.0)
@@ -239,8 +239,6 @@ function hydrology(
             end
         end
     end
-
-    meanwr = map(mean, meanwr)
 
     return  meanfvc, 
             meangc, 

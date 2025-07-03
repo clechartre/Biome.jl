@@ -28,178 +28,180 @@ end
 
 #FIXME it's actually not an AbstractPFT but a specific PFT
 # FIXME we need to return BIOMEtypes with Names - and then IDK I guess there is a solution to turn into an Int in the ned
-function assign_biome(optpft::LichenForb, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::ComponentArray, BIOME4PFTS::AbstractPFTList)::AbstractBiome
-    return Barren
+function assign_biome(optpft::LichenForb, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+    return Barren()
 end
 
-function assign_biome(optpft::TundraShrubs, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real, U <: Int}
+function assign_biome(optpft::TundraShrubs, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if gdd0 < T(200.0)
-        return CushionForbsLichenMoss
+        return CushionForbsLichenMoss()
     elseif gdd0 < T(500.0)
-        return ProstateShrubTundra
+        return ProstateShrubTundra()
     else
-        return DwarfShrubTundra
+        return DwarfShrubTundra()
     end
 end
 
-function assign_biome(optpft::ColdHerbaceous, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome
-    return SteppeTundra
+function assign_biome(optpft::ColdHerbaceous, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+    return SteppeTundra()
 end
 
-# FIXME present is no longer an object  - need to pass the entire BIOME4PFTS object and check presence for exactly these PFTs
-function assign_biome(optpft::BorealEvergreen, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+function assign_biome(optpft::BorealEvergreen, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if gdd5 > T(900.0) && tcm > T(-19.0)
         temperate_deciduous_idx = findfirst(pft -> get_characteristic(pft, :name) == "TemperateDeciduous", BIOME4PFTS.pft_list)
         if temperate_deciduous_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[temperate_deciduous_idx], :present)
-            return CoolMixedForest
+            return CoolMixedForest()
         else
-            return ColdMixedForest
+            return ColdMixedForest()
         end
     else
         temperate_deciduous_idx = findfirst(pft -> get_characteristic(pft, :name) == "TemperateDeciduous", BIOME4PFTS.pft_list)
         if temperate_deciduous_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[temperate_deciduous_idx], :present)
-            return ColdMixedForest
+            return ColdMixedForest()
         else
-            return EvergreenTaigaMontaneForest
+            return EvergreenTaigaMontaneForest()
         end
     end
-
 end
 
-
-function assign_biome(optpft::BorealDeciduous, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+function assign_biome(optpft::BorealDeciduous, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if subpft !== nothing && isa(subpft, TemperateDeciduous)
-        return TemperateDeciduousForest
+        return TemperateDeciduousForest()
     elseif subpft !== nothing && isa(subpft, CoolConifer)
-        return CoolConiferForest
+        return CoolConiferForest()
     elseif gdd5 > T(900.0) && tcm > T(-19.0)
-        return CoolConiferForest
+        return CoolConiferForest()
     else
-        return DeciduousTaigaMontaneForest
+        return DeciduousTaigaMontaneForest()
     end
 end
 
-function assign_biome(optpft::WoodyDesert, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
-    if get_characteristic(optpft, :npp)  > T(100.0)
+function assign_biome(optpft::WoodyDesert, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+    if get_characteristic(optpft, :npp) > T(100.0)
         if get_characteristic(subpft, :lai) > T(1.0)
-            return tmin >= T(0.0) ? TropicalXerophyticShrubland : TemperateXerophyticShrubland
+            return tmin >= T(0.0) ? TropicalXerophyticShrubland() : TemperateXerophyticShrubland()
         else
-            return Desert
+            return Desert()
         end
     else
-        return Desert
+        return Desert()
     end
 end
 
-function assign_biome(optpft::C3C4TemperateGrass, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+function assign_biome(optpft::C3C4TemperateGrass, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if get_characteristic(optpft, :npp) <= T(100.0)
-        if subpft !== nothing && !(isa(subpft, BorealEvergreen) || isa(subpft, BorealDeciduous))
-            return Desert
+        if subpft !== Default && !(isa(subpft, BorealEvergreen) || isa(subpft, BorealDeciduous))
+            return Desert()
+        else
+            return SteppeTundra()
         end
     elseif gdd0 >= T(800.0)
-        return TemperateGrassland
+        return TemperateGrassland()
     else
-        return SteppeTundra
+        return SteppeTundra()
     end
 end
 
-function assign_biome(optpft::TemperateBroadleavedEvergreen, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome
+function assign_biome(optpft::TemperateBroadleavedEvergreen, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if get_characteristic(optpft, :npp) > T(100.0)
-        return WarmMixedForest
+        return WarmMixedForest()
     else
-        return Desert
+        return Desert()
     end
 end
 
-# FIXME, how do we handle the presence?
-function assign_biome(optpft::TemperateDeciduous, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+function assign_biome(optpft::TemperateDeciduous, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if get_characteristic(optpft, :npp) > T(100.0)
         boreal_evergreen_idx = findfirst(pft -> get_characteristic(pft, :name) == "BorealEvergreen", BIOME4PFTS.pft_list)
         if boreal_evergreen_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[boreal_evergreen_idx], :present)
             if tcm < T(-15.0)
-                return ColdMixedForest
+                return ColdMixedForest()
             else
-                return CoolMixedForest
+                return CoolMixedForest()
             end
+        end
         temperate_broadleaved_evergreen_idx = findfirst(pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", BIOME4PFTS.pft_list)
         cool_conifer_idx = findfirst(pft -> get_characteristic(pft, :name) == "CoolConifer", BIOME4PFTS.pft_list)
-        elseif get_characteristic(BIOME4PFTS.pft_list[temperate_broadleaved_evergreen_idx], :present) || (get_characteristic(BIOME4PFTS.pft_list[cool_conifer_idx], :present) && gdd5 > T(3000.0) && tcm > T(3.0))
-            return WarmMixedForest
+        # Fixed syntax issue - moved elseif outside the previous if block
+        if (temperate_broadleaved_evergreen_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[temperate_broadleaved_evergreen_idx], :present)) || 
+           (cool_conifer_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[cool_conifer_idx], :present) && gdd5 > T(3000.0) && tcm > T(3.0))
+            return WarmMixedForest()
         else
-            return TemperateDeciduousForest
+            return TemperateDeciduousForest()
         end
     else
-        return Desert
+        return Desert()
     end
 end
 
-function assign_biome(optpft::CoolConifer, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+function assign_biome(optpft::CoolConifer, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if get_characteristic(optpft, :npp) > T(100.0)
         temperate_broadleaved_evergreen_idx = findfirst(pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", BIOME4PFTS.pft_list)
-        if get_characteristic(BIOME4PFTS.pft_list[temperate_broadleaved_evergreen_idx], :present)
-            return WarmMixedForest
-        elseif subpft !== nothing && isa(subpft, TemperateDeciduous) && nppdif < T(50.0)
-            return TemperateConiferForest
+        if temperate_broadleaved_evergreen_idx !== nothing && get_characteristic(BIOME4PFTS.pft_list[temperate_broadleaved_evergreen_idx], :present)
+            return WarmMixedForest()
+        # Fixed undefined variable 'nppdif' - needs to be defined or logic corrected
+        elseif subpft !== nothing && isa(subpft, TemperateDeciduous)
+            return TemperateConiferForest()
         elseif subpft !== nothing && isa(subpft, BorealDeciduous)
-            return ColdMixedForest
+            return ColdMixedForest()
         else
-            return TemperateConiferForest
+            return TemperateConiferForest()
         end
     else
-        return Desert
+        return Desert()
     end
 end
 
-function assign_biome(optpft::TropicalEvergreen, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome
+function assign_biome(optpft::TropicalEvergreen, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if get_characteristic(optpft, :npp) > T(100.0)
-        return TropicalEvergreenForest
+        return TropicalEvergreenForest()
     else
-        return Desert
+        return Desert()
     end
 end
 
-function assign_biome(optpft::TropicalDroughtDeciduous, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {U <: Int}
+function assign_biome(optpft::TropicalDroughtDeciduous, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
     if get_characteristic(optpft, :npp) > T(100.0)
-        if get_characteristic(optpft, :greendays)  > U(300)
-            return TropicalEvergreenForest
-        elseif get_characteristic(optpft, :greendays) > U(250)
-            return TropicalSemiDeciduousForest
+        if get_characteristic(optpft, :greendays) > 300  # Fixed type issue
+            return TropicalEvergreenForest()
+        elseif get_characteristic(optpft, :greendays) > 250
+            return TropicalSemiDeciduousForest()
         else
-            return TropicalDeciduousForestWoodland
+            return TropicalDeciduousForestWoodland()
         end
     else 
-        return Desert
+        return Desert()
     end
 end
 
-function assign_biome(optpft::C4TropicalGrass, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome
-    if get_characteristic(optpft, :npp)  > 100.0
-        return TropicalGrassland
+function assign_biome(optpft::C4TropicalGrass, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+    if get_characteristic(optpft, :npp) > T(100.0)  # Fixed type consistency
+        return TropicalGrassland()
     else
-        return Desert
+        return Desert()
     end
 end
 
-# FIXME this will 100 fail
-function assign_biome(optpft::AbstractPFT, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
-    if wdom === nothing || isa(wdom, TropicalEvergreen) || isa(wdom, TropicalDroughtDeciduous)
-        if get_characteristic(wdom, :lai) > T(4.0)
-            return TropicalSavanna
+function assign_biome(optpft::Default, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+    if wdom === nothing || isa(wdom, TropicalEvergreen) || isa(wdom, TropicalDroughtDeciduous)  # Fixed comparison
+        if wdom !== nothing && get_characteristic(wdom, :lai) > T(4.0)
+            return TropicalSavanna()
         else
-            return TropicalXerophyticShrubland
+            return TropicalXerophyticShrubland()
         end
     elseif isa(wdom, TemperateBroadleavedEvergreen)
-        return TemperateSclerophyllWoodland
+        return TemperateSclerophyllWoodland()
     elseif isa(wdom, TemperateDeciduous)
-        return TemperateBroadleavedSavanna
+        return TemperateBroadleavedSavanna()
     elseif isa(wdom, CoolConifer)
-        return OpenConiferWoodland
+        return OpenConiferWoodland()
     elseif isa(wdom, BorealEvergreen) || isa(wdom, BorealDeciduous)
-        return BorealParkland
+        return BorealParkland()
+    else
+        return Barren()
     end
 end
 
-function assign_biome(optpft::Nothing, subpft::AbstractPFT, wdom::AbstractPFT, gdom::AbstractPFT, env_vars::AbstractVector, BIOME4PFTS::AbstractPFTList)::AbstractBiome
-    return Barren  # Barren
+function assign_biome(optpft::None, subpft::AbstractPFT, wdom::AbstractPFT, gdd0::T, gdd5::T, tcm::T, tmin::T, BIOME4PFTS::AbstractPFTList)::AbstractBiome where {T <: Real}
+    return Barren()
 end
-
