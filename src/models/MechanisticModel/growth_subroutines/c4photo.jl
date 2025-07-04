@@ -39,7 +39,7 @@ function c4photo(
     elseif get_characteristic(pft, :name) == "C3C4WoodyDesert"
         (T(0.0565), T(0.75))
     else
-        println("Running the c4 photosynthesis routine with a non-c4 PFT")
+        throw(ArgumentError("Running the c4 subroutine with a non-c4 plant"))
     end
 
     # Derived parameters
