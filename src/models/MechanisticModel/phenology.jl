@@ -9,7 +9,6 @@ function phenology(
 )::AbstractArray{T} where {T <: Real}
     # Days in each month
     daysinmonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    dphen = ones(T, 365, 2)
     ramp = T[get_characteristic(pft, :GDD5_full_leaf_out), get_characteristic(pft, :GDD0_full_leaf_out)]
     ont = get_characteristic(pft, :name) == "BorealDeciduous" ? T(0.0) : T(5.0)
 
