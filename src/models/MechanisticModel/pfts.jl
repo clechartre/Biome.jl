@@ -1,6 +1,6 @@
 using Distributions
 
-mutable struct Characteristics{T <: Real, U <: Int} <: AbstractPFTCharacteristics
+mutable struct Characteristics{T<:Real,U<:Int} <: AbstractPFTCharacteristics
     name::String
     phenological_type::U
     max_min_canopy_conductance::T
@@ -21,7 +21,10 @@ mutable struct Characteristics{T <: Real, U <: Int} <: AbstractPFTCharacteristic
     respfact::T
     allocfact::T
     grass::Bool
-    constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow), NTuple{6, Vector{Float64}}}
+    constraints::NamedTuple{
+        (:tcm, :min, :gdd, :gdd0, :twm, :snow),
+        NTuple{6,Vector{Float64}}
+    }
     # Values that will get filled through the code
     present::Bool
     dominance::T
@@ -95,67 +98,82 @@ end
 
 # Default Characteristics
 Characteristics() = Characteristics(
-    "Default",                      # name
-    0,                             # phenological_type
-    0.0,                           # max_min_canopy_conductance
-    0.0,                           # Emax
-    0.0,                           # sw_drop
-    0.0,                           # sw_appear
-    0.0,                           # root_fraction_top_soil
-    0.0,                           # leaf_longevity
-    0.0,                           # GDD5_full_leaf_out
-    0.0,                           # GDD0_full_leaf_out
-    0,                             # sapwood_respiration
-    0.0,                           # optratioa
-    0.0,                           # kk
-    false,                         # c4
-    0.0,                           # threshold
-    0.0,                           # t0
-    0.0,                           # tcurve
-    0.0,                           # respfact
-    0.0,                           # allocfact
-    false,                         # grass
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]), # constraints
-    false,                         # present
-    0.0,                           # dominance
-    0,                             # greendays
-    0.0,                             # firedays
-    zeros(T, 12),                   # mwet
-    0.0,                           # npp
-    0.0                            # lai
+    "Default",
+    0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0,
+    0.0,
+    0.0,
+    false,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    false,
+    (
+        tcm=[-Inf, +Inf],
+        min=[-Inf, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, +Inf],
+        snow=[-Inf, +Inf]
+    ),
+    false,
+    0.0,
+    0,
+    0.0,
+    zeros(Float64, 12),
+    0.0,
+    0.0
 )
 
 # Default constructors for the PFTs
 WoodyDesert(clt, prec, temp) = WoodyDesert(Characteristics(
     "C3C4WoodyDesert",
-    1,      # phenological_type (evergreen)
-    0.1,    # max_min_canopy_conductance
-    1.0,    # Emax
-    -99.9,    # sw_drop
-    -99.9,    # sw_appear
-    0.53,    # root_fraction_top_soil
-    12.0,    # leaf_longevity
-    -99.9, # GDD5_full_leaf_out
-    -99.9,  # GDD0_full_leaf_out
-    1,   # sapwood_respiration
-    0.70,   # optratioa
-    0.3,   # kk
-    true,  # c4
-    0.33,    # threshold
-    5.0,    # t0
-    1.0,    # tcurve
-    1.4,    # respfact
-    1.0,    # allocfact
-    false,  # grass
-    (tcm=[-99.9, -99.9], min=[-45.0, -99.9], gdd=[500.0, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),  # constraints
-    true, # present
-    dominance_environment(clt, 9.2, 2.2) * dominance_environment(prec, 2.5, 2.8) * dominance_environment(temp, 23.9, 2.7),
+    1,
+    0.1,
+    1.0,
+    -99.9,
+    -99.9,
+    0.53,
+    12.0,
+    -99.9,
+    -99.9,
+    1,
+    0.70,
+    0.3,
+    true,
+    0.33,
+    5.0,
+    1.0,
+    1.4,
+    1.0,
+    false,
+    (
+        tcm=[-Inf, +Inf],
+        min=[-45.0, +Inf],
+        gdd=[500.0, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[10.0, +Inf],
+        snow=[-Inf, +Inf]
+    ),
+    true,
+    dominance_environment(clt, 9.2, 2.2) *
+        dominance_environment(prec, 2.5, 2.8) *
+        dominance_environment(temp, 23.9, 2.7),
     0,
     0.0,
     zeros(Float64, 12),
-    0.0, # npp
-    0.0  # lai
-    
+    0.0,
+    0.0
 ))
 
 TropicalEvergreen(clt, prec, temp) = TropicalEvergreen(Characteristics(
@@ -179,9 +197,18 @@ TropicalEvergreen(clt, prec, temp) = TropicalEvergreen(Characteristics(
     0.8,
     1.0,
     false,
-    (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    (
+        tcm=[-Inf, +Inf],
+        min=[0.0, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[10.0, +Inf],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 50.2, 4.9) * dominance_environment(prec, 169.6, 41.9) * dominance_environment(temp, 24.7, 1.2),
+    dominance_environment(clt, 50.2, 4.9) *
+        dominance_environment(prec, 169.6, 41.9) *
+        dominance_environment(temp, 24.7, 1.2),
     0,
     0.0,
     zeros(Float64, 12),
@@ -189,67 +216,89 @@ TropicalEvergreen(clt, prec, temp) = TropicalEvergreen(Characteristics(
     0.0
 ))
 
-TropicalDroughtDeciduous(clt, prec, temp) = TropicalDroughtDeciduous(Characteristics(
-    "TropicalDroughtDeciduous",
-    3,
-    0.5,
-    10.0, 
-    0.5,
-    0.6,
-    0.7,
-    9.0,
-    -99.9,
-    -99.9,
-    1,
-    0.9,
-    0.7,
-    false,
-    0.20,
-    10.0,
-    1.0,
-    0.8,
-    1.0,
-    false,
-    (tcm=[-99.9, -99.9], min=[0.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
-    true,
-    dominance_environment(clt, 44.0, 12.9) * dominance_environment(prec, 163.3, 85.1) * dominance_environment(temp, 23.7, 2.3),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
-))
+TropicalDroughtDeciduous(clt, prec, temp) = TropicalDroughtDeciduous(
+    Characteristics(
+        "TropicalDroughtDeciduous",
+        3,
+        0.5,
+        10.0,
+        0.5,
+        0.6,
+        0.7,
+        9.0,
+        -99.9,
+        -99.9,
+        1,
+        0.9,
+        0.7,
+        false,
+        0.20,
+        10.0,
+        1.0,
+        0.8,
+        1.0,
+        false,
+        (
+            tcm=[-Inf, +Inf],
+            min=[0.0, +Inf],
+            gdd=[-Inf, +Inf],
+            gdd0=[-Inf, +Inf],
+            twm=[10.0, +Inf],
+            snow=[-Inf, +Inf]
+        ),
+        true,
+        dominance_environment(clt, 44.0, 12.9) *
+            dominance_environment(prec, 163.3, 85.1) *
+            dominance_environment(temp, 23.7, 2.3),
+        0,
+        0.0,
+        zeros(Float64, 12),
+        0.0,
+        0.0
+    )
+)
 
-TemperateBroadleavedEvergreen(clt, prec, temp) = TemperateBroadleavedEvergreen(Characteristics(
-    "TemperateBroadleavedEvergreen",
-    1,
-    0.2,
-    4.8,
-    -99.9,
-    -99.9,
-    0.67,
-    18.0,
-    -99.9,
-    -99.9,
-    1,
-    0.8,
-    0.6,
-    false,
-    0.40,
-    5.0,
-    1.0,
-    1.4,
-    1.2,
-    false,
-    (tcm=[-99.9, -99.9], min=[-8.0, 5.0], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
-    true,
-    dominance_environment(clt, 33.4, 13.3) * dominance_environment(prec, 106.3, 83.6) * dominance_environment(temp, 18.7, 3.2),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
-))
+TemperateBroadleavedEvergreen(clt, prec, temp) = TemperateBroadleavedEvergreen(
+    Characteristics(
+        "TemperateBroadleavedEvergreen",
+        1,
+        0.2,
+        4.8,
+        -99.9,
+        -99.9,
+        0.67,
+        18.0,
+        -99.9,
+        -99.9,
+        1,
+        0.8,
+        0.6,
+        false,
+        0.40,
+        5.0,
+        1.0,
+        1.4,
+        1.2,
+        false,
+        (
+            tcm=[-Inf, +Inf],
+            min=[-8.0, 5.0],
+            gdd=[1200, +Inf],
+            gdd0=[-Inf, +Inf],
+            twm=[10.0, +Inf],
+            snow=[-Inf, +Inf]
+        ),
+        true,
+        dominance_environment(clt, 33.4, 13.3) *
+            dominance_environment(prec, 106.3, 83.6) *
+            dominance_environment(temp, 18.7, 3.2),
+        0,
+        0.0,
+        zeros(Float64, 12),
+        0.0,
+        0.0
+    )
+)
 
 TemperateDeciduous(clt, prec, temp) = TemperateDeciduous(Characteristics(
     "TemperateDeciduous",
@@ -272,9 +321,18 @@ TemperateDeciduous(clt, prec, temp) = TemperateDeciduous(Characteristics(
     1.6,
     1.2,
     false,
-    (tcm=[-15.0, -99.9], min=[-99.9, -8.0], gdd=[1200, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
+    (
+        tcm=[-15.0, +Inf],
+        min=[-Inf, -8.0],
+        gdd=[1200, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, +Inf],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 40.9, 8.6) * dominance_environment(prec, 70.2, 41.9) * dominance_environment(temp, 8.4, 4.7),
+    dominance_environment(clt, 40.9, 8.6) *
+        dominance_environment(prec, 70.2, 41.9) *
+        dominance_environment(temp, 8.4, 4.7),
     0,
     0.0,
     zeros(Float64, 12),
@@ -286,7 +344,7 @@ CoolConifer(clt, prec, temp) = CoolConifer(Characteristics(
     "CoolConifer",
     1,
     0.2,
-    4.8, 
+    4.8,
     -99.9,
     -99.9,
     0.52,
@@ -303,21 +361,30 @@ CoolConifer(clt, prec, temp) = CoolConifer(Characteristics(
     0.8,
     1.2,
     false,
-    (tcm=[-2.0, -99.9], min=[-99.9, 10.0], gdd=[900, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    (
+        tcm=[-2.0, +Inf],
+        min=[-Inf, 10.0],
+        gdd=[900, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[10.0, +Inf],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 28.1, 8.6) * dominance_environment(prec, 54.5, 49.9) * dominance_environment(temp, 13.9, 3.4),
+    dominance_environment(clt, 28.1, 8.6) *
+        dominance_environment(prec, 54.5, 49.9) *
+        dominance_environment(temp, 13.9, 3.4),
     0,
     0.0,
     zeros(Float64, 12),
     0.0,
     0.0
-))  
+))
 
 BorealEvergreen(clt, prec, temp) = BorealEvergreen(Characteristics(
     "BorealEvergreen",
     1,
     0.5,
-    4.5, 
+    4.5,
     -99.9,
     -99.9,
     0.83,
@@ -334,9 +401,18 @@ BorealEvergreen(clt, prec, temp) = BorealEvergreen(Characteristics(
     4.0,
     1.2,
     false,
-    (tcm=[-32.5, -2.0], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),
+    (
+        tcm=[-32.5, -2.0],
+        min=[-Inf, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, 21.0],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 48.1, 7.6) * dominance_environment(prec, 58.7, 35.7) * dominance_environment(temp, -2.7, 4.0),
+    dominance_environment(clt, 48.1, 7.6) *
+        dominance_environment(prec, 58.7, 35.7) *
+        dominance_environment(temp, -2.7, 4.0),
     0,
     0.0,
     zeros(Float64, 12),
@@ -348,7 +424,7 @@ BorealDeciduous(clt, prec, temp) = BorealDeciduous(Characteristics(
     "BorealDeciduous",
     2,
     0.8,
-    10.0, 
+    10.0,
     -99.9,
     -99.9,
     0.83,
@@ -365,9 +441,18 @@ BorealDeciduous(clt, prec, temp) = BorealDeciduous(Characteristics(
     4.0,
     1.2,
     false,
-    (tcm=[-99.9, 5.0], min=[-99.9, -10.0], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),
+    (
+        tcm=[-Inf, 5.0],
+        min=[-Inf, -10.0],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, 21.0],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 47.4, 8.3) * dominance_environment(prec, 65.0, 83.6) * dominance_environment(temp, -12, 7.7),
+    dominance_environment(clt, 47.4, 8.3) *
+        dominance_environment(prec, 65.0, 83.6) *
+        dominance_environment(temp, -12, 7.7),
     0,
     0.0,
     zeros(Float64, 12),
@@ -379,7 +464,7 @@ LichenForb(clt, prec, temp) = LichenForb(Characteristics(
     "LichenForb",
     1,
     0.8,
-    1.0, 
+    1.0,
     -99.9,
     -99.9,
     0.93,
@@ -396,21 +481,30 @@ LichenForb(clt, prec, temp) = LichenForb(Characteristics(
     4.0,
     1.5,
     false,
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),
+    (
+        tcm=[-Inf, +Inf],
+        min=[-Inf, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, 15.0],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 43.9, 9.0) * dominance_environment(prec, 53.3, 52.1) * dominance_environment(temp, -18.4, 4.1),
+    dominance_environment(clt, 43.9, 9.0) *
+        dominance_environment(prec, 53.3, 52.1) *
+        dominance_environment(temp, -18.4, 4.1),
     0,
     0.0,
     zeros(Float64, 12),
     0.0,
     0.0
-    ))
+))
 
 TundraShrubs(clt, prec, temp) = TundraShrubs(Characteristics(
     "TundraShrubs",
     1,
     0.8,
-    1.0, 
+    1.0,
     -99.9,
     -99.9,
     0.93,
@@ -427,9 +521,18 @@ TundraShrubs(clt, prec, temp) = TundraShrubs(Characteristics(
     4.0,
     1.0,
     true,
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[15.0, -99.9]),
+    (
+        tcm=[-Inf, +Inf],
+        min=[-Inf, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[50.0, +Inf],
+        twm=[-Inf, 15.0],
+        snow=[15.0, +Inf]
+    ),
     true,
-    dominance_environment(clt, 51.4, 9.0) * dominance_environment(prec, 50.0, 43.3) * dominance_environment(temp, -10.8, 5.1),
+    dominance_environment(clt, 51.4, 9.0) *
+        dominance_environment(prec, 50.0, 43.3) *
+        dominance_environment(temp, -10.8, 5.1),
     0,
     0.0,
     zeros(Float64, 12),
@@ -458,9 +561,18 @@ C3C4TemperateGrass(clt, prec, temp) = C3C4TemperateGrass(Characteristics(
     1.6,
     1.0,
     true,
-    (tcm=[-99.9, -99.9], min=[-99.9, 0.0], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
+    (
+        tcm=[-Inf, +Inf],
+        min=[-Inf, 0.0],
+        gdd=[550.0, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, +Inf],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 9.3, 1.5) * dominance_environment(prec, 1.5, 1.5) * dominance_environment(temp, 22.9, 2.7),
+    dominance_environment(clt, 9.3, 1.5) *
+        dominance_environment(prec, 1.5, 1.5) *
+        dominance_environment(temp, 22.9, 2.7),
     0,
     0.0,
     zeros(Float64, 12),
@@ -489,9 +601,18 @@ C4TropicalGrass(clt, prec, temp) = C4TropicalGrass(Characteristics(
     0.8,
     1.0,
     true,
-    (tcm=[-99.9, -99.9], min=[-3.0, -99.9], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[10.0, -99.9], snow=[-99.9, -99.9]),
+    (
+        tcm=[-Inf, +Inf],
+        min=[-3.0, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[10.0, +Inf],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 9.4, 1.4) * dominance_environment(prec, 1.7, 2.1) * dominance_environment(temp, 23.2, 2.2),
+    dominance_environment(clt, 9.4, 1.4) *
+        dominance_environment(prec, 1.7, 2.1) *
+        dominance_environment(temp, 23.2, 2.2),
     0,
     0.0,
     zeros(Float64, 12),
@@ -501,7 +622,7 @@ C4TropicalGrass(clt, prec, temp) = C4TropicalGrass(Characteristics(
 
 ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
     "ColdHerbaceous",
-    2, 
+    2,
     0.8,
     1.0,
     -99.9,
@@ -520,9 +641,18 @@ ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
     4.0,
     1.0,
     true,
-    (tcm=[-99.9, -99.9], min=[-99.9, -99.9], gdd=[-99.9, -99.9], gdd0=[50.0, -99.9], twm=[-99.9, 15.0], snow=[-99.9, -99.9]),
+    (
+        tcm=[-Inf, +Inf],
+        min=[-Inf, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[50.0, +Inf],
+        twm=[-Inf, 15.0],
+        snow=[-Inf, +Inf]
+    ),
     true,
-    dominance_environment(clt, 10.4, 2.5) * dominance_environment(prec, 2.0, 1.6) * dominance_environment(temp, 23.5, 2.3),
+    dominance_environment(clt, 10.4, 2.5) *
+        dominance_environment(prec, 2.0, 1.6) *
+        dominance_environment(temp, 23.5, 2.3),
     0,
     0.0,
     zeros(Float64, 12),
@@ -530,30 +660,31 @@ ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
     0.0
 ))
 
-Default() =  Default(Characteristics())
+Default() = Default(Characteristics())
 None() = None(Characteristics())
-
 
 struct BiomeClassification <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end
 
-# TOFIX: not sure this is needed, but could be used to define functions that are uniquely defined for specific biome classifications
-BiomeClassification(clt, prec, temp) = BiomeClassification([TropicalEvergreen(clt, prec, temp),
-                                            TropicalDroughtDeciduous(clt, prec, temp),
-                                            TemperateBroadleavedEvergreen(clt, prec, temp),
-                                            TemperateDeciduous(clt, prec, temp),
-                                            CoolConifer(clt, prec, temp),
-                                            BorealEvergreen(clt, prec, temp),
-                                            BorealDeciduous(clt, prec, temp),
-                                            C3C4TemperateGrass(clt, prec, temp),
-                                            C4TropicalGrass(clt, prec, temp),
-                                            WoodyDesert(clt, prec, temp),
-                                            TundraShrubs(clt, prec, temp),
-                                            ColdHerbaceous(clt, prec, temp),
-                                            LichenForb(clt, prec, temp)]) # place all other Biome4 PFTs here
+# TOFIX: not sure this is needed, but could be used to define functions 
+# that are uniquely defined for specific biome classifications
+BiomeClassification(clt, prec, temp) = BiomeClassification([
+    TropicalEvergreen(clt, prec, temp),
+    TropicalDroughtDeciduous(clt, prec, temp),
+    TemperateBroadleavedEvergreen(clt, prec, temp),
+    TemperateDeciduous(clt, prec, temp),
+    CoolConifer(clt, prec, temp),
+    BorealEvergreen(clt, prec, temp),
+    BorealDeciduous(clt, prec, temp),
+    C3C4TemperateGrass(clt, prec, temp),
+    C4TropicalGrass(clt, prec, temp),
+    WoodyDesert(clt, prec, temp),
+    TundraShrubs(clt, prec, temp),
+    ColdHerbaceous(clt, prec, temp),
+    LichenForb(clt, prec, temp)
+])
 
-# FIXME this will become just two much simpler functions - Need to try them in the Replaces
 """
     get_characteristic(pft::AbstractPFT, prop::Symbol)
 
@@ -580,7 +711,26 @@ function set_characteristic(pft::AbstractPFT, prop::Symbol, value)
     end
 end
 
+"""
+    dominance_environment(clt, mean, std)
 
+Calculate the normalized environmental dominance value for a given climate trait.
+
+This function computes how well a species performs in a given environment by evaluating
+a normal distribution centered on the species' optimal environmental conditions. The 
+function returns a value between 0 and 1, where 1 represents optimal conditions (at the mean)
+and values decrease as environmental conditions deviate from the optimum according to the
+standard deviation.
+
+# Arguments
+- `clt`: The current climate/environmental value to evaluate
+- `mean`: The optimal environmental value for the species (center of the distribution)
+- `std`: The standard deviation representing the species' environmental tolerance
+
+# Returns
+- `Float64`: A normalized value between 0 and 1 representing environmental suitability,
+  where 1.0 is optimal and lower values indicate decreasing suitability
+"""
 function dominance_environment(clt, mean, std)
     # Draw the normal distribution around the mean and std 
     distribution = Normal(mean, std)
@@ -588,9 +738,9 @@ function dominance_environment(clt, mean, std)
     # Pick the distribution at the clt value
     value = pdf(distribution, clt)
 
-    # Normalize the value to be between 0 and 1, 1 is the mean and it decreases according to the standard deviation
+    # Normalize the value to be between 0 and 1, 1 is the mean and it 
+    # decreases according to the standard deviation
     normalized_value = value / pdf(distribution, mean)
 
     return normalized_value
-
 end

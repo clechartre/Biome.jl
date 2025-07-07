@@ -1,6 +1,16 @@
-# Third-party
-using Statistics: mean
+"""
+    growth
 
+Main growth module for plant functional types.
+
+This module orchestrates the calculation of net primary productivity (NPP) for
+plant functional types by integrating photosynthesis, respiration, hydrology,
+and carbon cycling processes.
+"""
+
+# First-party
+include("./utils.jl")
+export safe_exp, safe_round_to_int
 # Import all growth subroutines 
 include("./growth_subroutines/c4photo.jl")
 include("./growth_subroutines/calcphi.jl")
@@ -10,52 +20,53 @@ include("./growth_subroutines/hydrology.jl")
 include("./growth_subroutines/isotope.jl")
 include("./growth_subroutines/photosynthesis.jl")
 include("./growth_subroutines/respiration.jl")
+export c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, 
+       respiration
 
-export c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration
+# Third-party
+using Statistics: mean
 
+"""
+    growth(maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft, dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp)
 
-function safe_exp(x::T)::T where {T <: Real}
-    try
-        return exp(x)
-    catch e
-        return Inf
-    end
-end
+Calculate net primary productivity and carbon fluxes for a plant functional type.
 
-function safe_round_to_int(x::T)::Int where {T <: Real}
-    if isnan(x)
-        return 0
-    elseif x > typemax(Int)
-        return typemax(Int)
-    elseif x < typemin(Int)
-        return typemin(Int)
-    else
-        return round(Int, x)
-    end
-end
+This is the main growth function that integrates photosynthesis, respiration,
+hydrology, and carbon cycling to determine NPP and related carbon fluxes.
+The function handles both C3 and C4 photosynthesis pathways and includes
+iterative optimization for photosynthesis-conductance coupling.
 
-function initialize_arrays(::Type{T}, ::Type{U})::Tuple{Vector{U}, Vector{U}} where {T <: Real, U <: Int}
-    midday = U[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
-    days = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    return midday, days
-end
+# Arguments
+- `maxlai`: Maximum leaf area index
+- `annp`: Annual precipitation (mm)
+- `sun`: Monthly solar radiation (12 elements, MJ/m²/day)
+- `temp`: Monthly temperature (12 elements, °C)
+- `dprec`: Daily precipitation (365 elements, mm)
+- `dmelt`: Daily snowmelt (365 elements, mm)
+- `dpet`: Daily potential evapotranspiration (365 elements, mm)
+- `k`: Soil and canopy parameter array
+- `pft`: Plant functional type
+- `dayl`: Monthly day length (12 elements, hours)
+- `dtemp`: Daily temperature (365 elements, °C)
+- `dphen`: Daily phenology array (365x2 matrix)
+- `co2`: Atmospheric CO2 concentration (ppm)
+- `p`: Atmospheric pressure (kPa)
+- `tsoil`: Monthly soil temperature (12 elements, °C)
+- `mnpp`: Monthly NPP array to be filled (12 elements)
+- `c4mnpp`: Monthly C4 NPP array to be filled (12 elements)
 
-function determine_c4_and_optratio(pft::AbstractPFT, optratioa::T, c4_override::Union{Bool, Nothing}=nothing)::Tuple{Bool, T} where {T <: Real, U <: Int}
-    if c4_override != nothing
-        c4 = c4_override
-    else
-        if get_characteristic(pft, :c4) == true 
-            c4 = true
-        else
-            c4 = false
-        end 
-    end
+# Returns
+A tuple containing:
+- `npp`: Annual net primary productivity (gC/m²/year)
+- `mnpp`: Monthly NPP values (12 elements, gC/m²/month)
+- `c4mnpp`: Monthly C4 NPP values (12 elements, gC/m²/month)
 
-    optratio = c4 ? T(0.4) : T(optratioa)
-    return c4, optratio
-end
-
-
+# Notes
+- Includes iterative bisection method for photosynthesis-conductance coupling
+- Handles mixed C3/C4 photosynthesis for certain PFTs
+- Integrates fire disturbance effects
+- Calculates isotopic signatures for carbon cycling
+"""
 function growth(
     maxlai::T,
     annp::T,
@@ -74,8 +85,7 @@ function growth(
     tsoil::AbstractArray{T},
     mnpp::Vector{T},
     c4mnpp::Vector{T}
-)::Tuple{T, AbstractArray{T}, AbstractArray{T}} where {T <: Real}
-
+)::Tuple{T,AbstractArray{T},AbstractArray{T}} where {T<:Real}
     U = Int
     # Initialize variables
     c4_override = nothing
@@ -85,7 +95,7 @@ function growth(
         reprocess = false
 
         # Initialize set values
-        midday, days= initialize_arrays(T, U)
+        midday, days = initialize_arrays(T, U)
         optratioa = get_characteristic(pft, :optratioa)
         kk = get_characteristic(pft, :kk)
         ca = co2 * T(1e-6)
@@ -141,17 +151,20 @@ function growth(
         # Set the value of optratio depending on whether c4 plant or not.
         c4, optratio = determine_c4_and_optratio(pft, optratioa, c4_override)
     
-
         maxgc = T(0.0)
         for m in 1:12
             tsecs = T(3600.0) * dayl[m]
             fpar = T(1.0) - T(exp(-kk * maxlai))
 
             if c4
-                alllresp, pgphot, aday = c4photo(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                alllresp, pgphot, aday = c4photo(
+                    optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft
+                )
                 lresp[m] = alllresp
             else
-                alllresp, pgphot, aday  = photosynthesis(optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                alllresp, pgphot, aday = photosynthesis(
+                    optratio, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft
+                )
                 lresp[m] = alllresp
             end
     
@@ -170,9 +183,11 @@ function growth(
     
         doptgc = daily(optgc)
 
-        meanfvc, meangc, meanwr, meanaet, runoffmonth, wet, dayfvc, annaet, sumoff, greendays, runnoff, wilt = hydrology(
+        meanfvc, meangc, meanwr, meanaet, runoffmonth, wet, dayfvc, annaet, 
+        sumoff, greendays, runnoff, wilt = hydrology(
             dprec, dmelt, dpet, root, k, maxfvc, pft, phentype,
-            wst, doptgc, mgmin, dphen, dtemp, sapwood, emax)
+            wst, doptgc, mgmin, dphen, dtemp, sapwood, emax
+        )
 
         set_characteristic(pft, :greendays, greendays)
         meanwrround = Vector{T}(undef, 12)
@@ -195,7 +210,8 @@ function growth(
                 rtbis = T(0.0)
                 leafresp = lresp[m] * (meanfvc[m] / maxfvc)
             else
-                # Iterate to a solution for gphot given this meangc value using bisection method
+                # Iterate to a solution for gphot given this meangc value 
+                # using bisection method
                 x1 = T(0.02)
                 x2 = optratio + T(0.05)
                 rtbis = x1
@@ -206,12 +222,16 @@ function growth(
                     fpar = meanfvc[m]
     
                     if c4
-                        allleafresp, alligphot, alladay = c4photo(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                        allleafresp, alligphot, alladay = c4photo(
+                            xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft
+                        )
                         leafresp = allleafresp
                         igphot = alligphot
                         aday = alladay
                     else
-                        allleafresp, alligphot, alladay = photosynthesis(xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft)
+                        allleafresp, alligphot, alladay = photosynthesis(
+                            xmid, sun[m], dayl[m], temp[m], age, fpar, p, ca, pft
+                        )
                         leafresp = allleafresp
                         igphot = alligphot
                         aday = alladay
@@ -219,7 +239,11 @@ function growth(
     
                     gt = 3600 * dayl[m] * meangc[m]
     
-                    ap = if gt == T(0.0) T(0.0) else mgmin + (gt / 1.6) * (ca * (1.0 - xmid)) end
+                    ap = if gt == T(0.0) 
+                        T(0.0) 
+                    else 
+                        mgmin + (gt / 1.6) * (ca * (1.0 - xmid)) 
+                    end
     
                     fmid = aday - ap
 
@@ -228,7 +252,6 @@ function growth(
                         gphot = igphot
                     end
                 end
-    
             end
     
             # Calculate monthly PAR values
@@ -270,10 +293,17 @@ function growth(
         end
     
         # Calculate annual FPAR (%) from annual totals of APAR and PAR
-        annualfpar = if annualapar == T(0.0) T(0.0) else T(100.0) * annualapar / annualparr end
+        annualfpar = if annualapar == T(0.0) 
+            T(0.0) 
+        else 
+            T(100.0) * annualapar / annualparr 
+        end
     
         # Calculate annual respiration costs to find annual NPP
-        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft)
+        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = 
+            respiration(
+                gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft
+            )
 
         if wilt
             npp = -9999.0
@@ -283,14 +313,16 @@ function growth(
         nppsum = T(0.0)
         # Calculate maintenance and growth respiration for months 1 to 11
         for m in 1:11
-            maintresp[m] = mlresp[m] + backleafresp[m] + mstemresp[m] + mrootresp[m]
+            maintresp[m] = mlresp[m] + backleafresp[m] + mstemresp[m] + 
+                          mrootresp[m]
             mgrowresp[m] = T(0.02) * (mgpp[m + 1] - maintresp[m + 1])
             mgrowresp[m] = max(mgrowresp[m], T(0.0))
             mnpp[m] = mgpp[m] - (maintresp[m] + mgrowresp[m])
         end
     
         # Handle month 12 separately
-        maintresp[12] = mlresp[12] + backleafresp[12] + mstemresp[12] + mrootresp[12]
+        maintresp[12] = mlresp[12] + backleafresp[12] + mstemresp[12] + 
+                       mrootresp[12]
         mgrowresp[12] = T(0.02) * (mgpp[1] - maintresp[1])
         mgrowresp[12] = max(mgrowresp[12], T(0.0))
         mnpp[12] = mgpp[12] - (maintresp[12] + mgrowresp[12])
@@ -303,8 +335,11 @@ function growth(
             nppsum += mnpp[m]
         end
     
-        nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
-            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4)
+        nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, 
+        monthlyapar, CCratio, isoresp = compare_c3_c4_npp(
+            pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, 
+            isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4
+        )
     
         if get_characteristic(pft, :name) == "C3C4WoodyDesert"
             if c4
@@ -326,16 +361,23 @@ function growth(
         end
     
         if gpp > 0.0 
-            if get_characteristic(pft, :grass) == true || get_characteristic(pft, :name) == "C3C4WoodyDesert"
-            #  calculate the phi term that is used in the C4 13C fractionation
-            #  routines
+            if get_characteristic(pft, :grass) == true || 
+               get_characteristic(pft, :name) == "C3C4WoodyDesert"
+                # Calculate the phi term that is used in the C4 13C fractionation
+                # routines
                 phi = calcphi(mgpp)
             end
-            meanC3, meanC4, C3DA, C4DA = isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
+            meanC3, meanC4, C3DA, C4DA = isotope(
+                CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp
+            )
         end
     
         moist = map(mean, meanwr)
-        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
+        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = 
+            hetresp(
+                pft, npp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, 
+                Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
+            )
 
         annresp = sum(Rtot)
     
@@ -348,12 +390,104 @@ function growth(
     
         pft = fire(wet, pft, maxlai, npp)
     
-
         return npp, mnpp, c4mnpp
-    
-end
+    end
 end 
 
+
+"""
+    initialize_arrays(T, U)
+
+Initialize day-of-year arrays for monthly calculations.
+
+# Arguments
+- `T`: Real number type
+- `U`: Integer type
+
+# Returns
+- `midday`: Vector of mid-month day numbers
+- `days`: Vector of days per month
+"""
+function initialize_arrays(
+    ::Type{T}, 
+    ::Type{U}
+)::Tuple{Vector{U},Vector{U}} where {T<:Real,U<:Int}
+    midday = U[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
+    days = U[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    return midday, days
+end
+
+"""
+    determine_c4_and_optratio(pft, optratioa, c4_override)
+
+Determine C4 photosynthesis type and optimal ratio for a PFT.
+
+# Arguments
+- `pft`: Plant functional type
+- `optratioa`: Base optimal ratio value
+- `c4_override`: Optional override for C4 determination
+
+# Returns
+- `c4`: Boolean indicating C4 photosynthesis
+- `optratio`: Optimal ratio value (0.4 for C4, optratioa for C3)
+"""
+function determine_c4_and_optratio(
+    pft::AbstractPFT, 
+    optratioa::T, 
+    c4_override::Union{Bool,Nothing}=nothing
+)::Tuple{Bool,T} where {T<:Real,U<:Int}
+    if c4_override != nothing
+        c4 = c4_override
+    else
+        if get_characteristic(pft, :c4) == true 
+            c4 = true
+        else
+            c4 = false
+        end 
+    end
+
+    optratio = c4 ? T(0.4) : T(optratioa)
+    return c4, optratio
+end
+
+"""
+    compare_c3_c4_npp(pft, mnpp, c4mnpp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp, c4fpar, c4parr, c4apar, c4ccratio, c4leafresp, nppsum, c4)
+
+Compare C3 and C4 NPP values and determine optimal photosynthetic pathway.
+
+This function handles mixed C3/C4 photosynthesis for certain PFTs by comparing
+monthly NPP values and selecting the more productive pathway for each month.
+
+# Arguments
+- `pft`: Plant functional type
+- `mnpp`: Monthly NPP array (C3 pathway)
+- `c4mnpp`: Monthly C4 NPP array
+- `monthlyfpar`: Monthly FPAR values
+- `monthlyparr`: Monthly PAR values
+- `monthlyapar`: Monthly absorbed PAR values
+- `CCratio`: Monthly CO2 concentration ratios
+- `isoresp`: Monthly isotopic respiration values
+- `c4fpar`: Monthly C4 FPAR values
+- `c4parr`: Monthly C4 PAR values
+- `c4apar`: Monthly C4 absorbed PAR values
+- `c4ccratio`: Monthly C4 CO2 concentration ratios
+- `c4leafresp`: Monthly C4 leaf respiration values
+- `nppsum`: Total NPP sum
+- `c4`: Current C4 status
+
+# Returns
+A tuple containing:
+- `nppsum`: Updated total NPP sum
+- `c4pct`: Percentage of NPP from C4 photosynthesis
+- `c4month`: Boolean array indicating C4 months
+- `mnpp`: Updated monthly NPP array
+- `annc4npp`: Annual C4 NPP
+- `monthlyfpar`: Updated monthly FPAR values
+- `monthlyparr`: Updated monthly PAR values
+- `monthlyapar`: Updated monthly absorbed PAR values
+- `CCratio`: Updated monthly CO2 concentration ratios
+- `isoresp`: Updated monthly isotopic respiration values
+"""
 function compare_c3_c4_npp(
     pft::AbstractPFT,
     mnpp::AbstractArray{T},
@@ -370,7 +504,7 @@ function compare_c3_c4_npp(
     c4leafresp::AbstractArray{T},
     nppsum::T,
     c4::Bool
-) where {T <: Real}
+) where {T<:Real}
     c4months = 0
     annc4npp = T(0.0)
     c4month = fill(false, 12)
@@ -418,5 +552,6 @@ function compare_c3_c4_npp(
 
     c4pct = (nppsum != 0) ? annc4npp / nppsum : T(0.0)
 
-    return nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, monthlyapar, CCratio, isoresp
+    return nppsum, c4pct, c4month, mnpp, annc4npp, monthlyfpar, monthlyparr, 
+           monthlyapar, CCratio, isoresp
 end

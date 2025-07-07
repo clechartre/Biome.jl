@@ -1,76 +1,104 @@
-"""Biome4 orchestrator."""
-# Third-party
-using LinearAlgebra
-using Printf
+"""
+    biome4
+
+Main BIOME4 orchestrator module.
+
+This module coordinates the execution of the BIOME4 vegetation model, 
+integrating climate data processing, plant functional type evaluation,
+and biome classification.
+"""
+
+# Third-party imports
 using ComponentArrays: ComponentArray
 using DimensionalData
+using LinearAlgebra
+using Printf
 
-# First-party
-include("./climdata.jl")
-export climdata
-include("./constraints.jl")
-export constraints
-include("./competition2.jl")
-export competition2
-include("./findnpp.jl")
-export findnpp
-include("./growth_subroutines/daily.jl")
-export daily
-include("./phenology.jl")
-export phenology
-include("./ppeett.jl")
-export ppeett
-include("./snow.jl")
-export snow
-include("./soiltemp.jl")
-export soiltemp
-include("./pfts.jl")
-export BiomeClassification, get_characteristic, set_characteristic, Default, None
+# First-party imports
 include("./biomes.jl")
-export TropicalEvergreenForest, TropicalSemiDeciduousForest, TropicalDeciduousForestWoodland,
-        TropicalGrassland, TropicalSavanna, TropicalXerophyticShrubland, 
-        TemperateSclerophyllWoodland, TemperateBroadleavedSavanna, OpenConiferWoodland,
-        BorealParkland, Barren, LandIce
+include("./climdata.jl")
+include("./competition2.jl")
+include("./constraints.jl")
+include("./findnpp.jl")
+include("./growth_subroutines/daily.jl")
+include("./pfts.jl")
+include("./phenology.jl")
+include("./ppeett.jl")
+include("./snow.jl")
+include("./soiltemp.jl")
+
+# Export functions and types
+export BiomeClassification, Default, None, get_characteristic, set_characteristic
+export TropicalEvergreenForest, TropicalSemiDeciduousForest, 
+       TropicalDeciduousForestWoodland, TropicalGrassland, TropicalSavanna, 
+       TropicalXerophyticShrubland, TemperateSclerophyllWoodland, 
+       TemperateBroadleavedSavanna, OpenConiferWoodland, BorealParkland, 
+       Barren, LandIce
+export climdata, competition2, constraints, daily, findnpp, phenology, 
+       ppeett, snow, soiltemp
 
 """
-Put Doc
+    run(m::BIOME4Model, vars_in::Vector{Union{T,U}}) where {T<:Real,U<:Int}
 
-args in: 
-- pfts: Vec{AbstractPFT{len}}- replaces pft_dict
-- vars_in::DimensionalData (Vector)
-- NO OUTPUTS
+Execute the complete BIOME4 model simulation for a single grid cell.
 
-args out:
-- dominance: vector of length pfts
-- npp: vector of length pfts
+This function orchestrates the entire BIOME4 modeling workflow including:
+climate data processing, snow dynamics, soil temperature calculation,
+potential evapotranspiration, phenology, plant functional type constraints,
+NPP optimization, and biome classification.
+
+# Arguments
+- `m::BIOME4Model`: Model configuration object
+- `vars_in::Vector{Union{T,U}}`: Input vector containing climate and site data
+  - Elements 1: latitude (degrees)
+  - Elements 2: CO2 concentration (ppm)
+  - Elements 3: atmospheric pressure (kPa)
+  - Elements 4: minimum temperature (°C)
+  - Elements 5-16: monthly temperature (°C, 12 months)
+  - Elements 17-28: monthly precipitation (mm, 12 months)
+  - Elements 29-40: monthly cloud cover (%, 12 months)
+  - Elements 41-44: soil parameters (4 values)
+  - Elements 49: longitude (degrees)
+
+# Returns
+- `Vector{Any}`: Output vector containing:
+  - Element 1: biome classification index
+  - Element 2: optimal PFT index
+  - Elements 3-16: NPP values for each PFT (gC/m²/year)
+  - Element 48: longitude
+  - Element 49: latitude
+
+# Notes
+- Uses 365-day year assumption
+- Handles both C3 and C4 photosynthesis pathways
+- Includes iterative optimization for LAI and NPP
+- Accounts for environmental constraints on PFT presence
 """
-function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
-    # Whatever biomeclassification that will be called will depend on the model. Then we will jump into a folder
-
-    # FIXME this will change and will not be based on indices but names in the Raster object
-    temp = @views vars_in[5:16] # 12 months of temperature
-    prec = @views vars_in[17:28] # 12 months of precipitation
-    clou = @views vars_in[29:40] # 12 months of cloud cover
-    soil = @views vars_in[41:44] # soil parameters
-    tminin = vars_in[4] # minimum temperature
-
-    lon = vars_in[49]
-    lat = vars_in[1]  # vars_in[49] - (vars_in[1] / vars_in[50])
+function run(
+    m::BIOME4Model, 
+    vars_in::Vector{Union{T,U}}
+) where {T<:Real,U<:Int}
+    # Extract input variables from the input vector
+    lat = vars_in[1]
     co2 = vars_in[2]
     p = vars_in[3]
+    tminin = vars_in[4]
+    temp = @views vars_in[5:16]    # 12 months of temperature
+    prec = @views vars_in[17:28]   # 12 months of precipitation
+    clou = @views vars_in[29:40]   # 12 months of cloud cover
+    soil = @views vars_in[41:44]   # soil parameters
+    lon = vars_in[49]
 
+    # Initialize plant functional types based on climate
     BIOME4PFTS = BiomeClassification(mean(clou), mean(temp), mean(prec))
     numofpfts = length(BIOME4PFTS.pft_list)
 
-    # FIXME it's those that don't need to be instantiated
+    # Initialize arrays for calculations
     dphen = ones(T, 365, 2)
-    optnpp = zeros(T, numofpfts+1) # original fortran code uses 0-indexing for this one
-    optlai = zeros(T, numofpfts+1) # original fortran code uses 0-indexing for this one
+    optnpp = zeros(T, numofpfts + 1)  # +1 for 0-indexing compatibility
+    optlai = zeros(T, numofpfts + 1)  # +1 for 0-indexing compatibility
     k = zeros(T, 12)
     tsoil = zeros(T, 12)
-
-    # Assign the variables that arrived in the array vars_in
-    # FIXME: you need to use views, from DimensionalData
 
     # Initialize soil texture specific parameters
     k[1] = soil[1]
@@ -78,111 +106,84 @@ function run(m::BIOME4Model, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     k[5] = soil[3]
     k[6] = soil[4]
 
-    # Linearly interpolate mid-month values to quasi-daily values:
-    # FIXME: dimensionaldata can interpolate for you
+    # Interpolate monthly values to daily values
     dtemp = daily(temp)
     dclou = daily(clou)
     dprecin = daily(prec)
 
-    # Initialize parameters derived from climate data:
-    # FIXME: not needed
+    # Calculate climate indices
     cold, gdd5, gdd0, warm = climdata(temp, prec, dtemp)
     tprec = sum(prec)
     tsoil = soiltemp(temp)
 
-    # Calculate mid-month values for pet, sun & dayl from temp, cloud & lat:
+    # Calculate potential evapotranspiration and solar radiation
     dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, temp)
 
-    # Run snow model
+    # Run snow accumulation and melting model
     dprec, dmelt, maxdepth = snow(dtemp, dprecin)
 
-    # Initialize the evergreen phenology
-    # FIXME To document
+    # Initialize evergreen phenology (all days active)
     dphen .= T(1.0)
 
-    # Rulebase of absolute constraints to select potentially present pfts:
+    # Apply environmental constraints to determine PFT presence
     tmin, BIOME4PFTS = constraints(
-        cold,
-        warm,
-        tminin,
-        gdd5,
-        rad0,
-        gdd0,
-        maxdepth,
-        BIOME4PFTS
+        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS
     )
 
-    #If you want to bypass the environmental constraints for your model
-    # set all pfts to present(true). You can turn them off by setting to false
-    # set_characteristic(BIOME4PFTS.pft_list[1], :presence, true)
-
-    # Calculate optimal LAI and NPP for the selected PFTs
+    # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(BIOME4PFTS.pft_list)
         if get_characteristic(pft, :present) == true
+            # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
                 dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl)
             end
 
-            # FIXME instead return BIOME4PFTs with firedays, greendays, mwet, wetlayer in it
-            # Find the index 
+            # Optimize NPP and LAI for this PFT
             BIOME4PFTS.pft_list[iv], optlai, optnpp = findnpp(
-                pft,
-                tprec,
-                dtemp,
-                sun,
-                temp,
-                dprec,
-                dmelt,
-                dpet,
-                dayl,
-                k,
-                dphen,
-                co2,
-                p,
-                tsoil,
+                pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
+                k, dphen, co2, p, tsoil
             )
-            # Set the characteristics of the PFT
+
+            # Store results in PFT characteristics
             set_characteristic(BIOME4PFTS.pft_list[iv], :npp, optnpp)
             set_characteristic(BIOME4PFTS.pft_list[iv], :lai, optlai)
-
         end
     end
 
+    # Determine winning biome through PFT competition
     biome, optpft, npp = competition2(
-        tmin,
-        tprec,
-        numofpfts,
-        gdd0,
-        gdd5,
-        cold,
-        BIOME4PFTS
+        tmin, tprec, numofpfts, gdd0, gdd5, cold, BIOME4PFTS
     )
 
-    # Transform optpft into a number that corresponds to its index in the PFT list
-    optindex = optpft === nothing ? 0 : (findfirst(pft -> pft == optpft, BIOME4PFTS.pft_list) === nothing ? 0 : findfirst(pft -> pft == optpft, BIOME4PFTS.pft_list))
+    # Convert optimal PFT to index
+    optindex = if optpft === nothing
+        0
+    else
+        idx = findfirst(pft -> pft == optpft, BIOME4PFTS.pft_list)
+        idx === nothing ? 0 : idx
+    end
 
-    # Transform Biome into an integer 
+    # Convert biome to integer index
     biomeindex = get_biome_characteristic(biome, :value)
 
-    # Save all NPP for each AbstractPFT in order into a vector 
-    nppindex = zeros(T, numofpfts + 1)  # +1 for the case of no PFTs present
+    # Collect NPP values for all PFTs
+    nppindex = zeros(T, numofpfts + 1)
     for pft in 1:numofpfts
         if get_characteristic(BIOME4PFTS.pft_list[pft], :present) == true
             nppindex[pft] = get_characteristic(BIOME4PFTS.pft_list[pft], :npp)
         else
-            nppindex[pft] = 0.0
+            nppindex[pft] = T(0.0)
         end
     end
 
-    # Final output biome is given by the integer biome:
+    # Prepare output vector
     output = Vector{Any}(undef, 50)
-    fill!(output, 0.0)
+    fill!(output, T(0.0))
     output[1] = biomeindex
-    output[2] = optindex  # Now can store AbstractPFT
-    output[3:16] = nppindex
+    output[2] = optindex
+    output[3:16] = nppindex[1:14]  # Ensure we don't exceed bounds
     output[48] = lon
     output[49] = lat
-
 
     return output
 end

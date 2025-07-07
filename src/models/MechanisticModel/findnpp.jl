@@ -1,4 +1,10 @@
-"""Find NPP subroutine."""
+"""
+Net Primary Productivity (NPP) optimization subroutine.
+
+This module contains functions for finding optimal NPP values for plant 
+functional types through iterative optimization of leaf area index.
+"""
+
 # Third-party
 using LinearAlgebra
 
@@ -6,8 +12,45 @@ using LinearAlgebra
 include("growth.jl")
 export growth
 
+"""
+    findnpp(pft, annp, dtemp, sun, temp, dprec, dmelt, dpet, dayl, k, dphen, co2, p, tsoil)
+
+Find optimal Net Primary Productivity (NPP) for a plant functional type.
+
+This function runs an NPP optimization model for one PFT by iteratively testing
+different leaf area index (LAI) values to find the combination that maximizes
+NPP. Uses a binary search approach to converge on the optimal LAI.
+
+# Arguments
+- `pft`: Plant Functional Type to optimize
+- `annp`: Annual precipitation (mm)
+- `dtemp`: Daily temperature array (365 elements, °C)
+- `sun`: Monthly solar radiation array (12 elements, MJ/m²/day)
+- `temp`: Monthly temperature array (12 elements, °C)
+- `dprec`: Daily precipitation array (365 elements, mm)
+- `dmelt`: Daily snowmelt array (365 elements, mm)
+- `dpet`: Daily potential evapotranspiration array (365 elements, mm)
+- `dayl`: Monthly day length array (12 elements, hours)
+- `k`: Soil and canopy parameter array
+- `dphen`: Daily phenology array (365x2 matrix)
+- `co2`: Atmospheric CO2 concentration (ppm)
+- `p`: Atmospheric pressure (kPa)
+- `tsoil`: Monthly soil temperature array (12 elements, °C)
+
+# Returns
+A tuple containing:
+- `pft`: The input plant functional type (potentially modified)
+- `optlai`: Optimal leaf area index that maximizes NPP
+- `optnpp`: Maximum net primary productivity achieved (gC/m²/year)
+
+# Notes
+- Returns (pft, 0.0, 0.0) if the PFT is not present in the current conditions
+- Uses 8 iterations of binary search to converge on optimal LAI
+- Tests LAI values between 0.01 and 8.0
+- Calls the growth() function to calculate NPP for each LAI value
+"""
 function findnpp(
-    pft::AbstractPFT, # FIXME this should be an AbstractPFT and then set_characteristic(BIOME4PFTS.pft_list[pft], :lai, alai[1]) can become set_characteristic(pft, :lai, alai[1])
+    pft::AbstractPFT,
     annp::T,
     dtemp::AbstractArray{T,1},
     sun::AbstractArray{T,1},
@@ -21,12 +64,10 @@ function findnpp(
     co2::AbstractFloat,
     p::AbstractFloat,
     tsoil::AbstractArray{T,1}
-)::Tuple{AbstractPFT, T, T} where {T <: Real, U <: Int}
-    """Run NPP optimization model for one pft"""
-
+)::Tuple{AbstractPFT,T,T} where {T<:Real,U<:Int}
     # Initialize variables
-    optnpp = 0
-    optlai = 0
+    optnpp = T(0.0)
+    optlai = T(0.0)
     mnpp = zeros(T, 12)
     c4mnpp = zeros(T, 12)
 
@@ -39,15 +80,17 @@ function findnpp(
         return pft, T(0.0), T(0.0)
     end
 
+    # Binary search optimization over 8 iterations
     for _ in 1:8
+        # Test two LAI values in the current range
+        alai[1] = lowbound + T(0.25) * range_val
+        alai[2] = lowbound + T(0.75) * range_val
 
-        alai[1] = lowbound + (1.0 / 4.0) * range_val
-        alai[2] = lowbound + (3.0 / 4.0) * range_val
-
+        # Test first LAI value
         npp, mnpp, c4mnpp = growth(
             alai[1],
             annp,
-            sun, # wst in fortran
+            sun,
             temp,
             dprec,
             dmelt,
@@ -69,6 +112,7 @@ function findnpp(
             optnpp = npp
         end
 
+        # Test second LAI value
         npp, mnpp, c4mnpp = growth(
             alai[2],
             annp,
@@ -94,9 +138,10 @@ function findnpp(
             optnpp = npp
         end
 
+        # Narrow the search range for next iteration
         range_val /= T(2.0)
         lowbound = optlai - range_val / T(2.0)
-        if lowbound <= 0.0
+        if lowbound <= T(0.0)
             lowbound = T(0.01)
         end
     end

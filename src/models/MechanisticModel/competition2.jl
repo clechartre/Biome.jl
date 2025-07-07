@@ -82,6 +82,13 @@ function competition2(
         BIOME4PFTS
     )
 
+    # # Determine the optimal PFT based on various conditions
+    # optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
+    #     optpft,
+    #     subpft,
+    #     BIOME4PFTS
+    # )
+
     # Format values for output
     dom, npp, lai, grasslai, optpft = calculate_vegetation_dominance(
         optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, BIOME4PFTS
@@ -176,9 +183,10 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
 
 # end
 
+
 function determine_optimal_pft(optpft::AbstractPFT, subpft::AbstractPFT, BIOME4PFTS::AbstractPFTList)
     # Initialize variables
-    wdom = Default()
+    wdom = optpft
     gdom = Default()
     woodnpp = 0.0
     woodylai = 0.0

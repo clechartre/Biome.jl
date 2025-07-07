@@ -1,11 +1,17 @@
 """
-Calculate monthly mean soil temperature
-based on monthly mean air temperature assuming a thermal
-conductivity of the soil and a time lag between soil and air
-temperatures. Based on work by S. Sitch.
-"""
+    soiltemp(tair)
 
-function soiltemp(tair::AbstractArray{T})::AbstractArray{T} where {T <: Real}
+Calculate monthly mean soil temperature based on monthly mean air temperature 
+assuming a thermal conductivity of the soil and a time lag between soil and air
+temperatures. Based on work by S. Sitch.
+
+# Arguments
+- `tair`: Array of 12 monthly mean air temperatures (°C).
+
+# Returns
+- Array of 12 monthly mean soil temperatures (°C).
+"""
+function soiltemp(tair::AbstractArray{T})::AbstractArray{T} where {T<:Real}
     pie = T(4.0) * atan(T(1.0))
 
     therm = T[8.0, 4.5, 1.0, 5.25, 4.5, 2.75, 1.0, 1.0, 8.0]
@@ -25,10 +31,16 @@ function soiltemp(tair::AbstractArray{T})::AbstractArray{T} where {T <: Real}
 
     # Calculate soil temperature
     tsoil = zeros(T, 12)
-    tsoil[1] = (T(1.0) - amp) * meantemp + amp * (tair[12] + (T(1.0) - lag) * (tair[1] - tair[12]))
+    tsoil[1] = (
+        (T(1.0) - amp) * meantemp + 
+        amp * (tair[12] + (T(1.0) - lag) * (tair[1] - tair[12]))
+    )
 
     for m in 2:12
-        tsoil[m] = (T(1.0) - amp) * meantemp + amp * (tair[m - 1] + (T(1.0) - lag) * (tair[m] - tair[m - 1]))
+        tsoil[m] = (
+            (T(1.0) - amp) * meantemp + 
+            amp * (tair[m - 1] + (T(1.0) - lag) * (tair[m] - tair[m - 1]))
+        )
     end
 
     # Due to snow cover don't allow soil temp < -10
@@ -40,4 +52,3 @@ function soiltemp(tair::AbstractArray{T})::AbstractArray{T} where {T <: Real}
 
     return tsoil
 end
-

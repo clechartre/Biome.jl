@@ -1,3 +1,31 @@
+"""
+    phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
+
+Calculate a generic phenology for any summergreen plant functional type.
+
+A three month period centered around the coldest month is defined as the 
+minimum period during which foliage is not present. Plants then start growing 
+leaves at the end of this 3 month period or when the temperature goes above 
+5°C if this occurs later. Plants take 200 Growing Degree Days at 5°C (GDD5)
+to grow a full leaf canopy.
+
+# Arguments
+- `dphen`: Daily phenology array (365x2 matrix) to be modified
+- `dtemp`: Daily temperature array (365 elements, °C)
+- `temp`: Monthly temperature array (12 elements, °C)
+- `tcm`: Temperature of the coldest month (°C)
+- `tmin`: Minimum temperature (°C)
+- `pft`: Plant Functional Type
+- `ddayl`: Daily day length array (365 elements, hours)
+
+# Returns
+- `dphen`: Modified daily phenology array (365x2 matrix)
+
+# Notes
+- Phencase 1: Standard phenology based on GDD5
+- Phencase 2: Alternative phenology based on GDD0
+- Fall leaf drop occurs when temperature < -10°C or day length < 10 hours
+"""
 function phenology(
     dphen::AbstractArray{T},
     dtemp::AbstractArray{T},
@@ -6,50 +34,53 @@ function phenology(
     tmin::T,
     pft::AbstractPFT,
     ddayl::AbstractArray{T},
-)::AbstractArray{T} where {T <: Real}
+)::AbstractArray{T} where {T<:Real}
     # Days in each month
     daysinmonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    ramp = T[get_characteristic(pft, :GDD5_full_leaf_out), get_characteristic(pft, :GDD0_full_leaf_out)]
+    ramp = T[
+        get_characteristic(pft, :GDD5_full_leaf_out), 
+        get_characteristic(pft, :GDD0_full_leaf_out)
+    ]
     ont = get_characteristic(pft, :name) == "BorealDeciduous" ? T(0.0) : T(5.0)
 
     # Initialize variables
     warm = tcm
-    ncm = (0)
-    hotm = (0)
+    ncm = 0
+    hotm = 0
 
     # Find coldest and hottest months
     for m in 1:12
         if temp[m] == tcm
-            ncm = (m)
+            ncm = m
         end
         if temp[m] > warm
             warm = temp[m]
-            hotm = (m)
+            hotm = m
         end
     end
 
     # Phenology cases (spinup loop)
     for phencase in 1:2
         coldm = [ncm - 1, ncm, ncm + 1]
-        if coldm[1] == (0)
-            coldm[1] = (12)
+        if coldm[1] == 0
+            coldm[1] = 12
         end
-        if coldm[3] == (13)
-            coldm[3] = (1)
+        if coldm[3] == 13
+            coldm[3] = 1
         end
-        if hotm == (12)
-            hotm = (0)
+        if hotm == 12
+            hotm = 0
         end
 
         gdd = T(0.0)
-        winter = (0)
-        flip = (0)
+        winter = 0
+        flip = 0
 
         for _ in 1:2 # Spinup loop
-            day = (0)
+            day = 0
             for m in 1:12 # Monthly loop
                 for _ in 1:daysinmonth[m] # Daily loop
-                    day += (1)
+                    day += 1
 
                     # Check temperature threshold
                     if dtemp[day] > ont
@@ -65,20 +96,20 @@ function phenology(
                             if gdd >= ramp[phencase]
                                 dphen[day, phencase] = T(1.0)
                             end
-                            flip = (1)
+                            flip = 1
                         else
-                            if flip == (1)
-                                winter = (0)
+                            if flip == 1
+                                winter = 0
                             end
-                            winter += (1)
+                            winter += 1
                             dphen[day, phencase] = T(0.0)
                             gdd = T(0.0)
-                            flip = (0)
+                            flip = 0
                         end
                     end
 
                     # Fall leaves removal
-                    if phencase == (1)
+                    if phencase == 1
                         if m >= hotm
                             if dtemp[day] < T(-10.0) || ddayl[day] < T(10.0)
                                 dphen[day, phencase] = T(0.0)
@@ -86,7 +117,7 @@ function phenology(
                         elseif m == coldm[1]
                             dphen[day, phencase] = T(0.0)
                         end
-                    elseif phencase == (2)
+                    elseif phencase == 2
                         if dtemp[day] < T(-5.0)
                             dphen[day, phencase] = T(0.0)
                         end

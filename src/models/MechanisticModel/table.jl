@@ -1,4 +1,6 @@
 """
+    table(tc)
+
 Extract Gamma and Lambda based on temperature.
 
 Looks up gamma and lambda from the table based on the given temperature (tc).
@@ -7,14 +9,13 @@ Author: Wolfgang Cramer, Dept. of Geography, Trondheim University-AVH,
 N-7055 Dragvoll, Norway.
 Latest revisions 14/2-1991
 
-Args:
-    tc (T): Temperature for which gamma and lambda are looked up.
+# Arguments
+- `tc`: Temperature for which gamma and lambda are looked up.
 
-Returns:
-    Tuple{T, T}: gamma and lambda values based on the provided temperature.
+# Returns
+- `Tuple{T, T}`: gamma and lambda values based on the provided temperature.
 """
-
-function table(tc::T)::Tuple{T, T} where {T <: Real}
+function table(tc::T)::Tuple{T,T} where {T<:Real}
     gbase = [
         (-5.0, 64.6),
         (0.0, 64.9),
