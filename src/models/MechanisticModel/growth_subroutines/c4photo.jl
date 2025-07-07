@@ -31,7 +31,7 @@ function c4photo(
     p::T,
     ca::T,
     pft::AbstractPFT
-)::Tuple{T,T,T} where {T<:Real,U<:Int}
+)::Tuple{T,T,T} where {T<:Real}
     # PFT-specific parameters
     # TODO verify that this gives the same result as the original code
     t0 = T(10.0)

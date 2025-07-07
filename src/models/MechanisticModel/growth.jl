@@ -435,7 +435,7 @@ function determine_c4_and_optratio(
     pft::AbstractPFT, 
     optratioa::T, 
     c4_override::Union{Bool,Nothing}=nothing
-)::Tuple{Bool,T} where {T<:Real,U<:Int}
+)::Tuple{Bool,T} where {T<:Real}
     if c4_override != nothing
         c4 = c4_override
     else

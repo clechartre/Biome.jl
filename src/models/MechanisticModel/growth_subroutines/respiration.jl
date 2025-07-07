@@ -44,7 +44,7 @@ function respiration(
     lai::T,
     monthlyfpar::AbstractArray{T},
     pft::AbstractPFT
-)::Tuple{T,T,T,Vector{T},Vector{T},Vector{T}} where {T<:Real,U<:Int}
+)::Tuple{T,T,T,Vector{T},Vector{T},Vector{T}} where {T<:Real}
     allocfact = get_characteristic(pft, :allocfact)
     respfact = get_characteristic(pft, :respfact)
 

@@ -100,7 +100,7 @@ function competition2(
     return biome, optpft, npp
 end
 
-function initialize_presence(numofpfts::U, BIOME4PFTS::AbstractPFTList)::AbstractPFTList where {T <: Real, U <: Int}
+function initialize_presence(numofpfts::U, BIOME4PFTS::AbstractPFTList)::AbstractPFTList where {U <: Int}
     # Initialize present dynamically based on optnpp
     for pft in 1:numofpfts
         if get_characteristic(BIOME4PFTS.pft_list[pft], :npp) > 0.0
@@ -129,7 +129,7 @@ for PFT `i`.
 function calculate_soil_moisture(
     numofpfts::U,
     BIOME4PFTS::AbstractPFTList
-) where {T<:Real, U<:Int}
+) where {U<:Int}
     # pre‐allocate the output
     wetness = zeros(Float64, numofpfts+1)
 
@@ -279,7 +279,7 @@ function determine_optimal_pft_Kaplan(
     tprec::T,
     wetness::AbstractArray{T},
     BIOME4PFTS::AbstractPFTList
-) where {T <: Real, U <: Int} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
+) where {T <: Real} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
     flop = false
 
     # Helper function to find PFT by type

@@ -29,7 +29,7 @@ function photosynthesis(
     p::T,
     ca::T,
     pft::AbstractPFT
-)::Tuple{T,T,T} where {T<:Real,U<:Int}
+)::Tuple{T,T,T} where {T<:Real}
     # PFT specific parameters
     t0 = get_characteristic(pft, :t0)
     tcurve = get_characteristic(pft, :tcurve)

@@ -52,7 +52,7 @@ function hetresp(
     Rmean::T,
     meanKlit::T,
     meanKsoil::T
-)::Tuple{Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},T,T,T} where {T<:Real,U<:Int}
+)::Tuple{Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},T,T,T} where {T<:Real}
 
     # Constants and initializations
     isoatm = T(-8.0)

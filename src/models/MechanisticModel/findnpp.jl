@@ -64,7 +64,7 @@ function findnpp(
     co2::AbstractFloat,
     p::AbstractFloat,
     tsoil::AbstractArray{T,1}
-)::Tuple{AbstractPFT,T,T} where {T<:Real,U<:Int}
+)::Tuple{AbstractPFT,T,T} where {T<:Real}
     # Initialize variables
     optnpp = T(0.0)
     optlai = T(0.0)
