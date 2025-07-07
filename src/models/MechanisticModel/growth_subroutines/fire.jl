@@ -17,7 +17,7 @@ function fire(wet::AbstractVector{T},
     pft::AbstractPFT,
     lai::T,
     npp::T
-)::AbstractPFT where {T <: Real, U <: Int}
+)::T where {T <: Real, U <: Int}
 
     # Threshold values per PFT
     threshold = get_characteristic(pft, :threshold)
@@ -56,8 +56,6 @@ function fire(wet::AbstractVector{T},
         firedays *= npp / T(1000.0)
     end
 
-    set_characteristic(pft, :firedays, firedays)
-
-    # Return results as a FireResult
-    return pft
+    # Return firedays
+    return firedays
 end

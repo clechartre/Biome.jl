@@ -28,7 +28,7 @@ include("./snow.jl")
 include("./soiltemp.jl")
 
 # Export functions and types
-export BiomeClassification, Default, None, get_characteristic, set_characteristic
+export PFTClassification, Default, None, get_characteristic, PFTState
 export TropicalEvergreenForest, TropicalSemiDeciduousForest, 
        TropicalDeciduousForestWoodland, TropicalGrassland, TropicalSavanna, 
        TropicalXerophyticShrubland, TemperateSclerophyllWoodland, 
@@ -36,6 +36,11 @@ export TropicalEvergreenForest, TropicalSemiDeciduousForest,
        Barren, LandIce
 export climdata, competition2, constraints, daily, findnpp, phenology, 
        ppeett, snow, soiltemp
+
+# Create global singleton instances at module level
+const NONE_INSTANCE = None()
+const DEFAULT_INSTANCE = Default()
+export NONE_INSTANCE, DEFAULT_INSTANCE
 
 """
     run(m::BIOME4Model, vars_in::Vector{Union{T,U}}) where {T<:Real,U<:Int}
@@ -76,7 +81,8 @@ NPP optimization, and biome classification.
 """
 function run(
     m::BIOME4Model, 
-    vars_in::Vector{Union{T,U}}
+    vars_in::Vector{Union{T,U}},
+    BIOME4PFTS::AbstractPFTList
 ) where {T<:Real,U<:Int}
     # Extract input variables from the input vector
     lat = vars_in[1]
@@ -89,10 +95,18 @@ function run(
     soil = @views vars_in[41:44]   # soil parameters
     lon = vars_in[49]
 
-    # Initialize plant functional types based on climate
-    BIOME4PFTS = BiomeClassification(mean(clou), mean(temp), mean(prec))
     numofpfts = length(BIOME4PFTS.pft_list)
 
+    # Create the Dict that holds the PFT dynamic states
+    PFTStates = Dict{AbstractPFT,PFTState{Float64,Int}}()
+    for pft in BIOME4PFTS.pft_list
+        PFTStates[pft] = PFTState{Float64,Int}()
+    end
+    
+    # Add None and Default abstract PFT types
+    PFTStates[NONE_INSTANCE] = PFTState{Float64,Int}()
+    PFTStates[DEFAULT_INSTANCE] = PFTState{Float64,Int}()
+    
     # Initialize arrays for calculations
     dphen = ones(T, 365, 2)
     optnpp = zeros(T, numofpfts + 1)  # +1 for 0-indexing compatibility
@@ -128,33 +142,34 @@ function run(
     dphen .= T(1.0)
 
     # Apply environmental constraints to determine PFT presence
-    tmin, BIOME4PFTS = constraints(
-        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS
+    tmin, PFTStates = constraints(
+        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, PFTStates
     )
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(BIOME4PFTS.pft_list)
-        if get_characteristic(pft, :present) == true
+        if PFTStates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
                 dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl)
             end
 
             # Optimize NPP and LAI for this PFT
-            BIOME4PFTS.pft_list[iv], optlai, optnpp = findnpp(
+            BIOME4PFTS.pft_list[iv], optlai, optnpp, PFTStates[pft] = findnpp(
                 pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
-                k, dphen, co2, p, tsoil
+                k, dphen, co2, p, tsoil, PFTStates[pft]
             )
 
             # Store results in PFT characteristics
-            set_characteristic(BIOME4PFTS.pft_list[iv], :npp, optnpp)
-            set_characteristic(BIOME4PFTS.pft_list[iv], :lai, optlai)
+            st = PFTStates[pft]           # look up this PFT’s state
+            st.npp = optnpp            # assign the optimized NPP
+            st.lai = optlai            # assign the optimized LAI
         end
     end
 
     # Determine winning biome through PFT competition
     biome, optpft, npp = competition2(
-        tmin, tprec, numofpfts, gdd0, gdd5, cold, BIOME4PFTS
+        tmin, tprec, numofpfts, gdd0, gdd5, cold, BIOME4PFTS, PFTStates
     )
 
     # Convert optimal PFT to index
@@ -170,11 +185,11 @@ function run(
 
     # Collect NPP values for all PFTs
     nppindex = zeros(T, numofpfts + 1)
-    for pft in 1:numofpfts
-        if get_characteristic(BIOME4PFTS.pft_list[pft], :present) == true
-            nppindex[pft] = get_characteristic(BIOME4PFTS.pft_list[pft], :npp)
+    for (i, pft) in enumerate(BIOME4PFTS.pft_list)
+        if PFTStates[pft].present == true
+            nppindex[i] = PFTStates[pft].npp
         else
-            nppindex[pft] = T(0.0)
+            nppindex[i] = T(0.0)
         end
     end
 

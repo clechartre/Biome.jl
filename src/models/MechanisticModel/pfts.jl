@@ -1,688 +1,549 @@
 using Distributions
+using Parameters: @kwdef
 
-mutable struct Characteristics{T<:Real,U<:Int} <: AbstractPFTCharacteristics
-    name::String
-    phenological_type::U
-    max_min_canopy_conductance::T
-    Emax::T
-    sw_drop::T
-    sw_appear::T
-    root_fraction_top_soil::T
-    leaf_longevity::T
-    GDD5_full_leaf_out::T
-    GDD0_full_leaf_out::T
-    sapwood_respiration::U
-    optratioa::T
-    kk::T
-    c4::Bool
-    threshold::T
-    t0::T
-    tcurve::T
-    respfact::T
-    allocfact::T
-    grass::Bool
+@kwdef mutable struct PFTCharacteristics{T<:Real,U<:Int} <: AbstractPFTCharacteristics
+    name::String = "Default"
+    phenological_type::U = U(1)
+    max_min_canopy_conductance::T = T(0.0)
+    Emax::T = T(0.0)
+    sw_drop::T = T(0.0)
+    sw_appear::T = T(0.0)
+    root_fraction_top_soil::T = T(0.0)
+    leaf_longevity::T = T(0.0)
+    GDD5_full_leaf_out::T = T(0.0)
+    GDD0_full_leaf_out::T = T(0.0)
+    sapwood_respiration::U = U(0)
+    optratioa::T = T(0.0)
+    kk::T = T(0.0)
+    c4::Bool = false
+    threshold::T = T(0.0)
+    t0::T = T(0.0)
+    tcurve::T = T(0.0)
+    respfact::T = T(0.0)
+    allocfact::T = T(0.0)
+    grass::Bool = false
     constraints::NamedTuple{
         (:tcm, :min, :gdd, :gdd0, :twm, :snow),
         NTuple{6,Vector{Float64}}
-    }
-    # Values that will get filled through the code
-    present::Bool
-    dominance::T
-    greendays::U
-    firedays::T
-    mwet::Vector{T}
-    npp::T
-    lai::T
+    } = (tcm=Float64[-Inf, +Inf], min=Float64[-Inf, +Inf], gdd=Float64[-Inf, +Inf], gdd0=Float64[-Inf, +Inf], twm=Float64[-Inf, +Inf], snow=Float64[-Inf, +Inf])
 end
+
+@kwdef mutable struct PFTState{T<:Real,U<:Int}
+    present   :: Bool         = false           # is this PFT active this timestep?
+    dominance :: T            = zero(T)         # computed environmental dominance
+    greendays :: U            = zero(U)         # how many days with green leaves?
+    firedays  :: T            = zero(T)         # cumulative days since last fire
+    mwet      :: Vector{T}    = zeros(T, 12)    # monthly wetness index (12 months)
+    npp       :: T            = zero(T)         # net primary productivity
+    lai       :: T            = zero(T)         # leaf area index
+end
+
 
 # Define the PFT structures
 struct WoodyDesert <: AbstractPFT
-    characteristics::Characteristics
+    characteristics::PFTCharacteristics
 end
 
-struct TropicalEvergreen <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct TropicalDroughtDeciduous <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct TemperateBroadleavedEvergreen <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct TemperateDeciduous <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct CoolConifer <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct BorealEvergreen <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct BorealDeciduous <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct LichenForb <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct TundraShrubs <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct C3C4TemperateGrass <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct C4TropicalGrass <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct ColdHerbaceous <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct Default <: AbstractPFT
-    characteristics::Characteristics
-end
-
-struct None <: AbstractPFT
-    characteristics::Characteristics
-end
-
-# Default Characteristics
-Characteristics() = Characteristics(
-    "Default",
-    0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0,
-    0.0,
-    0.0,
-    false,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    false,
-    (
-        tcm=[-Inf, +Inf],
-        min=[-Inf, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, +Inf],
-        snow=[-Inf, +Inf]
-    ),
-    false,
-    0.0,
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
-)
-
-# Default constructors for the PFTs
-WoodyDesert(clt, prec, temp) = WoodyDesert(Characteristics(
-    "C3C4WoodyDesert",
-    1,
-    0.1,
-    1.0,
-    -99.9,
-    -99.9,
-    0.53,
-    12.0,
-    -99.9,
-    -99.9,
-    1,
-    0.70,
-    0.3,
-    true,
-    0.33,
-    5.0,
-    1.0,
-    1.4,
-    1.0,
-    false,
-    (
+WoodyDesert() = WoodyDesert(PFTCharacteristics{Float64, Int}(
+    name="C3C4WoodyDesert",
+    phenological_type=1,
+    max_min_canopy_conductance=0.1,
+    Emax=1.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.53,
+    leaf_longevity=12.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.70,
+    kk=0.3,
+    c4=true,
+    threshold=0.33,
+    t0=5.0,
+    tcurve=1.0,
+    respfact=1.4,
+    allocfact=1.0,
+    grass=false,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[-45.0, +Inf],
         gdd=[500.0, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[10.0, +Inf],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 9.2, 2.2) *
-        dominance_environment(prec, 2.5, 2.8) *
-        dominance_environment(temp, 23.9, 2.7),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-TropicalEvergreen(clt, prec, temp) = TropicalEvergreen(Characteristics(
-    "TropicalEvergreen",
-    1,
-    0.5,
-    10.0,
-    -99.9,
-    -99.9,
-    0.69,
-    18.0,
-    -99.9,
-    -99.9,
-    1,
-    0.95,
-    0.7,
-    false,
-    0.25,
-    10.0,
-    1.0,
-    0.8,
-    1.0,
-    false,
-    (
+struct TropicalEvergreen <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+TropicalEvergreen() = TropicalEvergreen(PFTCharacteristics{Float64, Int}(
+    name="TropicalEvergreen",
+    phenological_type=1,
+    max_min_canopy_conductance=0.5,
+    Emax=10.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.69,
+    leaf_longevity=18.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.95,
+    kk=0.7,
+    c4=false,
+    threshold=0.25,
+    t0=10.0,
+    tcurve=1.0,
+    respfact=0.8,
+    allocfact=1.0,
+    grass=false,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[0.0, +Inf],
         gdd=[-Inf, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[10.0, +Inf],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 50.2, 4.9) *
-        dominance_environment(prec, 169.6, 41.9) *
-        dominance_environment(temp, 24.7, 1.2),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-TropicalDroughtDeciduous(clt, prec, temp) = TropicalDroughtDeciduous(
-    Characteristics(
-        "TropicalDroughtDeciduous",
-        3,
-        0.5,
-        10.0,
-        0.5,
-        0.6,
-        0.7,
-        9.0,
-        -99.9,
-        -99.9,
-        1,
-        0.9,
-        0.7,
-        false,
-        0.20,
-        10.0,
-        1.0,
-        0.8,
-        1.0,
-        false,
-        (
+struct TropicalDroughtDeciduous <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+TropicalDroughtDeciduous() = TropicalDroughtDeciduous(
+    PFTCharacteristics{Float64, Int64}(
+        name="TropicalDroughtDeciduous",
+        phenological_type=3,
+        max_min_canopy_conductance=0.5,
+        Emax=10.0,
+        sw_drop=0.5,
+        sw_appear=0.6,
+        root_fraction_top_soil=0.7,
+        leaf_longevity=9.0,
+        GDD5_full_leaf_out=-99.9,
+        GDD0_full_leaf_out=-99.9,
+        sapwood_respiration=1,
+        optratioa=0.9,
+        kk=0.7,
+        c4=false,
+        threshold=0.20,
+        t0=10.0,
+        tcurve=1.0,
+        respfact=0.8,
+        allocfact=1.0,
+        grass=false,
+        constraints=(
             tcm=[-Inf, +Inf],
             min=[0.0, +Inf],
             gdd=[-Inf, +Inf],
             gdd0=[-Inf, +Inf],
             twm=[10.0, +Inf],
             snow=[-Inf, +Inf]
-        ),
-        true,
-        dominance_environment(clt, 44.0, 12.9) *
-            dominance_environment(prec, 163.3, 85.1) *
-            dominance_environment(temp, 23.7, 2.3),
-        0,
-        0.0,
-        zeros(Float64, 12),
-        0.0,
-        0.0
+        )
     )
 )
 
-TemperateBroadleavedEvergreen(clt, prec, temp) = TemperateBroadleavedEvergreen(
-    Characteristics(
-        "TemperateBroadleavedEvergreen",
-        1,
-        0.2,
-        4.8,
-        -99.9,
-        -99.9,
-        0.67,
-        18.0,
-        -99.9,
-        -99.9,
-        1,
-        0.8,
-        0.6,
-        false,
-        0.40,
-        5.0,
-        1.0,
-        1.4,
-        1.2,
-        false,
-        (
+struct TemperateBroadleavedEvergreen <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+TemperateBroadleavedEvergreen() = TemperateBroadleavedEvergreen(
+    PFTCharacteristics{Float64, Int64}(
+        name="TemperateBroadleavedEvergreen",
+        phenological_type=1,
+        max_min_canopy_conductance=0.2,
+        Emax=4.8,
+        sw_drop=-99.9,
+        sw_appear=-99.9,
+        root_fraction_top_soil=0.67,
+        leaf_longevity=18.0,
+        GDD5_full_leaf_out=-99.9,
+        GDD0_full_leaf_out=-99.9,
+        sapwood_respiration=1,
+        optratioa=0.8,
+        kk=0.6,
+        c4=false,
+        threshold=0.40,
+        t0=5.0,
+        tcurve=1.0,
+        respfact=1.4,
+        allocfact=1.2,
+        grass=false,
+        constraints=(
             tcm=[-Inf, +Inf],
             min=[-8.0, 5.0],
             gdd=[1200, +Inf],
             gdd0=[-Inf, +Inf],
             twm=[10.0, +Inf],
             snow=[-Inf, +Inf]
-        ),
-        true,
-        dominance_environment(clt, 33.4, 13.3) *
-            dominance_environment(prec, 106.3, 83.6) *
-            dominance_environment(temp, 18.7, 3.2),
-        0,
-        0.0,
-        zeros(Float64, 12),
-        0.0,
-        0.0
+        )
     )
 )
 
-TemperateDeciduous(clt, prec, temp) = TemperateDeciduous(Characteristics(
-    "TemperateDeciduous",
-    2,
-    0.8,
-    10.0,
-    -99.9,
-    -99.9,
-    0.65,
-    7.0,
-    200.0,
-    -99.9,
-    1,
-    0.8,
-    0.6,
-    false,
-    0.33,
-    4.0,
-    1.0,
-    1.6,
-    1.2,
-    false,
-    (
+struct TemperateDeciduous <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+TemperateDeciduous() = TemperateDeciduous(PFTCharacteristics{Float64, Int64}(
+    name="TemperateDeciduous",
+    phenological_type=2,
+    max_min_canopy_conductance=0.8,
+    Emax=10.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.65,
+    leaf_longevity=7.0,
+    GDD5_full_leaf_out=200.0,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.8,
+    kk=0.6,
+    c4=false,
+    threshold=0.33,
+    t0=4.0,
+    tcurve=1.0,
+    respfact=1.6,
+    allocfact=1.2,
+    grass=false,
+    constraints=(
         tcm=[-15.0, +Inf],
         min=[-Inf, -8.0],
         gdd=[1200, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[-Inf, +Inf],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 40.9, 8.6) *
-        dominance_environment(prec, 70.2, 41.9) *
-        dominance_environment(temp, 8.4, 4.7),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-CoolConifer(clt, prec, temp) = CoolConifer(Characteristics(
-    "CoolConifer",
-    1,
-    0.2,
-    4.8,
-    -99.9,
-    -99.9,
-    0.52,
-    30.0,
-    -99.9,
-    -99.9,
-    1,
-    0.9,
-    0.5,
-    false,
-    0.40,
-    3.0,
-    0.9,
-    0.8,
-    1.2,
-    false,
-    (
+struct CoolConifer <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+CoolConifer() = CoolConifer(PFTCharacteristics{Float64, Int}(
+    name="CoolConifer",
+    phenological_type=1,
+    max_min_canopy_conductance=0.2,
+    Emax=4.8,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.52,
+    leaf_longevity=30.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.9,
+    kk=0.5,
+    c4=false,
+    threshold=0.40,
+    t0=3.0,
+    tcurve=0.9,
+    respfact=0.8,
+    allocfact=1.2,
+    grass=false,
+    constraints=(
         tcm=[-2.0, +Inf],
         min=[-Inf, 10.0],
         gdd=[900, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[10.0, +Inf],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 28.1, 8.6) *
-        dominance_environment(prec, 54.5, 49.9) *
-        dominance_environment(temp, 13.9, 3.4),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-BorealEvergreen(clt, prec, temp) = BorealEvergreen(Characteristics(
-    "BorealEvergreen",
-    1,
-    0.5,
-    4.5,
-    -99.9,
-    -99.9,
-    0.83,
-    24.0,
-    -99.9,
-    -99.9,
-    1,
-    0.8,
-    0.5,
-    false,
-    0.33,
-    0.0,
-    0.8,
-    4.0,
-    1.2,
-    false,
-    (
+struct BorealEvergreen <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+BorealEvergreen() = BorealEvergreen(PFTCharacteristics{Float64, Int}(
+    name="BorealEvergreen",
+    phenological_type=1,
+    max_min_canopy_conductance=0.5,
+    Emax=4.5,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.83,
+    leaf_longevity=24.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.8,
+    kk=0.5,
+    c4=false,
+    threshold=0.33,
+    t0=0.0,
+    tcurve=0.8,
+    respfact=4.0,
+    allocfact=1.2,
+    grass=false,
+    constraints=(
         tcm=[-32.5, -2.0],
         min=[-Inf, +Inf],
         gdd=[-Inf, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[-Inf, 21.0],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 48.1, 7.6) *
-        dominance_environment(prec, 58.7, 35.7) *
-        dominance_environment(temp, -2.7, 4.0),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-BorealDeciduous(clt, prec, temp) = BorealDeciduous(Characteristics(
-    "BorealDeciduous",
-    2,
-    0.8,
-    10.0,
-    -99.9,
-    -99.9,
-    0.83,
-    24.0,
-    200.0,
-    -99.9,
-    1,
-    0.9,
-    0.4,
-    false,
-    0.33,
-    0.0,
-    0.8,
-    4.0,
-    1.2,
-    false,
-    (
+struct BorealDeciduous <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+BorealDeciduous() = BorealDeciduous(PFTCharacteristics{Float64, Int}(
+    name="BorealDeciduous",
+    phenological_type=2,
+    max_min_canopy_conductance=0.8,
+    Emax=10.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.83,
+    leaf_longevity=24.0,
+    GDD5_full_leaf_out=200.0,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.9,
+    kk=0.4,
+    c4=false,
+    threshold=0.33,
+    t0=0.0,
+    tcurve=0.8,
+    respfact=4.0,
+    allocfact=1.2,
+    grass=false,
+    constraints=(
         tcm=[-Inf, 5.0],
         min=[-Inf, -10.0],
         gdd=[-Inf, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[-Inf, 21.0],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 47.4, 8.3) *
-        dominance_environment(prec, 65.0, 83.6) *
-        dominance_environment(temp, -12, 7.7),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-LichenForb(clt, prec, temp) = LichenForb(Characteristics(
-    "LichenForb",
-    1,
-    0.8,
-    1.0,
-    -99.9,
-    -99.9,
-    0.93,
-    8.0,
-    -99.9,
-    -99.9,
-    1,
-    0.80,
-    0.6,
-    false,
-    0.33,
-    -12.0,
-    0.5,
-    4.0,
-    1.5,
-    false,
-    (
+struct LichenForb <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+LichenForb() = LichenForb(PFTCharacteristics{Float64, Int}(
+    name="LichenForb",
+    phenological_type=1,
+    max_min_canopy_conductance=0.8,
+    Emax=1.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.93,
+    leaf_longevity=8.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.80,
+    kk=0.6,
+    c4=false,
+    threshold=0.33,
+    t0=-12.0,
+    tcurve=0.5,
+    respfact=4.0,
+    allocfact=1.5,
+    grass=false,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[-Inf, +Inf],
         gdd=[-Inf, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[-Inf, 15.0],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 43.9, 9.0) *
-        dominance_environment(prec, 53.3, 52.1) *
-        dominance_environment(temp, -18.4, 4.1),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-TundraShrubs(clt, prec, temp) = TundraShrubs(Characteristics(
-    "TundraShrubs",
-    1,
-    0.8,
-    1.0,
-    -99.9,
-    -99.9,
-    0.93,
-    8.0,
-    -99.9,
-    -99.9,
-    1,
-    0.90,
-    0.5,
-    false,
-    0.33,
-    -7.0,
-    0.6,
-    4.0,
-    1.0,
-    true,
-    (
+struct TundraShrubs <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+TundraShrubs() = TundraShrubs(PFTCharacteristics{Float64, Int}(
+    name="TundraShrubs",
+    phenological_type=1,
+    max_min_canopy_conductance=0.8,
+    Emax=1.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.93,
+    leaf_longevity=8.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=1,
+    optratioa=0.90,
+    kk=0.5,
+    c4=false,
+    threshold=0.33,
+    t0=-7.0,
+    tcurve=0.6,
+    respfact=4.0,
+    allocfact=1.0,
+    grass=true,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[-Inf, +Inf],
         gdd=[-Inf, +Inf],
         gdd0=[50.0, +Inf],
         twm=[-Inf, 15.0],
         snow=[15.0, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 51.4, 9.0) *
-        dominance_environment(prec, 50.0, 43.3) *
-        dominance_environment(temp, -10.8, 5.1),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-C3C4TemperateGrass(clt, prec, temp) = C3C4TemperateGrass(Characteristics(
-    "C3C4TemperateGrass",
-    3,
-    0.8,
-    6.5,
-    0.2,
-    0.3,
-    0.83,
-    8.0,
-    -99.9,
-    100.0,
-    2,
-    0.65,
-    0.4,
-    false,
-    0.40,
-    4.5,
-    1.0,
-    1.6,
-    1.0,
-    true,
-    (
+struct C3C4TemperateGrass <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+C3C4TemperateGrass() = C3C4TemperateGrass(PFTCharacteristics{Float64, Int}(
+    name="C3C4TemperateGrass",
+    phenological_type=3,
+    max_min_canopy_conductance=0.8,
+    Emax=6.5,
+    sw_drop=0.2,
+    sw_appear=0.3,
+    root_fraction_top_soil=0.83,
+    leaf_longevity=8.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=100.0,
+    sapwood_respiration=2,
+    optratioa=0.65,
+    kk=0.4,
+    c4=false,
+    threshold=0.40,
+    t0=4.5,
+    tcurve=1.0,
+    respfact=1.6,
+    allocfact=1.0,
+    grass=true,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[-Inf, 0.0],
         gdd=[550.0, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[-Inf, +Inf],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 9.3, 1.5) *
-        dominance_environment(prec, 1.5, 1.5) *
-        dominance_environment(temp, 22.9, 2.7),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-C4TropicalGrass(clt, prec, temp) = C4TropicalGrass(Characteristics(
-    "C4TropicalGrass",
-    3,
-    0.8,
-    8.0,
-    0.2,
-    0.3,
-    0.57,
-    10.0,
-    -99.9,
-    -99.9,
-    2,
-    0.65,
-    0.4,
-    true,
-    0.40,
-    10.0,
-    1.0,
-    0.8,
-    1.0,
-    true,
-    (
+struct C4TropicalGrass <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+C4TropicalGrass() = C4TropicalGrass(PFTCharacteristics{Float64, Int}(
+    name="C4TropicalGrass",
+    phenological_type=3,
+    max_min_canopy_conductance=0.8,
+    Emax=8.0,
+    sw_drop=0.2,
+    sw_appear=0.3,
+    root_fraction_top_soil=0.57,
+    leaf_longevity=10.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=-99.9,
+    sapwood_respiration=2,
+    optratioa=0.65,
+    kk=0.4,
+    c4=true,
+    threshold=0.40,
+    t0=10.0,
+    tcurve=1.0,
+    respfact=0.8,
+    allocfact=1.0,
+    grass=true,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[-3.0, +Inf],
         gdd=[-Inf, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[10.0, +Inf],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 9.4, 1.4) *
-        dominance_environment(prec, 1.7, 2.1) *
-        dominance_environment(temp, 23.2, 2.2),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-ColdHerbaceous(clt, prec, temp) = ColdHerbaceous(Characteristics(
-    "ColdHerbaceous",
-    2,
-    0.8,
-    1.0,
-    -99.9,
-    -99.9,
-    0.93,
-    8.0,
-    -99.9,
-    25.0,
-    2,
-    0.75,
-    0.3,
-    false,
-    0.33,
-    -7.0,
-    0.6,
-    4.0,
-    1.0,
-    true,
-    (
+struct ColdHerbaceous <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+ColdHerbaceous() = ColdHerbaceous(PFTCharacteristics{Float64, Int}(
+    name="ColdHerbaceous",
+    phenological_type=2,
+    max_min_canopy_conductance=0.8,
+    Emax=1.0,
+    sw_drop=-99.9,
+    sw_appear=-99.9,
+    root_fraction_top_soil=0.93,
+    leaf_longevity=8.0,
+    GDD5_full_leaf_out=-99.9,
+    GDD0_full_leaf_out=25.0,
+    sapwood_respiration=2,
+    optratioa=0.75,
+    kk=0.3,
+    c4=false,
+    threshold=0.33,
+    t0=-7.0,
+    tcurve=0.6,
+    respfact=4.0,
+    allocfact=1.0,
+    grass=true,
+    constraints=(
         tcm=[-Inf, +Inf],
         min=[-Inf, +Inf],
         gdd=[-Inf, +Inf],
         gdd0=[50.0, +Inf],
         twm=[-Inf, 15.0],
         snow=[-Inf, +Inf]
-    ),
-    true,
-    dominance_environment(clt, 10.4, 2.5) *
-        dominance_environment(prec, 2.0, 1.6) *
-        dominance_environment(temp, 23.5, 2.3),
-    0,
-    0.0,
-    zeros(Float64, 12),
-    0.0,
-    0.0
+    )
 ))
 
-Default() = Default(Characteristics())
-None() = None(Characteristics())
 
-struct BiomeClassification <: AbstractPFTList
+"""
+    Default <: AbstractPFT
+
+A default plant functional type (PFT) that ressembles a savanna grass and is defined as a generic PFT
+with no specific characteristics. This PFT can be used as a default when no other PFT is suited to the environment.
+"""
+struct Default <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+Default() = Default(PFTCharacteristics{Float64, Int}())
+
+"""
+    None<: AbstractPFT
+
+A None type plant functional type (PFT) that is chosen when no PFT is applicable to the environment.
+This PFT will lead to a Barren type biome
+"""
+struct None <: AbstractPFT
+    characteristics::PFTCharacteristics
+end
+
+None() = None(PFTCharacteristics{Float64, Int}())
+
+struct PFTClassification <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end
 
 # TOFIX: not sure this is needed, but could be used to define functions 
 # that are uniquely defined for specific biome classifications
-BiomeClassification(clt, prec, temp) = BiomeClassification([
-    TropicalEvergreen(clt, prec, temp),
-    TropicalDroughtDeciduous(clt, prec, temp),
-    TemperateBroadleavedEvergreen(clt, prec, temp),
-    TemperateDeciduous(clt, prec, temp),
-    CoolConifer(clt, prec, temp),
-    BorealEvergreen(clt, prec, temp),
-    BorealDeciduous(clt, prec, temp),
-    C3C4TemperateGrass(clt, prec, temp),
-    C4TropicalGrass(clt, prec, temp),
-    WoodyDesert(clt, prec, temp),
-    TundraShrubs(clt, prec, temp),
-    ColdHerbaceous(clt, prec, temp),
-    LichenForb(clt, prec, temp)
+PFTClassification() = PFTClassification([
+    TropicalEvergreen(),
+    TropicalDroughtDeciduous(),
+    TemperateBroadleavedEvergreen(),
+    TemperateDeciduous(),
+    CoolConifer(),
+    BorealEvergreen(),
+    BorealDeciduous(),
+    C3C4TemperateGrass(),
+    C4TropicalGrass(),
+    WoodyDesert(),
+    TundraShrubs(),
+    ColdHerbaceous(),
+    LichenForb()
 ])
 
 """
@@ -694,53 +555,6 @@ function get_characteristic(pft::AbstractPFT, prop::Symbol)
     if hasproperty(pft.characteristics, prop)
         return getproperty(pft.characteristics, prop)
     else
-        throw(ArgumentError("`$(prop)` is not a field of Characteristics"))
+        throw(ArgumentError("`$(prop)` is not a field of PFTCharacteristics"))
     end
-end
-
-"""
-    set_characteristic!(pft::AbstractPFT, prop::Symbol, value)
-
-Assigns to any mutable field `prop` in `pft.characteristics`
-"""
-function set_characteristic(pft::AbstractPFT, prop::Symbol, value)
-    if hasproperty(pft.characteristics, prop)
-        setfield!(pft.characteristics, prop, value)
-    else
-        throw(ArgumentError("`$(prop)` is not a field of Characteristics"))
-    end
-end
-
-"""
-    dominance_environment(clt, mean, std)
-
-Calculate the normalized environmental dominance value for a given climate trait.
-
-This function computes how well a species performs in a given environment by evaluating
-a normal distribution centered on the species' optimal environmental conditions. The 
-function returns a value between 0 and 1, where 1 represents optimal conditions (at the mean)
-and values decrease as environmental conditions deviate from the optimum according to the
-standard deviation.
-
-# Arguments
-- `clt`: The current climate/environmental value to evaluate
-- `mean`: The optimal environmental value for the species (center of the distribution)
-- `std`: The standard deviation representing the species' environmental tolerance
-
-# Returns
-- `Float64`: A normalized value between 0 and 1 representing environmental suitability,
-  where 1.0 is optimal and lower values indicate decreasing suitability
-"""
-function dominance_environment(clt, mean, std)
-    # Draw the normal distribution around the mean and std 
-    distribution = Normal(mean, std)
-
-    # Pick the distribution at the clt value
-    value = pdf(distribution, clt)
-
-    # Normalize the value to be between 0 and 1, 1 is the mean and it 
-    # decreases according to the standard deviation
-    normalized_value = value / pdf(distribution, mean)
-
-    return normalized_value
 end
