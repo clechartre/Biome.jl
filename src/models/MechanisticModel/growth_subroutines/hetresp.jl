@@ -1,12 +1,12 @@
 """
-hetresp(pft, nppann, tair, tsoil, aet, moist, isoveg)
+    hetresp(pft, nppann, tair, tsoil, aet, moist, isoveg, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
 
 Model heterotrophic respiration of litter and soil organic carbon
 in both a fast and a slow pool. It assumes equilibrium and so decays
 all of a given year's NPP. The 13C composition of respired CO2 is also
 modeled.
 
-Arguments:
+# Arguments
 - `pft`: Plant Functional Type.
 - `nppann`: Annual Net Primary Productivity.
 - `tair`: Array of monthly air temperatures.
@@ -14,14 +14,31 @@ Arguments:
 - `aet`: Array of monthly Actual Evapotranspiration values.
 - `moist`: Array of monthly soil moisture values.
 - `isoveg`: 13C composition of vegetation.
+- `Rlit`: Vector for litter respiration values (modified in place).
+- `Rfst`: Vector for fast pool respiration values (modified in place).
+- `Rslo`: Vector for slow pool respiration values (modified in place).
+- `Rtot`: Vector for total respiration values (modified in place).
+- `isoR`: Vector for isotope respiration values (modified in place).
+- `isoflux`: Vector for isotope flux values (modified in place).
+- `Rmean`: Mean respiration value.
+- `meanKlit`: Mean litter decay constant.
+- `meanKsoil`: Mean soil decay constant.
 
-Returns:
-- A `HetRespResults` struct containing respiration and isotope-related results.
+# Returns
+A tuple containing:
+- `Rlit`: Monthly litter respiration rates (Vector{T}).
+- `Rfst`: Monthly fast pool respiration rates (Vector{T}).
+- `Rslo`: Monthly slow pool respiration rates (Vector{T}).
+- `Rtot`: Monthly total respiration rates (Vector{T}).
+- `isoR`: Monthly isotope respiration values (Vector{T}).
+- `isoflux`: Monthly isotope flux values (Vector{T}).
+- `Rmean`: Mean annual respiration rate (T).
+- `meanKlit`: Mean litter decay constant (T).
+- `meanKsoil`: Mean soil decay constant (T).
 """
 function hetresp(
     pft::AbstractPFT,
     nppann::T,
-    tair::AbstractArray{T},
     tsoil::AbstractArray{T},
     aet::AbstractArray{T},
     moist::AbstractArray{T},
@@ -35,7 +52,7 @@ function hetresp(
     Rmean::T,
     meanKlit::T,
     meanKsoil::T
-    )::Tuple{Vector{T}, Vector{T}, Vector{T}, Vector{T}, Vector{T}, Vector{T}, T, T, T} where {T <: Real, U <: Int}
+)::Tuple{Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},T,T,T} where {T<:Real,U<:Int}
 
     # Constants and initializations
     isoatm = T(-8.0)
@@ -70,7 +87,7 @@ function hetresp(
             mfact = T(0.25) + T(0.75) * moist[m]
 
             # Litter decay
-            Klit[m] = T(10.0) ^ (-T(1.4553) + T(0.0014175) * aet[m])
+            Klit[m] = T(10.0)^(-T(1.4553) + T(0.0014175) * aet[m])
             Klitsum += Klit[m]
 
             # Fast and slow soil pool decay

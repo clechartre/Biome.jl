@@ -120,7 +120,7 @@ Characteristics() = Characteristics(
     0.0,                           # dominance
     0,                             # greendays
     0.0,                             # firedays
-    zeros(Float64, 12),            # mwet
+    zeros(T, 12),                   # mwet
     0.0,                           # npp
     0.0                            # lai
 )
@@ -367,7 +367,7 @@ BorealDeciduous(clt, prec, temp) = BorealDeciduous(Characteristics(
     false,
     (tcm=[-99.9, 5.0], min=[-99.9, -10.0], gdd=[-99.9, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, 21.0], snow=[-99.9, -99.9]),
     true,
-    dominance_environment(clt, 47.4, 8.3) * dominance_environment(prec, 65.0, 83.6) * dominance_environment(temp, -6.4, 7.7),
+    dominance_environment(clt, 47.4, 8.3) * dominance_environment(prec, 65.0, 83.6) * dominance_environment(temp, -12, 7.7),
     0,
     0.0,
     zeros(Float64, 12),
@@ -460,7 +460,7 @@ C3C4TemperateGrass(clt, prec, temp) = C3C4TemperateGrass(Characteristics(
     true,
     (tcm=[-99.9, -99.9], min=[-99.9, 0.0], gdd=[550.0, -99.9], gdd0=[-99.9, -99.9], twm=[-99.9, -99.9], snow=[-99.9, -99.9]),
     true,
-    dominance_environment(clt, 16.6, 6.9) * dominance_environment(prec, 12.2, 13.4) * dominance_environment(temp, 21.3, 6.2),
+    dominance_environment(clt, 9.3, 1.5) * dominance_environment(prec, 1.5, 1.5) * dominance_environment(temp, 22.9, 2.7),
     0,
     0.0,
     zeros(Float64, 12),

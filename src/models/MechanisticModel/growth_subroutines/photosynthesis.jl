@@ -1,9 +1,9 @@
 """
-photosynthesis(ratio, dsun, daytime, temp, age, fpar, p, ca, pft) :: PhotosynthesisResults
+    photosynthesis(ratio, dsun, daytime, temp, age, fpar, p, ca, pft)
 
 Calculate C3 photosynthesis based on environmental and plant functional type (PFT) parameters.
 
-Arguments:
+# Arguments
 - `ratio`: The ratio of intercellular to ambient CO2 concentration.
 - `dsun`: Daily solar radiation (MJ/m²/day).
 - `daytime`: Length of the day (hours).
@@ -14,7 +14,7 @@ Arguments:
 - `ca`: Ambient CO2 concentration (ppm).
 - `pft`: Plant Functional Type (integer index).
 
-Returns:
+# Returns
 - `leafresp`: Leaf respiration rate.
 - `grossphot`: Gross photosynthesis rate.
 - `aday`: Net daily photosynthesis.
@@ -29,13 +29,13 @@ function photosynthesis(
     p::T,
     ca::T,
     pft::AbstractPFT
-    )::Tuple{T,T,T} where {T <: Real, U <: Int}
+)::Tuple{T,T,T} where {T<:Real,U<:Int}
     # PFT specific parameters
     t0 = get_characteristic(pft, :t0)
     tcurve = get_characteristic(pft, :tcurve)
 
     # Derived parameters
-    leafcost = (age / T(12.0)) ^ T(0.25)
+    leafcost = (age / T(12.0))^T(0.25)
     mfo2 = SLO2 / T(1e5)
     o2 = p * mfo2
     if daytime <= T(4.0)
@@ -45,15 +45,15 @@ function photosynthesis(
     # Temperature stress calculation
     mintemp = t0
     tstress = if temp > mintemp + T(1.0)
-        tcurve * (T(2.71828) ^ (-T(10.0) / (temp - mintemp)))
+        tcurve * (T(2.71828)^(-T(10.0) / (temp - mintemp)))
     else
         T(0.0)
     end
 
     # Temperature adjusted values
-    ko = KO25 * (KOQ10 ^ ((temp - T(25.0)) / T(10.0)))
-    kc = KC25 * (KCQ10 ^ ((temp - T(25.0)) / T(10.0)))
-    tao = TAO25 * (TAOQ10 ^ ((temp - T(25.0)) / T(10.0)))
+    ko = KO25 * (KOQ10^((temp - T(25.0)) / T(10.0)))
+    kc = KC25 * (KCQ10^((temp - T(25.0)) / T(10.0)))
+    tao = TAO25 * (TAOQ10^((temp - T(25.0)) / T(10.0)))
 
     s = DRESPC3 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
@@ -70,9 +70,9 @@ function photosynthesis(
     oc = if denominator != T(0.0)
         result = numerator / denominator
         if result < T(0.0)
-            sign(result) * abs(result) ^ T(0.5)
+            sign(result) * abs(result)^T(0.5)
         else
-            result ^ T(0.5)
+            result^T(0.5)
         end
     else
         T(0.0)
@@ -81,7 +81,9 @@ function photosynthesis(
     vmax = if z == T(0.0)
         T(0.0)
     else
-        (z / DRESPC3) * (c1 / c2) * ((T(2.0) * TETA - T(1.0)) * s - (T(2.0) * TETA * s - c2) * oc)
+        (z / DRESPC3) * (c1 / c2) * (
+            (T(2.0) * TETA - T(1.0)) * s - (T(2.0) * TETA * s - c2) * oc
+        )
     end
 
     # Actual photosynthesis calculation
@@ -110,7 +112,11 @@ function photosynthesis(
         if je == T(0.0) && jc == T(0.0)
             T(0.0)
         else
-            wif * (je + jc - ((je + jc) ^ T(2.0) - T(4.0) * TETA * je * jc) ^ T(0.5))
+            wif * (
+                je + jc - (
+                    (je + jc)^T(2.0) - T(4.0) * TETA * je * jc
+                )^T(0.5)
+            )
         end
     end
 

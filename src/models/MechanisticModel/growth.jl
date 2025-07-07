@@ -109,6 +109,7 @@ function growth(
         meanKsoil = T(0.0)
         gphot = T(0.0)
         maxgc = T(0.0)
+        meanC3 = T(0.0)
 
         # Initialize Array
         lresp = zeros(T, 12)
@@ -334,7 +335,7 @@ function growth(
         end
     
         moist = map(mean, meanwr)
-        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, temp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
+        Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil = hetresp(pft, npp, tsoil, meanaet, moist, meanC3, Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
 
         annresp = sum(Rtot)
     

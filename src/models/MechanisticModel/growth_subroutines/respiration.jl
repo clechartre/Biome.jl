@@ -1,36 +1,40 @@
-
 """
-respiration(gpp, alresp, temp, sapwood, lai, monthlyfpar, pft, pftdict) -> Tuple{T, T, T, Vector{T}, Vector{T}}
+    respiration(gpp, alresp, temp, sapwood, lai, monthlyfpar, pft)
 
-Calculate plant respiration components and net primary productivity (NPP) from gross primary productivity (GPP).
+Calculate plant respiration components and net primary productivity (NPP) from 
+gross primary productivity (GPP).
 
-This function computes various respiration costs including stem maintenance, belowground maintenance,
-leaf respiration, and growth respiration to determine the net primary productivity of a plant functional type.
+This function computes various respiration costs including stem maintenance, 
+belowground maintenance, leaf respiration, and growth respiration to determine 
+the net primary productivity of a plant functional type.
 
 # Arguments
-- `gpp::T`: Gross primary productivity (carbon gained through photosynthesis)
-- `alresp::T`: Autotrophic leaf respiration
-- `temp::AbstractArray{T}`: Monthly temperature array (12 elements)
-- `sapwood::Int`: sapwood indicator (2 = sapwood, other = woody)
-- `lai::T`: Leaf area index
-- `monthlyfpar::AbstractArray{T}`: Monthly fraction of photosynthetically active radiation (12 elements)
-- `pft::U`: Plant functional type identifier
-- `pftdict`: Dictionary containing PFT-specific parameters (allocfact, respfact)
+- `gpp`: Gross primary productivity (carbon gained through photosynthesis)
+- `alresp`: Autotrophic leaf respiration
+- `temp`: Monthly temperature array (12 elements)
+- `sapwood`: sapwood indicator (2 = sapwood, other = woody)
+- `lai`: Leaf area index
+- `monthlyfpar`: Monthly fraction of photosynthetically active radiation 
+  (12 elements)
+- `pft`: Plant functional type identifier
 
 # Returns
 A tuple containing:
-- `npp::T`: Net primary productivity (-9999.0 if below minimum allocation requirement)
-- `stemresp::T`: Total annual stem maintenance respiration
-- `percentcost::T`: Respiration costs as percentage of GPP
-- `mstemresp::Vector{T}`: Monthly stem maintenance respiration (12 elements)
-- `mrootresp::Vector{T}`: Monthly root maintenance respiration (12 elements)
-- `backleafresp::Vector{T}`: Monthly leaf maintenance respiration (12 elements, not returned in current implementation)
+- `npp`: Net primary productivity (-9999.0 if below minimum allocation 
+  requirement)
+- `stemresp`: Total annual stem maintenance respiration
+- `percentcost`: Respiration costs as percentage of GPP
+- `mstemresp`: Monthly stem maintenance respiration (12 elements)
+- `mrootresp`: Monthly root maintenance respiration (12 elements)
+- `backleafresp`: Monthly leaf maintenance respiration (12 elements)
 
 # Notes
 - For sapwood PFTs (sapwood == 2), stem respiration is set to zero
-- Temperature-dependent respiration follows exponential relationship with reference temperature of 10°C
+- Temperature-dependent respiration follows exponential relationship with 
+  reference temperature of 10°C
 - NPP is set to -9999.0 if it falls below the minimum allocation requirement
-- Function uses multiple hardcoded constants that should ideally be moved to a constants module
+- Function uses multiple hardcoded constants that should ideally be moved to a 
+  constants module
 """
 function respiration(
     gpp::T,
@@ -40,7 +44,7 @@ function respiration(
     lai::T,
     monthlyfpar::AbstractArray{T},
     pft::AbstractPFT
-    )::Tuple{T, T, T, Vector{T}, Vector{T}, Vector{T}} where {T <: Real, U <: Int}
+)::Tuple{T,T,T,Vector{T},Vector{T},Vector{T}} where {T<:Real,U<:Int}
     allocfact = get_characteristic(pft, :allocfact)
     respfact = get_characteristic(pft, :respfact)
 
@@ -54,7 +58,12 @@ function respiration(
         if temp[m] <= -46.02
             mstemresp[m] = T(0.0)
         else
-            mstemresp[m] = lai * STEMCARBON * respfact * exp(E0 * (T(1.0) / (TREF + TEMP0) - T(1.0) / (temp[m] + TEMP0)))
+            temp_factor = exp(
+                E0 * (
+                    T(1.0) / (TREF + TEMP0) - T(1.0) / (temp[m] + TEMP0)
+                )
+            )
+            mstemresp[m] = lai * STEMCARBON * respfact * temp_factor
         end
         stemresp += mstemresp[m]
     end

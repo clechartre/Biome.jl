@@ -21,7 +21,6 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         
         # Realistic environmental data
         nppann = 1500.0
-        tair = [15.0, 17.0, 20.0, 25.0, 28.0, 30.0, 32.0, 30.0, 26.0, 22.0, 18.0, 16.0]
         tsoil = [12.0, 14.0, 18.0, 22.0, 25.0, 27.0, 29.0, 27.0, 24.0, 20.0, 16.0, 13.0]
         aet = [50.0, 60.0, 80.0, 100.0, 120.0, 140.0, 130.0, 110.0, 90.0, 70.0, 55.0, 45.0]
         moist = [0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
@@ -39,7 +38,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         meanKsoil = 0.0
         
         # Test tropical evergreen
-        result_trop_ever = hetresp(tropical_evergreen, nppann, tair, tsoil, aet, moist, isoveg,
+        result_trop_ever = hetresp(tropical_evergreen, nppann, tsoil, aet, moist, isoveg,
                                   Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil)
         
         Rlit_te, Rfst_te, Rslo_te, Rtot_te, isoR_te, isoflux_te, Rmean_te, meanKlit_te, meanKsoil_te = result_trop_ever
@@ -84,7 +83,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         isoR_td = zeros(12)
         isoflux_td = zeros(12)
         
-        result_temp_dec = hetresp(temperate_deciduous, nppann, tair, tsoil, aet, moist, isoveg,
+        result_temp_dec = hetresp(temperate_deciduous, nppann, tsoil, aet, moist, isoveg,
                                  Rlit_td, Rfst_td, Rslo_td, Rtot_td, isoR_td, isoflux_td, 
                                  Rmean, meanKlit, meanKsoil)
         
@@ -109,7 +108,6 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         set_characteristic(temperate, :name, "temperate_deciduous")
         
         nppann = 1000.0
-        tair = fill(20.0, 12)
         tsoil = fill(18.0, 12)
         aet = fill(100.0, 12)
         moist = fill(0.5, 12)
@@ -120,7 +118,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         isoR = zeros(12); isoflux = zeros(12)
         
         # Test tropical partitioning (65% litter, 34.3% fast, 0.7% slow)
-        result_trop = hetresp(tropical, nppann, tair, tsoil, aet, moist, isoveg,
+        result_trop = hetresp(tropical, nppann, tsoil, aet, moist, isoveg,
                              Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_t, Rfst_t, Rslo_t, Rtot_t, isoR_t, isoflux_t, Rmean_t, meanKlit_t, meanKsoil_t = result_trop
@@ -139,7 +137,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
         # Test temperate partitioning (70% litter, 29.55% fast, 0.45% slow)
-        result_temp = hetresp(temperate, nppann, tair, tsoil, aet, moist, isoveg,
+        result_temp = hetresp(temperate, nppann, tsoil, aet, moist, isoveg,
                              Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_temp, Rfst_temp, Rslo_temp, Rtot_temp, isoR_temp, isoflux_temp, 
@@ -160,7 +158,6 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         set_characteristic(test_pft, :name, "boreal_evergreen")
         
         nppann = 800.0
-        tair = fill(15.0, 12)
         aet = fill(80.0, 12)
         isoveg = -26.0
         
@@ -173,7 +170,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         Rlit = zeros(12); Rfst = zeros(12); Rslo = zeros(12); Rtot = zeros(12)
         isoR = zeros(12); isoflux = zeros(12)
         
-        result_cold = hetresp(test_pft, nppann, tair, tsoil_cold, aet, moist, isoveg,
+        result_cold = hetresp(test_pft, nppann, tsoil_cold, aet, moist, isoveg,
                              Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_cold, Rfst_cold, Rslo_cold, Rtot_cold, _, _, _, meanKlit_cold, meanKsoil_cold = result_cold
@@ -182,7 +179,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(Rlit, 0.0); fill!(Rfst, 0.0); fill!(Rslo, 0.0); fill!(Rtot, 0.0)
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
-        result_warm = hetresp(test_pft, nppann, tair, tsoil_warm, aet, moist, isoveg,
+        result_warm = hetresp(test_pft, nppann, tsoil_warm, aet, moist, isoveg,
                              Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_warm, Rfst_warm, Rslo_warm, Rtot_warm, _, _, _, meanKlit_warm, meanKsoil_warm = result_warm
@@ -199,7 +196,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(Rlit, 0.0); fill!(Rfst, 0.0); fill!(Rslo, 0.0); fill!(Rtot, 0.0)
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
-        result_dry = hetresp(test_pft, nppann, tair, tsoil, aet, moist_dry, isoveg,
+        result_dry = hetresp(test_pft, nppann, tsoil, aet, moist_dry, isoveg,
                             Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         _, _, _, _, _, _, _, _, meanKsoil_dry = result_dry
@@ -208,7 +205,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(Rlit, 0.0); fill!(Rfst, 0.0); fill!(Rslo, 0.0); fill!(Rtot, 0.0)
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
-        result_wet = hetresp(test_pft, nppann, tair, tsoil, aet, moist_wet, isoveg,
+        result_wet = hetresp(test_pft, nppann, tsoil, aet, moist_wet, isoveg,
                             Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         _, _, _, _, _, _, _, _, meanKsoil_wet = result_wet
@@ -222,7 +219,6 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         set_characteristic(test_pft, :name, "cool_conifer")
         
         nppann = 1200.0
-        tair = fill(10.0, 12)
         tsoil = fill(8.0, 12)
         aet = fill(60.0, 12)
         moist = fill(0.4, 12)
@@ -232,7 +228,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         Rlit = zeros(12); Rfst = zeros(12); Rslo = zeros(12); Rtot = zeros(12)
         isoR = zeros(12); isoflux = zeros(12)
         
-        result = hetresp(test_pft, nppann, tair, tsoil, aet, moist, isoveg,
+        result = hetresp(test_pft, nppann, tsoil, aet, moist, isoveg,
                         Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_iso, Rfst_iso, Rslo_iso, Rtot_iso, isoR_iso, isoflux_iso, _, _, _ = result
@@ -260,7 +256,6 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         test_pft = TemperateDeciduous(8.0, 800.0, 15.0)
         set_characteristic(test_pft, :name, "temperate_deciduous")
         
-        tair = fill(20.0, 12)
         tsoil = fill(18.0, 12)
         aet = fill(100.0, 12)
         moist = fill(0.5, 12)
@@ -271,7 +266,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         isoR = zeros(12); isoflux = zeros(12)
         
         # Test with zero NPP
-        result_zero = hetresp(test_pft, 0.0, tair, tsoil, aet, moist, isoveg,
+        result_zero = hetresp(test_pft, 0.0, tsoil, aet, moist, isoveg,
                              Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_zero, Rfst_zero, Rslo_zero, Rtot_zero, isoR_zero, isoflux_zero, 
@@ -292,7 +287,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(Rlit, 0.0); fill!(Rfst, 0.0); fill!(Rslo, 0.0); fill!(Rtot, 0.0)
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
-        result_neg = hetresp(test_pft, -100.0, tair, tsoil, aet, moist, isoveg,
+        result_neg = hetresp(test_pft, -100.0, tsoil, aet, moist, isoveg,
                             Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         Rlit_neg, Rfst_neg, Rslo_neg, Rtot_neg, _, _, _, _, _ = result_neg
@@ -307,7 +302,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(Rlit, 0.0); fill!(Rfst, 0.0); fill!(Rslo, 0.0); fill!(Rtot, 0.0)
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
-        result_extreme_cold = hetresp(test_pft, 1000.0, tair, tsoil_extreme_cold, aet, moist, isoveg,
+        result_extreme_cold = hetresp(test_pft, 1000.0, tsoil_extreme_cold, aet, moist, isoveg,
                                      Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         _, _, _, Rtot_extreme_cold, _, _, _, _, _ = result_extreme_cold
@@ -322,7 +317,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         fill!(Rlit, 0.0); fill!(Rfst, 0.0); fill!(Rslo, 0.0); fill!(Rtot, 0.0)
         fill!(isoR, 0.0); fill!(isoflux, 0.0)
         
-        result_extreme_dry = hetresp(test_pft, 1000.0, tair, tsoil, aet, moist_extreme_dry, isoveg,
+        result_extreme_dry = hetresp(test_pft, 1000.0, tsoil, aet, moist_extreme_dry, isoveg,
                                     Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
         _, _, _, Rtot_extreme_dry, _, _, _, _, _ = result_extreme_dry
@@ -343,11 +338,11 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         isoR = zeros(12); isoflux = zeros(12)
         
         # Test with wrong array lengths
-        @test_throws BoundsError hetresp(test_pft, nppann, fill(20.0, 11), fill(18.0, 10), 
+        @test_throws BoundsError hetresp(test_pft, nppann, fill(18.0, 10), 
                                         fill(100.0, 12), fill(0.5, 12), isoveg,
                                         Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
         
-        @test_throws BoundsError hetresp(test_pft, nppann, fill(20.0, 12), fill(18.0, 13), 
+        @test_throws BoundsError hetresp(test_pft, nppann, fill(18.0, 13), 
                                         fill(100.0, 12), fill(0.5, 10), isoveg,
                                         Rlit, Rfst, Rslo, Rtot, isoR, isoflux, 0.0, 0.0, 0.0)
     end
@@ -358,7 +353,6 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         
         # Test with Float32
         nppann_f32 = Float32(800.0)
-        tair_f32 = fill(Float32(15.0), 12)
         tsoil_f32 = fill(Float32(12.0), 12)
         aet_f32 = fill(Float32(70.0), 12)
         moist_f32 = fill(Float32(0.4), 12)
@@ -368,7 +362,7 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
         Rslo_f32 = zeros(Float32, 12); Rtot_f32 = zeros(Float32, 12)
         isoR_f32 = zeros(Float32, 12); isoflux_f32 = zeros(Float32, 12)
         
-        result_f32 = hetresp(test_pft, nppann_f32, tair_f32, tsoil_f32, aet_f32, moist_f32, isoveg_f32,
+        result_f32 = hetresp(test_pft, nppann_f32, tsoil_f32, aet_f32, moist_f32, isoveg_f32,
                             Rlit_f32, Rfst_f32, Rslo_f32, Rtot_f32, isoR_f32, isoflux_f32, 
                             Float32(0.0), Float32(0.0), Float32(0.0))
         

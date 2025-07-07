@@ -1,8 +1,11 @@
 using Base.Math: exp
+
 """
-    c4photo(ratio, dsun, daytime, temp, age, fpar, p, ca, pft) :: PhotosynthesisResults
+    c4photo(ratio, dsun, daytime, temp, age, fpar, p, ca, pft)::Tuple{T,T,T} 
+
 Calculate C4 photosynthesis based on environmental and plant functional type (PFT) parameters.
-Arguments:
+
+# Arguments:
 - `ratio`: The ratio of intercellular to ambient CO2 concentration.
 - `dsun`: Daily solar radiation (MJ/m²/day).
 - `daytime`: Length of the day (hours).
@@ -12,7 +15,8 @@ Arguments:
 - `p`: Atmospheric pressure (kPa).
 - `ca`: Ambient CO2 concentration (ppm).
 - `pft`: Plant Functional Type (integer index).
-Returns:
+
+# Returns:
 - `leafresp`: Leaf respiration rate.
 - `grossphot`: Gross photosynthesis rate.
 - `aday`: Net daily photosynthesis.
@@ -27,13 +31,14 @@ function c4photo(
     p::T,
     ca::T,
     pft::AbstractPFT
-)::Tuple{T,T,T} where {T <: Real, U <: Int}
+)::Tuple{T,T,T} where {T<:Real,U<:Int}
     # PFT-specific parameters
     # TODO verify that this gives the same result as the original code
     t0 = T(10.0)
 
     # Determine qeffc4 and tune based on PFT
-    # FIXME this is a bit of a hack, we should have a better way to handle PFT-specific parameters - ask if C4 and then define these parameters in C4 plants
+    # FIXME this is a bit of a hack, we should have a better way to handle PFT-specific parameters 
+    #- ask if C4 and then define these parameters in C4 plants
     qeffc4, tune = if get_characteristic(pft, :name) in ["C3C4TemperateGrass", "C4TropicalGrass"]
         (T(0.0633), T(1.0))
     elseif get_characteristic(pft, :name) == "C3C4WoodyDesert"
@@ -43,7 +48,7 @@ function c4photo(
     end
 
     # Derived parameters
-    leafcost = (age / T(12.0)) ^ T(0.25)
+    leafcost = (age / T(12.0))^T(0.25)
     mfo2 = SLO2 / T(1e5)
     o2 = p * mfo2
     daytime = max(daytime, T(4.0))
@@ -58,7 +63,7 @@ function c4photo(
     tstress = min(tstress, T(1.0))
 
     # Temperature adjusted values
-    tao = TAO25 * (TAOQ10 ^ ((temp - T(25.0)) / T(10.0)))
+    tao = TAO25 * (TAOQ10^((temp - T(25.0)) / T(10.0)))
 
     s = DRESPC4 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
@@ -99,7 +104,7 @@ function c4photo(
         if je == T(0.0) && jc == T(0.0)
             T(0.0)
         else
-            wif * (je + jc - sqrt((je + jc) ^ T(2.0) - T(4.0) * TETA * je * jc))
+            wif * (je + jc - sqrt((je + jc)^T(2.0) - T(4.0) * TETA * je * jc))
         end
     end
 

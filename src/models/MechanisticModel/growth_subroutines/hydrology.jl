@@ -1,9 +1,10 @@
 """
-hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtemp, sapwood, emax, pftpar) :: HydrologyResults
+    hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtemp, sapwood, emax) :: HydrologyResults
 
-Calculate the actual values of canopy conductance (gc), soil moisture, and other hydrological variables.
+Calculate the actual values of canopy conductance (gc), soil moisture, and other
+hydrological variables.
 
-Arguments:
+# Arguments:
 - `dprec`: Daily precipitation (365-element vector).
 - `dmelt`: Daily snowmelt (365-element vector).
 - `deq`: Daily equilibrium evapotranspiration (365-element vector).
@@ -19,9 +20,8 @@ Arguments:
 - `dtemp`: Daily temperature (365-element vector).
 - `sapwood`: Presence of sapwood respiration.
 - `emax`: Maximum evapotranspiration efficiency (scalar).
-- `pftpar`: PFT parameters (2x5 matrix).
 
-Returns:
+# Returns:
 - `meanfvc`: Mean monthly foliar vegetation cover.
 - `meangc`: Mean monthly canopy conductance.
 - `meanwr`: Mean monthly soil water reservoir (root zone, layer 1, and layer 2).
@@ -51,8 +51,20 @@ function hydrology(
     dtemp::AbstractArray{T},
     sapwood::U,
     emax::T
-
-    )::Tuple{AbstractArray{T}, AbstractArray{T}, Vector{Vector{T}}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, AbstractArray{T}, T, T, U, T, Bool } where {T <: Real, U <: Int}
+)::Tuple{
+    AbstractArray{T},
+    AbstractArray{T},
+    Vector{Vector{T}},
+    AbstractArray{T},
+    AbstractArray{T},
+    AbstractArray{T},
+    AbstractArray{T},
+    T,
+    T,
+    U,
+    T,
+    Bool
+} where {T<:Real,U<:Int}
     days = T[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     alfam = T(1.4)
     gm = T(5.0)
@@ -149,7 +161,10 @@ function hydrology(
                         gc = gcopt[d] * (fvc / maxfvc)
                         gsurf = gc + gmin
                         if gsurf > 0.0
-                            alfa = min(T(1.0), alfam * (T(1.0) - exp(-gsurf / gm)))
+                            alfa = min(
+                                T(1.0),
+                                alfam * (T(1.0) - exp(-gsurf / gm))
+                            )
                             aet = alfa * deq[d]
                         else
                             alfa = T(0.0)
@@ -169,22 +184,27 @@ function hydrology(
                         gc = gsurf - gmin
                         aet = supply
                         if gc <= T(0.0)
-                        gc = T(0.0)
-                        wilt = true
+                            gc = T(0.0)
+                            wilt = true
                         end
-                    end                      
+                    end
 
-                    perc = k[1] * w[1] ^ T(4.0)
+                    perc = k[1] * w[1]^T(4.0)
                     evap = T(0.0)
 
                     if wr > T(0.0)
-                        r1 = [root * (w[1] / wr), (T(1.0) - root) * (w[2] / wr)]
+                        r1 = [
+                            root * (w[1] / wr),
+                            (T(1.0) - root) * (w[2] / wr)
+                        ]
                     else
                         r1 = T[0.0, 0.0]
                     end
 
                     if k[5] != T(0.0)
-                        w[1] = w[1] + (dprec[d] + dmelt[d] - perc - evap - r1[1] * aet) / k[5]
+                        w[1] = w[1] + (
+                            dprec[d] + dmelt[d] - perc - evap - r1[1] * aet
+                        ) / k[5]
                     else
                         w[1] = T(0.0)
                     end
@@ -212,11 +232,11 @@ function hydrology(
                     if w[1] <= T(0.0)
                         w[1] = T(0.0)
                     end
-                    
+
                     if w[2] <= T(0.0)
                         w[2] = T(0.0)
                     end
-                
+
                 end
 
                 annaet += aet
@@ -240,16 +260,16 @@ function hydrology(
         end
     end
 
-    return  meanfvc, 
-            meangc, 
-            meanwr, 
-            meanaet, 
-            runoffmonth, 
-            wet, 
-            dayfvc, 
-            annaet, 
-            sumoff, 
-            greendays, 
-            runnoff, 
-            wilt
+    return meanfvc,
+        meangc,
+        meanwr,
+        meanaet,
+        runoffmonth,
+        wet,
+        dayfvc,
+        annaet,
+        sumoff,
+        greendays,
+        runnoff,
+        wilt
 end

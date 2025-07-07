@@ -1,6 +1,6 @@
 
 """
-fire(wet::AbstractVector{T}, pft::U, lai::T, npp::T)::firedays::T, wetday::T, dryday::T, firefraction::T, burnfraction::T
+  fire(wet::AbstractVector{T}, pft::U, lai::T, npp::T)::AbstractPFT
 
 Calculate the number of potential fire days in a year based on threshold values for soil moisture.
 
@@ -11,12 +11,7 @@ Calculate the number of potential fire days in a year based on threshold values 
 - `npp`: Net Primary Productivity.
 
 # Returns
-- A tuple containing:
-- `firedays`: Total number of fire days in the year.
-- `wetday`: Maximum wetness observed during the year.
-- `dryday`: Minimum wetness observed during the year.
-- `firefraction`: Fraction of days with fire potential.
-- `burnfraction`: Fraction of litter burned based on fire potential.
+- 'pft`: An updated Plant Functional Type (PFT) with the number of fire days set.'
 """
 function fire(wet::AbstractVector{T},
     pft::AbstractPFT,
