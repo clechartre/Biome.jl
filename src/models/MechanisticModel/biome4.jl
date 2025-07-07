@@ -123,6 +123,8 @@ function run(
     dprec, dmelt, maxdepth = snow(dtemp, dprecin)
 
     # Initialize evergreen phenology (all days active)
+    # By default, all days are favorable for growth - all activate growth days
+    # This will be modified for other phenological types with the phenology function
     dphen .= T(1.0)
 
     # Apply environmental constraints to determine PFT presence
