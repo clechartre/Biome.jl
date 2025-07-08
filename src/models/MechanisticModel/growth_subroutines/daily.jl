@@ -1,5 +1,5 @@
 """
-    daily(mly::Vector{T})
+    daily_interp(mly::Vector{T})
 
 Linearly interpolate the mid-month values (mly) to daily values, modifying `dly` in place.
 
@@ -9,7 +9,7 @@ Linearly interpolate the mid-month values (mly) to daily values, modifying `dly`
 # Returns
 - `dly`:  A vector of 365T values representing daily interpolated values.
 """
-function daily(mly::AbstractArray{T})::AbstractArray{T} where {T<:Real}
+function daily_interp(mly::AbstractArray{T})::AbstractArray{T} where {T<:Real}
     # Ensure mly has 12 elements
     if length(mly) != 12
         error("mly must be of length 12")

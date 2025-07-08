@@ -371,7 +371,7 @@ function process_chunk(
     lon_chunk, biome_var, wdom_var, gdom_var, 
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
     output_dataset, strx, model_instance::BiomeModel, PFTS::AbstractPFTList
-) where {T<:Real}
+)
     for y in 1:cnty
         println("Serially processing y index $y")
 
@@ -595,7 +595,7 @@ to run the biome classification models.
 - `--year`: Year identifier for output
 - `--model`: Model type to run
 """
-function parse_command_line() where {T<:Real}
+function parse_command_line()
     s = ArgParseSettings()
     @add_arg_table! s begin
         "--coordstring"

@@ -84,7 +84,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
        OpenConiferWoodland, BorealParkland, Barren, LandIce,
        
        # Functions
-       get_biome_characteristic, climdata, competition2, constraints, daily, findnpp,
+       get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int,
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table
        

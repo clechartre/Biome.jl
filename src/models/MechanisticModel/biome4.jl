@@ -99,9 +99,9 @@ function run(
     k[6] = soil[4]
 
     # Interpolate monthly values to daily values
-    dtemp = daily(temp)
-    dclou = daily(clou)
-    dprecin = daily(prec)
+    dtemp = daily_interp(temp)
+    dclou = daily_interp(clou)
+    dprecin = daily_interp(prec)
 
     # Calculate climate indices
     cold, gdd5, gdd0, warm = climdata(temp, prec, dtemp)

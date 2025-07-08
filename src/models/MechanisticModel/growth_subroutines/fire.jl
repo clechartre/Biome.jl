@@ -17,7 +17,7 @@ function fire(wet::AbstractVector{T},
     pft::AbstractPFT,
     lai::T,
     npp::T
-)::T where {T <: Real, U <: Int}
+)::T where {T <: Real}
 
     # Threshold values per PFT
     threshold = get_characteristic(pft, :threshold)

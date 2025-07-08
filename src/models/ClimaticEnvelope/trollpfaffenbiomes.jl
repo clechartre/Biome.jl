@@ -1,10 +1,6 @@
 # Third-Party
 using Statistics
 
-# First-Party
-include("../MechanisticModel/growth_subroutines/daily.jl")
-export daily
-
 function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
 
     # Define Troll-Paffen climate zones with numerical values and descriptions
@@ -153,8 +149,8 @@ function get_growing_degree_days(temp::Vector{Float64}, base_temp::Float64)
 end
 
 function get_humid_months(temp::Vector{Float64}, precip::Vector{Float64})
-    temp_daily = daily(temp)
-    precip_daily = daily(precip)
+    temp_daily = daily_interp(temp)
+    precip_daily = daily_interp(precip)
     humid_days = sum(precip_daily[i] > 2 * temp_daily[i] for i in 1:365)
     return humid_days * 12.0 / 365.0
 end

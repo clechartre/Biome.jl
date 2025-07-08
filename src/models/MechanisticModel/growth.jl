@@ -166,7 +166,7 @@ function growth(
             maxgc = max(maxgc, optgc[m])
         end
     
-        doptgc = daily(optgc)
+        doptgc = daily_interp(optgc)
 
         meanfvc, meangc, meanwr, meanaet, runoffmonth, wet, dayfvc, annaet, 
         sumoff, greendays, runnoff, wilt = hydrology(
