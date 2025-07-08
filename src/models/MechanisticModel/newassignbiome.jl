@@ -6,14 +6,6 @@ Assign biomes as in BIOME3.5 according to a new scheme of biomes.
 As per the logic of Jed Kaplan 3/1998
 """
 
-include("./pfts.jl")
-include("./biomes.jl")
-export TropicalEvergreen, TropicalDroughtDeciduous, 
-       TemperateBroadleavedEvergreen, TemperateDeciduous, 
-       CoolConifer, BorealEvergreen, BorealDeciduous, C4TropicalGrass,
-       LichenForb, TundraShrubs, ColdHerbaceous,
-       WoodyDesert, C3C4TemperateGrass
-
 """
     assign_biome(optpft::LichenForb, subpft, wdom, gdd0, gdd5, tcm, tmin, BIOME4PFTS)
 
@@ -24,7 +16,7 @@ Returns Barren biome as LichenForb typically occurs in harsh environments.
 function assign_biome(
     optpft::LichenForb;
     kwargs...
-)::AbstractBiome where {T<:Real}
+)::AbstractBiome
     return Barren()
 end
 
@@ -59,7 +51,7 @@ Returns SteppeTundra biome for cold herbaceous vegetation.
 function assign_biome(
     optpft::ColdHerbaceous;
     kwargs...
-)::AbstractBiome where {T<:Real}
+)::AbstractBiome
     return SteppeTundra()
 end
 
@@ -410,6 +402,6 @@ Returns Barren biome when no vegetation is present.
 function assign_biome(
     optpft::None;
     kwargs...
-)::AbstractBiome where {T<:Real}
+)::AbstractBiome
     return Barren()
 end

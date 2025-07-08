@@ -7,7 +7,11 @@ This module provides the command-line interface and data processing pipeline
 for running various biome classification models including BIOME4, Wissmann,
 Thornthwaite, Koppen-Geiger, and Troll-Pfaffen classifications.
 """
-module Biome4Driver
+
+using Pkg
+Pkg.instantiate() 
+
+using BIOME   
 
 # Standard library
 using Base.Threads
@@ -25,40 +29,6 @@ using DataStructures: OrderedDict
 using Plots
 using DimensionalData
 gr()
-
-# First-party
-include("../pfts.jl")
-export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT
-
-include("../biomes.jl")
-export AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList, 
-       get_biome_characteristic
-
-# Models
-include("../abstractmodel.jl")
-export WissmannModel, BIOME4Model, ThornthwaiteModel, KoppenModel, 
-       TrollPfaffenModel
-
-# Climatic Envelope Options
-include("../models/ClimaticEnvelope/koppenbiomes.jl")
-include("../models/ClimaticEnvelope/thornthwaitebiomes.jl")
-include("../models/ClimaticEnvelope/trollpfaffenbiomes.jl")
-include("../models/ClimaticEnvelope/wissmannbiomes.jl")
-
-# Mechanistic Options
-include("../models/MechanisticModel/biome4.jl")
-include("../models/MechanisticModel/pfts.jl")
-
-# Objects 
-include("../models/MechanisticModel/constants.jl")
-using .Constants: T, P0, CP, T0, G, M, R0,
-    QEFFC3, DRESPC3, DRESPC4, ABS1, TETA, SLO2, JTOE, OPTRATIO,
-    KO25, KC25, TAO25, CMASS, KCQ10, KOQ10, TAOQ10,
-    TWIGLOSS, TUNE, LEAFRESP,
-    MAXTEMP,
-    LN, Y, M10, P1, STEMCARBON,
-    E0, TREF, TEMP0,
-    A, ES, A1, B3, B
 
 """
     main(coordstring, co2, tempfile, precfile, sunfile, soilfile, year, model)
@@ -324,6 +294,9 @@ function main(
         println("max ksat: ", maximum(ksat_chunk), ", min ksat: ", minimum(ksat_chunk))
         println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
 
+        # Instantiate the PFTs before going into pixels
+        PFTS = PFTClassification()
+
         # Process the data in this chunk
         process_chunk(
             current_chunk_size,
@@ -350,7 +323,8 @@ function main(
             wetness_var,
             output_dataset,
             strx,
-            model_instance
+            model_instance,
+            PFTS
         )
     end
 
@@ -396,7 +370,7 @@ function process_chunk(
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
     lon_chunk, biome_var, wdom_var, gdom_var, 
     npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
-    output_dataset, strx, model_instance::BiomeModel
+    output_dataset, strx, model_instance::BiomeModel, PFTS::AbstractPFTList
 ) where {T<:Real}
     for y in 1:cnty
         println("Serially processing y index $y")
@@ -418,7 +392,7 @@ function process_chunk(
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
                 dz, lon_chunk, biome_var, wdom_var, gdom_var, npp_var, 
                 tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, 
-                model_instance
+                model_instance, PFTS
             )
         end
 
@@ -458,7 +432,7 @@ function process_cell(
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
     lon_chunk,
     biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
-    gdd5_var, subpft_var, wetness_var, model::BiomeModel
+    gdd5_var, subpft_var, wetness_var, model::BiomeModel, PFTS::AbstractPFTList
 ) where {T<:Real}
     # Convert local indices to global indices
     x_global_index = x
@@ -493,7 +467,7 @@ function process_cell(
     input[49] = lon_chunk[x]
 
     # Run the model 
-    output = run(model, input)
+    output = BIOME.run(model, input, PFTS)
 
     # Write results to the output variables
     biome_var[x_global_index, y_global_index] = output[1]
@@ -621,7 +595,7 @@ to run the biome classification models.
 - `--year`: Year identifier for output
 - `--model`: Model type to run
 """
-function parse_command_line()
+function parse_command_line() where {T<:Real}
     s = ArgParseSettings()
     @add_arg_table! s begin
         "--coordstring"
@@ -636,7 +610,7 @@ function parse_command_line()
 
         "--co2"
         help = "CO2 concentration"
-        arg_type = T
+        arg_type = Float64
         default = 400.0
 
         "--tempfile"
@@ -678,7 +652,7 @@ with the appropriate parameters.
 function main()
     args = parse_command_line()
 
-    Biome4Driver.main(
+    main(
         args["coordstring"],
         args["co2"],
         args["tempfile"],
@@ -694,5 +668,4 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
-
-end # End of module
+# End of module

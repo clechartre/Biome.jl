@@ -10,14 +10,14 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     
     @testset "Mock Assign Biome Test" begin
         # Test the mock function
-        result = mock_assign_biome(nothing, nothing, nothing, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, BiomeClassification(50.0, 100.0, 15.0))
+        result = mock_assign_biome(nothing, nothing, nothing, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, PFTClassification(50.0, 100.0, 15.0))
         @test result == 1
         @test typeof(result) == Int
     end
     
     @testset "Tropical Evergreen Assignment Tests" begin
         # Create test PFTs and biome classification
-        biome_pfts = BiomeClassification(50.0, 1500.0, 26.0)
+        biome_pfts = PFTClassification(50.0, 1500.0, 26.0)
         tropical_evergreen = TropicalEvergreen(50.0, 1500.0, 26.0)
         
         # Test with high NPP - should return TropicalEvergreenForest
@@ -32,7 +32,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Tropical Drought Deciduous Assignment Tests" begin
-        biome_pfts = BiomeClassification(40.0, 1200.0, 24.0)
+        biome_pfts = PFTClassification(40.0, 1200.0, 24.0)
         tropical_drought = TropicalDroughtDeciduous(40.0, 1200.0, 24.0)
         
         # Test with high NPP and long green season
@@ -58,7 +58,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Temperate Broadleaved Evergreen Assignment Tests" begin
-        biome_pfts = BiomeClassification(35.0, 1000.0, 18.0)
+        biome_pfts = PFTClassification(35.0, 1000.0, 18.0)
         temperate_be = TemperateBroadleavedEvergreen(35.0, 1000.0, 18.0)
         
         # Test with high NPP
@@ -73,7 +73,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Temperate Deciduous Assignment Tests" begin
-        biome_pfts = BiomeClassification(40.0, 800.0, 10.0)
+        biome_pfts = PFTClassification(40.0, 800.0, 10.0)
         temperate_dec = TemperateDeciduous(40.0, 800.0, 10.0)
         
         # Test with high NPP and boreal evergreen present
@@ -111,7 +111,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Cool Conifer Assignment Tests" begin
-        biome_pfts = BiomeClassification(30.0, 600.0, 12.0)
+        biome_pfts = PFTClassification(30.0, 600.0, 12.0)
         cool_conifer = CoolConifer(30.0, 600.0, 12.0)
         
         # Test with high NPP and temperate broadleaved evergreen present
@@ -144,7 +144,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Boreal Evergreen Assignment Tests" begin
-        biome_pfts = BiomeClassification(50.0, 500.0, -3.0)
+        biome_pfts = PFTClassification(50.0, 500.0, -3.0)
         boreal_evergreen = BorealEvergreen(50.0, 500.0, -3.0)
         
         # Test warm conditions with temperate deciduous present
@@ -171,7 +171,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Boreal Deciduous Assignment Tests" begin
-        biome_pfts = BiomeClassification(48.0, 550.0, -5.0)
+        biome_pfts = PFTClassification(48.0, 550.0, -5.0)
         boreal_deciduous = BorealDeciduous(48.0, 550.0, -5.0)
         
         # Test with temperate deciduous subdominant
@@ -194,7 +194,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Woody Desert Assignment Tests" begin
-        biome_pfts = BiomeClassification(15.0, 200.0, 25.0)
+        biome_pfts = PFTClassification(15.0, 200.0, 25.0)
         woody_desert = WoodyDesert(15.0, 200.0, 25.0)
         
         # Test with high NPP and high LAI subdominant
@@ -222,7 +222,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Grass PFT Assignment Tests" begin
-        biome_pfts = BiomeClassification(20.0, 400.0, 18.0)
+        biome_pfts = PFTClassification(20.0, 400.0, 18.0)
         
         # Test C3C4 Temperate Grass
         temperate_grass = C3C4TemperateGrass(20.0, 400.0, 18.0)
@@ -262,7 +262,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Tundra PFT Assignment Tests" begin
-        biome_pfts = BiomeClassification(60.0, 300.0, -15.0)
+        biome_pfts = PFTClassification(60.0, 300.0, -15.0)
         
         # Test Lichen Forb
         lichen_forb = LichenForb(60.0, 300.0, -15.0)
@@ -291,7 +291,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Default and None PFT Assignment Tests" begin
-        biome_pfts = BiomeClassification(30.0, 500.0, 15.0)
+        biome_pfts = PFTClassification(30.0, 500.0, 15.0)
         
         # Test Default PFT with different woody dominants
         default_pft = Default()
@@ -338,7 +338,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Type Consistency Tests" begin
-        biome_pfts = BiomeClassification(40.0, 800.0, 15.0)
+        biome_pfts = PFTClassification(40.0, 800.0, 15.0)
         tropical_evergreen = TropicalEvergreen(50.0, 1500.0, 26.0)
         set_characteristic(tropical_evergreen, :npp, 300.0)
         
@@ -359,7 +359,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Threshold Boundary Tests" begin
-        biome_pfts = BiomeClassification(40.0, 800.0, 15.0)
+        biome_pfts = PFTClassification(40.0, 800.0, 15.0)
         
         # Test NPP threshold boundary (100.0)
         temperate_dec = TemperateDeciduous(40.0, 800.0, 10.0)
@@ -391,7 +391,7 @@ include("../../../src/models/MechanisticModel/newassignbiome.jl")
     end
     
     @testset "Edge Cases and Error Handling" begin
-        biome_pfts = BiomeClassification(40.0, 800.0, 15.0)
+        biome_pfts = PFTClassification(40.0, 800.0, 15.0)
         
         # Test with extreme climate values
         tropical_evergreen = TropicalEvergreen(50.0, 1500.0, 26.0)

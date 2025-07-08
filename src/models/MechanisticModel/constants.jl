@@ -16,7 +16,7 @@ export P0, CP, T0, G, M, R0,
        KO25, KC25, TAO25, CMASS, KCQ10, KOQ10, TAOQ10,
        TWIGLOSS, TUNE, LEAFRESP,
        MAXTEMP,
-       LN, Y, M10, P1, STEMCARBON,
+       LN, Y0, M10, P1, STEMCARBON,
        E0, TREF, TEMP0,
        A, ES, A1, B3, B
 
@@ -59,7 +59,7 @@ const P1 = T(0.25)          # Root respiration coefficient
 const STEMCARBON = T(0.5)   # Stem carbon content (kg C m⁻²)
 const TEMP0 = T(46.02)      # Reference temperature offset (K)
 const TREF = T(10.0)        # Reference temperature (°C)
-const Y = T(0.8)            # Growth efficiency coefficient
+const Y0 = T(0.8)            # Growth efficiency coefficient
 
 # Isotopic fractionation constants
 const A = T(4.4)            # Fractionation during CO₂ diffusion (‰)

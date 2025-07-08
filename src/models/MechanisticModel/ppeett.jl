@@ -1,12 +1,6 @@
 # Third-party imports
 using Printf
 
-# First-party imports
-include("./table.jl")
-include("./utils.jl")
-export table
-export safe_exp
-
 """
     ppeett(lat, dtemp, dclou, temp)
 

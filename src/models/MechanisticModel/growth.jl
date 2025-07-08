@@ -8,21 +8,6 @@ plant functional types by integrating photosynthesis, respiration, hydrology,
 and carbon cycling processes.
 """
 
-# First-party
-include("./utils.jl")
-export safe_exp, safe_round_to_int
-# Import all growth subroutines 
-include("./growth_subroutines/c4photo.jl")
-include("./growth_subroutines/calcphi.jl")
-include("./growth_subroutines/fire.jl")
-include("./growth_subroutines/hetresp.jl")
-include("./growth_subroutines/hydrology.jl")
-include("./growth_subroutines/isotope.jl")
-include("./growth_subroutines/photosynthesis.jl")
-include("./growth_subroutines/respiration.jl")
-export c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, 
-       respiration
-
 # Third-party
 using Statistics: mean
 

@@ -90,7 +90,7 @@ function respiration(
     end
 
     # Growth respiration and annual NPP
-    growthresp = (T(1.0) - Y) * (gpp - stemresp - leafresp - finerootresp)
+    growthresp = (T(1.0) - Y0) * (gpp - stemresp - leafresp - finerootresp)
     npp = gpp - stemresp - leafresp - finerootresp - growthresp
 
     # Minimum allocation requirement

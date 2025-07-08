@@ -82,19 +82,15 @@ This package includes a Julia script that can be executed to run the BIOME4 mode
 You can run the model using the following SLURM command:
 
 ```
-srun julia -O3 --project=. -e 'include("/path/to/src/BIOME4Ju/biome4driver.jl"); using .Biome4Driver; Biome4Driver.main(
-    "-84/-56/-32/15",  # Coordinates as a string in the format: "longitude_min/longitude_max/latitude_min/latitude_max". Use 'alldata' for global.
-    324.0,             # CO2 concentration (parts per million)
-    false,             # Set diagnostic mode (true/false)
-    "/path/to/temp_data.nc",  # Path to the temperature data file (NetCDF format)
-    "/path/to/tmin_data.nc",  # Path to the minimum temperature data file (NetCDF format)
-    "/path/to/prec_data.nc",  # Path to the precipitation data file (NetCDF format)
-    "/path/to/sun_data.nc",   # Path to the sunshine/cloud cover data file (NetCDF format)
-    "/path/to/soil.nc",       # Path to the water holding capacity (WHC) and saturate conductivity (Ksat) data file (NetCDF format)
-    "path/to/pft.json",       # Path to the PFT characteristic file
-    "year",                   # Year of data source as a string, will determine the output file name
-    "high"                    # Resolution setting: choose from "high" or "low"
-)'
+julia --project=. src/driver.jl --coordstring "alldata"\
+  --co2 373.847 \
+  --tempfile  "path/to/tempfile.nc" \
+  --precfile "path/to/precfile.nc"\
+  --sunfile "path/to/sunfile.nc"\
+  --soilfile "path/to/soilfile.nc""\
+  --year "NAME"\
+  --model "biome4"
+
 ```
 
 
