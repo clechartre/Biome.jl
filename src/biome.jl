@@ -58,7 +58,7 @@ include("models/ClimaticEnvelope/wissmannbiomes.jl")
 
 # Export all necessary types and functions
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
-       AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList,
+       AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList, PFTCharacteristics,
        BiomeModel, WissmannModel, BIOME4Model, ThornthwaiteModel, KoppenModel, TrollPfaffenModel,
        
        # Constants
@@ -79,17 +79,21 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
        
        # Biome types
        TropicalEvergreenForest, TropicalSemiDeciduousForest, TropicalDeciduousForestWoodland,
-       TropicalGrassland, TropicalSavanna, TropicalXerophyticShrubland,
-       TemperateSclerophyllWoodland, TemperateBroadleavedSavanna,
-       OpenConiferWoodland, BorealParkland, Barren, LandIce,
+       TropicalGrassland, TemperateGrassland, TropicalSavanna, TropicalXerophyticShrubland,
+       TemperateXerophyticShrubland, TemperateSclerophyllWoodland, TemperateBroadleavedSavanna,
+       OpenConiferWoodland, BorealParkland, Barren, LandIce, Desert, EvergreenTaigaMontaneForest,
+       DwarfShrubTundra, CoolMixedForest, TemperateConiferForest, CoolConiferForest, ColdMixedForest,
+       EvergreenTaigaMontaneForest, ProstateShrubTundra, CushionForbsLichenMoss, SteppeTundra, WarmMixedForest,
+       TemperateDeciduousForest, DeciduousTaigaMontaneForest,
        
        # Functions
        get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int,
-       c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table
+       c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, compare_c3_c4_npp,
+       determine_c4_and_optratio, initialize_arrays, assign_biome,
        
        # Main functions
-        run
+        run,
        
        # Constants instances
        NONE_INSTANCE, DEFAULT_INSTANCE
