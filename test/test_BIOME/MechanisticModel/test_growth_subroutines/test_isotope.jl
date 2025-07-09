@@ -1,16 +1,5 @@
 using Test
 
-include("../../../../src/models/MechanisticModel/growth_subroutines/isotope.jl")
-include("../../../../src/models/MechanisticModel/constants.jl")
-using .Constants: T, P0, CP, T0, G, M, R0,
-    QEFFC3, DRESPC3, DRESPC4, ABS1, TETA, SLO2, JTOE, OPTRATIO,
-    KO25, KC25, TAO25, CMASS, KCQ10, KOQ10, TAOQ10,
-    TWIGLOSS, TUNE, LEAFRESP,
-    MAXTEMP,
-    LN, Y, M10, P1, STEMCARBON,
-    E0, TREF, TEMP0,
-    A, ES, A1, B3, B
-
 @testset "Isotope Fractionation Tests" begin
     
     @testset "isoC3 Function Tests" begin

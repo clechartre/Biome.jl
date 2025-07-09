@@ -1,7 +1,5 @@
 using Test
 
-include("../../../../src/models/MechanisticModel/growth_subroutines/daily.jl")
-
 @testset "Daily Interpolation Tests" begin
     
     @testset "Positive Test - Normal monthly patterns" begin

@@ -1,8 +1,6 @@
 using Test
 using Statistics
 
-include("../../../src/models/MechanisticModel/ppeett.jl")
-
 @testset "PPEETT Tests" begin
     
     @testset "Positive Test - Temperate Climate" begin

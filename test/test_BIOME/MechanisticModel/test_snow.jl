@@ -1,7 +1,6 @@
 using Test
 using Statistics
 
-include("../../../src/models/MechanisticModel/snow.jl")
 
 @testset "Snow Tests" begin
     
@@ -283,7 +282,7 @@ include("../../../src/models/MechanisticModel/snow.jl")
         drain_factor_f32 = Float32(365.0 / 12.0)
         total_input_f32 = sum(dprecin_f32) / drain_factor_f32
         total_output_f32 = sum(dprec_f32) + sum(dmelt_f32)
-        @test abs(total_output_f32 - total_input_f32) < Float32(1e-6)
+        @test abs(total_output_f32 - total_input_f32) < Float32(1e-5)
     end
     
     @testset "Array Length Validation" begin

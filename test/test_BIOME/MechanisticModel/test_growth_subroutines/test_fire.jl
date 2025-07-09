@@ -1,11 +1,5 @@
 using Test
 
-include("../../../../src/abstractmodel.jl")
-include("../../../../src/pfts.jl")
-include("../../../../src/biomes.jl")
-include("../../../../src/models/MechanisticModel/pfts.jl")
-include("../../../../src/models/MechanisticModel/growth_subroutines/fire.jl")
-
 @testset "Fire Tests" begin
     
     @testset "Positive Test - Normal fire conditions" begin

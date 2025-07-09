@@ -1,23 +1,17 @@
 using Test
 
-include("../../../../src/abstractmodel.jl")
-include("../../../../src/pfts.jl")
-include("../../../../src/biomes.jl")
-include("../../../../src/models/MechanisticModel/pfts.jl")
-include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
-
 @testset "Heterotrophic Respiration Tests" begin
     
     @testset "Positive Test - Normal conditions" begin
         # Create different PFT types
-        tropical_evergreen = TropicalEvergreen(10.0, 2000.0, 25.0)
-        tropical_drought = TropicalDroughtDeciduous(12.0, 1500.0, 28.0)
-        temperate_deciduous = TemperateDeciduous(8.0, 800.0, 15.0)
+        tropical_evergreen = TropicalEvergreen()
+        tropical_drought = TropicalDroughtDeciduous()
+        temperate_deciduous = TemperateDeciduous()
         
         # Set PFT names for partitioning logic
-        set_characteristic(tropical_evergreen, :name, "tropical_evergreen")
-        set_characteristic(tropical_drought, :name, "tropical_drought_deciduous")
-        set_characteristic(temperate_deciduous, :name, "temperate_deciduous")
+        tropical_evergreen.characteristics.name = "tropical_evergreen"
+        tropical_drought.characteristics.name = "tropical_drought_deciduous"
+        temperate_deciduous.characteristics.name = "temperate_deciduous"
         
         # Realistic environmental data
         nppann = 1500.0
@@ -101,11 +95,11 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
     
     @testset "NPP Partitioning Tests" begin
         # Test the different partitioning strategies
-        tropical = TropicalEvergreen(10.0, 2000.0, 25.0)
-        temperate = TemperateDeciduous(8.0, 800.0, 15.0)
+        tropical = TropicalEvergreen()
+        temperate = TemperateDeciduous()
         
-        set_characteristic(tropical, :name, "tropical_evergreen")
-        set_characteristic(temperate, :name, "temperate_deciduous")
+        tropical.characteristics.name = "tropical_evergreen"
+        temperate.characteristics.name = "temperate_deciduous"
         
         nppann = 1000.0
         tsoil = fill(18.0, 12)
@@ -154,8 +148,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
     end
     
     @testset "Temperature and Moisture Dependencies" begin
-        test_pft = BorealEvergreen(5.0, 600.0, 10.0)
-        set_characteristic(test_pft, :name, "boreal_evergreen")
+        test_pft = BorealEvergreen()
+        test_pft-characteristics.name = "boreal_evergreen"
         
         nppann = 800.0
         aet = fill(80.0, 12)
@@ -215,8 +209,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
     end
     
     @testset "Isotope Calculations" begin
-        test_pft = CoolConifer(6.0, 700.0, 12.0)
-        set_characteristic(test_pft, :name, "cool_conifer")
+        test_pft = CoolConifer()
+        test_pft.characteristics.name = "cool_conifer"
         
         nppann = 1200.0
         tsoil = fill(8.0, 12)
@@ -253,8 +247,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
     end
     
     @testset "Edge Cases" begin
-        test_pft = TemperateDeciduous(8.0, 800.0, 15.0)
-        set_characteristic(test_pft, :name, "temperate_deciduous")
+        test_pft = TemperateDeciduous()
+        test_pft.characteristics.name = "temperate_deciduous"
         
         tsoil = fill(18.0, 12)
         aet = fill(100.0, 12)
@@ -327,8 +321,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
     end
     
     @testset "Array Length Validation" begin
-        test_pft = BorealDeciduous(4.0, 500.0, 8.0)
-        set_characteristic(test_pft, :name, "boreal_deciduous")
+        test_pft = BorealDeciduous()
+        test_pft.characteristics.name = "boreal_deciduous"
         
         nppann = 600.0
         isoveg = -27.0
@@ -348,8 +342,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hetresp.jl")
     end
     
     @testset "Type Consistency Tests" begin
-        test_pft = LichenForb(2.0, 300.0, 5.0)
-        set_characteristic(test_pft, :name, "lichen_forb")
+        test_pft = LichenForb()
+        test_pft.characteristics.name = "lichen_forb"
         
         # Test with Float32
         nppann_f32 = Float32(800.0)

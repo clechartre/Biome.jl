@@ -1,6 +1,5 @@
 using Test
 
-include("../../../src/models/MechanisticModel/climdata.jl")
 
 @testset "Climate Data Tests" begin
     

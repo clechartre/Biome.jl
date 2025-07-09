@@ -1,7 +1,5 @@
 using Test
 
-include("../../../src/models/MechanisticModel/table.jl")
-
 @testset "Table Lookup Tests" begin
     
     @testset "Exact Temperature Matches" begin

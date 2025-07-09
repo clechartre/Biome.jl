@@ -1,8 +1,6 @@
 using Test
 using Statistics
 
-include("../../../src/models/MechanisticModel/soiltemp.jl")
-
 @testset "Soil Temperature Tests" begin
     
     @testset "Positive Test - Temperate Climate" begin

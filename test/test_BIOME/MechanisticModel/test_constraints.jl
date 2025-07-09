@@ -1,16 +1,9 @@
 using Test
-
-
-include("../../../src/abstractmodel.jl")
-include("../../../src/pfts.jl")
-include("../../../src/biomes.jl")
-include("../../../src/models/MechanisticModel/pfts.jl")
-include("../../../src/models/MechanisticModel/constraints.jl")
-
+using BIOME
 
 # Create mock types for testing
 struct MockPFT <: AbstractPFT
-    characteristics::Characteristics
+    characteristics::PFTCharacteristics
 end
 
 struct MockPFTList <: AbstractPFTList
@@ -21,7 +14,7 @@ end
     
     @testset "Positive Test - PFT meets all constraints" begin
         # Create mock PFT with loose constraints that should pass
-        ch = Characteristics()
+        ch = PFTCharacteristics{Float64, Int}()
         ch.constraints = (
             tcm = Vector{Float64}([-50.0, 50.0]),    # Wide temperature range
             min = Vector{Float64}([-60.0, 40.0]),    # Wide min temp range  
@@ -33,20 +26,24 @@ end
         mock_pft = MockPFT(ch)
         pft_list = MockPFTList([mock_pft])
         
+        # Create PFTStates dictionary
+        PFTStates = Dict{AbstractPFT,PFTState{Float64,Int}}()
+        PFTStates[mock_pft] = PFTState{Float64,Int}()
+        
         # Input values that should satisfy all constraints
         tcm, twm, tminin = 10.0, 25.0, 5.0
         gdd5, rad0, gdd0 = 2000.0, 150.0, 3000.0
         maxdepth = 100.0
         
-        tmin, updated_pfts = constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, pft_list)
+        tmin, updated_states = constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, pft_list, PFTStates)
         
-        @test get_characteristic(updated_pfts.pft_list[1], :present) == true
+        @test updated_states[mock_pft].present == true
         @test tmin == tminin  # Since tminin <= tcm
     end
     
     @testset "Negative Test - PFT violates constraints" begin
         # Create mock PFT with strict constraints that should fail
-        ch = Characteristics()
+        ch = PFTCharacteristics{Float64, Int}()
         ch.constraints = (
             tcm = Vector{Float64}([-10.0, -5.0]),    # Narrow temperature range
             min = Vector{Float64}([-60.0, -50.0]),    # Narrow min temp range  
@@ -58,14 +55,18 @@ end
         mock_pft = MockPFT(ch)
         pft_list = MockPFTList([mock_pft])
 
+        # Create PFTStates dictionary
+        PFTStates = Dict{AbstractPFT,PFTState{Float64,Int}}()
+        PFTStates[mock_pft] = PFTState{Float64,Int}()
+
         # Input values that violate multiple constraints
         tcm, twm, tminin = 5.0, 15.0, 0.0  # Too cold
         gdd5, rad0, gdd0 = 1000.0, 150.0, 2000.0  # Too low GDD values
         maxdepth = 200.0  # Too high snow depth
         
-        tmin, updated_pfts = constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, pft_list)
+        tmin, updated_states = constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, pft_list, PFTStates)
         
-        @test get_characteristic(updated_pfts.pft_list[1], :present) == false
+        @test updated_states[mock_pft].present == false
         @test tmin == tcm - 5.0  # Since tminin > tcm, tmin = tcm - 5.0
     end
 end

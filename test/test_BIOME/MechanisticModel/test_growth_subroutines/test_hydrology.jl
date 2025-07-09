@@ -1,21 +1,16 @@
 using Test
 
-include("../../../../src/abstractmodel.jl")
-include("../../../../src/pfts.jl")
-include("../../../../src/biomes.jl")
-include("../../../../src/models/MechanisticModel/pfts.jl")
-include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl")
 
 @testset "Hydrology Tests" begin
     
     @testset "Positive Test - Normal hydrological conditions" begin
         # Create different PFT types
-        evergreen = BorealEvergreen(5.0, 800.0, 10.0)
-        deciduous = TemperateDeciduous(8.0, 1000.0, 15.0)
+        evergreen = BorealEvergreen()
+        deciduous = TemperateDeciduous()
         
         # Set required PFT characteristics
-        set_characteristic(evergreen, :sw_drop, 0.3)
-        set_characteristic(deciduous, :sw_drop, 0.25)
+        evergreen.characteristics.sw_drop = 0.3
+        deciduous.characteristics.sw_drop = 0.25
         
         # Realistic daily inputs
         dprec = vcat(fill(2.0, 90), fill(1.0, 90), fill(0.5, 90), fill(3.0, 95))  # Seasonal precipitation
@@ -90,8 +85,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     
     @testset "Phenological Type Tests" begin
         # Test different phenological types
-        deciduous_pft = TemperateDeciduous(8.0, 1000.0, 15.0)
-        set_characteristic(deciduous_pft, :sw_drop, 0.25)
+        deciduous_pft = TemperateDeciduous()
+        deciduous_pft.characteristics.sw_drop = 0.25
         
         # Create seasonal phenology pattern (cold deciduous)
         dphen_seasonal = zeros(365, 2)
@@ -138,8 +133,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Water Balance Tests" begin
-        test_pft = CoolConifer(6.0, 700.0, 12.0)
-        set_characteristic(test_pft, :sw_drop, 0.3)
+        test_pft = CoolConifer()
+        test_pft.characteristics.sw_drop = 0.3
         
         # Simple water balance test with known inputs
         dprec = fill(5.0, 365)  # Constant precipitation
@@ -177,8 +172,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Drought Stress Tests" begin
-        drought_pft = WoodyDesert(15.0, 200.0, 25.0)
-        set_characteristic(drought_pft, :sw_drop, 0.2)
+        drought_pft = WoodyDesert()
+        drought_pft.characteristics.sw_drop = 0.2
         
         # Severe drought conditions
         dprec = vcat(fill(0.1, 300), fill(0.0, 65))  # Very low precipitation
@@ -223,8 +218,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Temperature Effects Tests" begin
-        cold_pft = BorealDeciduous(4.0, 500.0, 8.0)
-        set_characteristic(cold_pft, :sw_drop, 0.35)
+        cold_pft = BorealDeciduous()
+        cold_pft.characteristics.sw_drop = 0.35
         
         # Test extreme cold conditions
         dprec = fill(3.0, 365)
@@ -265,8 +260,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Edge Cases" begin
-        edge_pft = TropicalEvergreen(10.0, 1500.0, 27.0)
-        set_characteristic(edge_pft, :sw_drop, 0.25)
+        edge_pft = TropicalEvergreen()
+        edge_pft.characteristics.sw_drop = 0.25
         
         # Standard conditions for baseline
         dprec = fill(1.0, 365)
@@ -326,8 +321,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Array Length Validation" begin
-        test_pft = LichenForb(2.0, 300.0, 5.0)
-        set_characteristic(test_pft, :sw_drop, 0.4)
+        test_pft = LichenForb()
+        test_pft.characteristics.sw_drop = 0.4
         
         # Standard parameters
         root = 0.4
@@ -353,8 +348,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Type Consistency Tests" begin
-        test_pft = TundraShrubs(1.0, 250.0, 3.0)
-        set_characteristic(test_pft, :sw_drop, 0.45)
+        test_pft = TundraShrubs()
+        test_pft.characteristics.sw_drop = 0.45
         
         # Test with Float32
         dprec_f32 = fill(Float32(2.0), 365)
@@ -391,8 +386,8 @@ include("../../../../src/models/MechanisticModel/growth_subroutines/hydrology.jl
     end
     
     @testset "Mass Conservation Tests" begin
-        conserve_pft = C4TropicalGrass(12.0, 900.0, 28.0)
-        set_characteristic(conserve_pft, :sw_drop, 0.3)
+        conserve_pft = C4TropicalGrass()
+        conserve_pft.characteristics.sw_drop = 0.3
         
         # Controlled conditions for mass balance
         dprec = fill(4.0, 365)

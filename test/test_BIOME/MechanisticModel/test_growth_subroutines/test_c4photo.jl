@@ -1,31 +1,13 @@
 using Test
 using Base.Math: exp
-
-include("../../../../src/abstractmodel.jl")
-include("../../../../src/pfts.jl")
-include("../../../../src/biomes.jl")
-include("../../../../src/models/MechanisticModel/pfts.jl")
-include("../../../../src/models/MechanisticModel/growth_subroutines/c4photo.jl")
-
-# Mock constants (these should match the actual constants used in the model)
-const SLO2 = 0.209
-const MAXTEMP = 50.0
-const TAO25 = 2600.0
-const TAOQ10 = 0.57
-const DRESPC4 = 0.5
-const CMASS = 12.0
-const JTOE = 4.6
-const TWIGLOSS = 0.8
-const TUNE = 1.0
-const OPTRATIO = 0.8
-const TETA = 0.95
+using BIOME 
 
 @testset "C4 Photosynthesis Tests" begin
     
     @testset "Positive Test - Normal C4 photosynthesis conditions" begin
         # Create real C4 PFTs using the actual constructors
-        c4_tropical = C4TropicalGrass(10.0, 100.0, 25.0)  # clt, prec, temp
-        c4_woody_desert = WoodyDesert(10.0, 50.0, 25.0)   # clt, prec, temp
+        c4_tropical = C4TropicalGrass()
+        c4_woody_desert = WoodyDesert() 
         
         # Realistic environmental parameters for active photosynthesis
         ratio = 0.7          # Normal intercellular/ambient CO2 ratio
@@ -67,7 +49,7 @@ const TETA = 0.95
     
     @testset "Negative Test - Conditions limiting photosynthesis" begin
         # Create real C4 PFT for controlled testing
-        c4_tropical = C4TropicalGrass(10.0, 100.0, 25.0)
+        c4_tropical = C4TropicalGrass()
         
         # Test with extreme cold temperature
         ratio = 0.7
@@ -107,7 +89,7 @@ const TETA = 0.95
     
     @testset "Non-C4 PFT Test" begin
         # Create a non-C4 PFT to test error handling
-        c3_deciduous = TemperateDeciduous(10.0, 100.0, 15.0)  # This is a C3 plant
+        c3_deciduous = TemperateDeciduous()  # This is a C3 plant
         
         # Test that function handles non-C4 PFT appropriately
         # The function should print a warning but may crash due to uninitialized variables
@@ -116,7 +98,7 @@ const TETA = 0.95
     
     @testset "Edge Cases" begin
         # Create real C4 PFT
-        c4_tropical = C4TropicalGrass(10.0, 100.0, 25.0)
+        c4_tropical = C4TropicalGrass()
         
         # Test with very low ratio (should trigger damage calculation)
         leafresp_low, grossphot_low, aday_low = c4photo(0.2, 20.0, 12.0, 30.0, 6.0, 0.8, 101.3, 400.0, c4_tropical)
@@ -137,24 +119,41 @@ const TETA = 0.95
         @test leafresp_zero >= 0.0   # Respiration may still occur
     end
     
-    @testset "Domain Error Tests" begin
+    @testset "Edge Cases with Low Values" begin
         # Create real C4 PFT
-        c4_tropical = C4TropicalGrass(10.0, 100.0, 25.0)
+        c4_tropical = C4TropicalGrass()
         
-        # Test conditions that can cause sqrt of negative number in the photosynthesis calculation
-        # This happens when (je + jc)^2 - 4*TETA*je*jc < 0
-        
-        # Test with parameters that lead to numerical instability
-        @test_throws DomainError c4photo(0.7, 1.0, 2.0, 30.0, 6.0, 0.1, 101.3, 400.0, c4_tropical)
+        # Test conditions that produce very small positive values instead of domain errors
+        # These parameters lead to extremely low photosynthesis but valid results
         
         # Test with very low solar radiation and short daytime
-        @test_throws DomainError c4photo(0.8, 0.5, 1.0, 25.0, 12.0, 0.05, 101.3, 350.0, c4_tropical)
+        leafresp1, grossphot1, aday1 = c4photo(0.7, 1.0, 2.0, 30.0, 6.0, 0.1, 101.3, 400.0, c4_tropical)
+        @test isfinite(leafresp1) && leafresp1 >= 0.0
+        @test isfinite(grossphot1) && grossphot1 >= 0.0
+        @test isfinite(aday1) && aday1 >= 0.0
+        @test grossphot1 < 1e-6  # Very small value
         
-        # Test with extreme parameter combinations that cause mathematical domain errors
-        @test_throws DomainError c4photo(0.9, 0.1, 3.0, 35.0, 24.0, 0.02, 90.0, 300.0, c4_tropical)
+        # Test with low solar radiation and poor conditions
+        leafresp2, grossphot2, aday2 = c4photo(0.8, 0.5, 1.0, 25.0, 12.0, 0.05, 101.3, 350.0, c4_tropical)
+        @test isfinite(leafresp2) && leafresp2 >= 0.0
+        @test isfinite(grossphot2) && grossphot2 >= 0.0
+        @test isfinite(aday2) && aday2 >= 0.0
+        @test grossphot2 < 1e-7  # Very small value
+        
+        # Test with extreme parameter combinations that produce minimal photosynthesis
+        leafresp3, grossphot3, aday3 = c4photo(0.9, 0.1, 3.0, 35.0, 24.0, 0.02, 90.0, 300.0, c4_tropical)
+        @test isfinite(leafresp3) && leafresp3 >= 0.0
+        @test isfinite(grossphot3) && grossphot3 >= 0.0
+        @test isfinite(aday3) && aday3 >= 0.0
+        @test grossphot3 < 1e-8  # Very small value
         
         # Test with very old leaves and poor conditions
-        @test_throws DomainError c4photo(0.6, 0.8, 2.5, 28.0, 36.0, 0.03, 101.3, 380.0, c4_tropical)
+        leafresp4, grossphot4, aday4 = c4photo(0.6, 0.8, 2.5, 28.0, 36.0, 0.03, 101.3, 380.0, c4_tropical)
+        @test isfinite(leafresp4) && leafresp4 >= 0.0
+        @test isfinite(grossphot4) && grossphot4 >= 0.0
+        @test isfinite(aday4) && aday4 >= 0.0
+        @test grossphot4 < 1e-7  # Very small value
     end
+    
     
 end

@@ -1,7 +1,5 @@
 using Test
 
-include("../../../../src/models/MechanisticModel/growth_subroutines/calcphi.jl")
-
 @testset "CalcPhi Tests" begin
     
     @testset "Positive Test - Normal GPP patterns" begin
