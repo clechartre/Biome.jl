@@ -24,533 +24,616 @@ using Parameters: @kwdef
     grass::Bool = false
     constraints::NamedTuple{
         (:tcm, :min, :gdd, :gdd0, :twm, :snow),
-        NTuple{6,Vector{Float64}}
-    } = (tcm=Float64[-Inf, +Inf], min=Float64[-Inf, +Inf], gdd=Float64[-Inf, +Inf], gdd0=Float64[-Inf, +Inf], twm=Float64[-Inf, +Inf], snow=Float64[-Inf, +Inf])
+        NTuple{6,Vector{T}}
+    } = (
+        tcm=[-Inf, +Inf],
+        min=[-Inf, +Inf],
+        gdd=[-Inf, +Inf],
+        gdd0=[-Inf, +Inf],
+        twm=[-Inf, +Inf],
+        snow=[-Inf, +Inf]
+    )
 end
+
+# Shorthand: default to Float64 and Int
+PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
-    present   :: Bool         = false           # is this PFT active this timestep?
-    dominance :: T            = zero(T)         # computed environmental dominance
-    greendays :: U            = zero(U)         # how many days with green leaves?
-    firedays  :: T            = zero(T)         # cumulative days since last fire
-    mwet      :: Vector{T}    = zeros(T, 12)    # monthly wetness index (12 months)
-    npp       :: T            = zero(T)         # net primary productivity
-    lai       :: T            = zero(T)         # leaf area index
+    present::Bool = false
+    dominance::T = zero(T)
+    greendays::U = zero(U)
+    firedays::T = zero(T)
+    mwet::Vector{T} = zeros(T, 12)
+    npp::T = zero(T)
+    lai::T = zero(T)
 end
 
-
-# Define the PFT structures
-struct WoodyDesert <: AbstractPFT
-    characteristics::PFTCharacteristics
+# 1) WoodyDesert
+struct WoodyDesert{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
 end
 
-WoodyDesert() = WoodyDesert(PFTCharacteristics{Float64, Int}(
-    name="C3C4WoodyDesert",
-    phenological_type=1,
-    max_min_canopy_conductance=0.1,
-    Emax=1.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.53,
-    leaf_longevity=12.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.70,
-    kk=0.3,
-    c4=true,
-    threshold=0.33,
-    t0=5.0,
-    tcurve=1.0,
-    respfact=1.4,
-    allocfact=1.0,
-    grass=false,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[-45.0, +Inf],
-        gdd=[500.0, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[10.0, +Inf],
-        snow=[-Inf, +Inf]
-    )
-))
-
-struct TropicalEvergreen <: AbstractPFT
-    characteristics::PFTCharacteristics
-end
-
-TropicalEvergreen() = TropicalEvergreen(PFTCharacteristics{Float64, Int}(
-    name="TropicalEvergreen",
-    phenological_type=1,
-    max_min_canopy_conductance=0.5,
-    Emax=10.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.69,
-    leaf_longevity=18.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.95,
-    kk=0.7,
-    c4=false,
-    threshold=0.25,
-    t0=10.0,
-    tcurve=1.0,
-    respfact=0.8,
-    allocfact=1.0,
-    grass=false,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[0.0, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[10.0, +Inf],
-        snow=[-Inf, +Inf]
-    )
-))
-
-struct TropicalDroughtDeciduous <: AbstractPFT
-    characteristics::PFTCharacteristics
-end
-
-TropicalDroughtDeciduous() = TropicalDroughtDeciduous(
-    PFTCharacteristics{Float64, Int64}(
-        name="TropicalDroughtDeciduous",
-        phenological_type=3,
-        max_min_canopy_conductance=0.5,
-        Emax=10.0,
-        sw_drop=0.5,
-        sw_appear=0.6,
-        root_fraction_top_soil=0.7,
-        leaf_longevity=9.0,
-        GDD5_full_leaf_out=-99.9,
-        GDD0_full_leaf_out=-99.9,
-        sapwood_respiration=1,
-        optratioa=0.9,
-        kk=0.7,
-        c4=false,
-        threshold=0.20,
-        t0=10.0,
-        tcurve=1.0,
-        respfact=0.8,
-        allocfact=1.0,
-        grass=false,
-        constraints=(
-            tcm=[-Inf, +Inf],
-            min=[0.0, +Inf],
-            gdd=[-Inf, +Inf],
-            gdd0=[-Inf, +Inf],
-            twm=[10.0, +Inf],
-            snow=[-Inf, +Inf]
+function WoodyDesert{T,U}() where {T<:Real,U<:Int}
+    return WoodyDesert{T,U}(
+        PFTCharacteristics{T,U}(
+            "C3C4WoodyDesert",
+            U(1),
+            T(0.1),
+            T(1.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.53),
+            T(12.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.70),
+            T(0.3),
+            true,
+            T(0.33),
+            T(5.0),
+            T(1.0),
+            T(1.4),
+            T(1.0),
+            false,
+            (
+                tcm=[-Inf, +Inf],
+                min=[T(-45.0), +Inf],
+                gdd=[T(500), +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf]
+            )
         )
     )
-)
-
-struct TemperateBroadleavedEvergreen <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-TemperateBroadleavedEvergreen() = TemperateBroadleavedEvergreen(
-    PFTCharacteristics{Float64, Int64}(
-        name="TemperateBroadleavedEvergreen",
-        phenological_type=1,
-        max_min_canopy_conductance=0.2,
-        Emax=4.8,
-        sw_drop=-99.9,
-        sw_appear=-99.9,
-        root_fraction_top_soil=0.67,
-        leaf_longevity=18.0,
-        GDD5_full_leaf_out=-99.9,
-        GDD0_full_leaf_out=-99.9,
-        sapwood_respiration=1,
-        optratioa=0.8,
-        kk=0.6,
-        c4=false,
-        threshold=0.40,
-        t0=5.0,
-        tcurve=1.0,
-        respfact=1.4,
-        allocfact=1.2,
-        grass=false,
-        constraints=(
-            tcm=[-Inf, +Inf],
-            min=[-8.0, 5.0],
-            gdd=[1200, +Inf],
-            gdd0=[-Inf, +Inf],
-            twm=[10.0, +Inf],
-            snow=[-Inf, +Inf]
+WoodyDesert() = WoodyDesert{Float64,Int}()
+
+# 2) TropicalEvergreen
+struct TropicalEvergreen{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function TropicalEvergreen{T,U}() where {T<:Real,U<:Int}
+    return TropicalEvergreen{T,U}(
+        PFTCharacteristics{T,U}(
+            "TropicalEvergreen",
+            U(1),
+            T(0.5),
+            T(10.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.69),
+            T(18.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.95),
+            T(0.7),
+            false,
+            T(0.25),
+            T(10.0),
+            T(1.0),
+            T(0.8),
+            T(1.0),
+            false,
+            (
+                tcm=[-Inf, +Inf],
+                min=[T(0.0), +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf]
+            )
         )
     )
-)
-
-struct TemperateDeciduous <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-TemperateDeciduous() = TemperateDeciduous(PFTCharacteristics{Float64, Int64}(
-    name="TemperateDeciduous",
-    phenological_type=2,
-    max_min_canopy_conductance=0.8,
-    Emax=10.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.65,
-    leaf_longevity=7.0,
-    GDD5_full_leaf_out=200.0,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.8,
-    kk=0.6,
-    c4=false,
-    threshold=0.33,
-    t0=4.0,
-    tcurve=1.0,
-    respfact=1.6,
-    allocfact=1.2,
-    grass=false,
-    constraints=(
-        tcm=[-15.0, +Inf],
-        min=[-Inf, -8.0],
-        gdd=[1200, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, +Inf],
-        snow=[-Inf, +Inf]
+TropicalEvergreen() = TropicalEvergreen{Float64,Int}()
+
+# 3) TropicalDroughtDeciduous
+struct TropicalDroughtDeciduous{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
+    return TropicalDroughtDeciduous{T,U}(
+        PFTCharacteristics{T,U}(
+            "TropicalDroughtDeciduous",
+            U(3),
+            T(0.5),
+            T(10.0),
+            T(0.5),
+            T(0.6),
+            T(0.7),
+            T(9.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.9),
+            T(0.7),
+            false,
+            T(0.20),
+            T(10.0),
+            T(1.0),
+            T(0.8),
+            T(1.0),
+            false,
+            (
+                tcm=[-Inf, +Inf],
+                min=[T(0.0), +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct CoolConifer <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-CoolConifer() = CoolConifer(PFTCharacteristics{Float64, Int}(
-    name="CoolConifer",
-    phenological_type=1,
-    max_min_canopy_conductance=0.2,
-    Emax=4.8,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.52,
-    leaf_longevity=30.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.9,
-    kk=0.5,
-    c4=false,
-    threshold=0.40,
-    t0=3.0,
-    tcurve=0.9,
-    respfact=0.8,
-    allocfact=1.2,
-    grass=false,
-    constraints=(
-        tcm=[-2.0, +Inf],
-        min=[-Inf, 10.0],
-        gdd=[900, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[10.0, +Inf],
-        snow=[-Inf, +Inf]
+TropicalDroughtDeciduous() = TropicalDroughtDeciduous{Float64,Int}()
+
+# 4) TemperateBroadleavedEvergreen
+struct TemperateBroadleavedEvergreen{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
+    return TemperateBroadleavedEvergreen{T,U}(
+        PFTCharacteristics{T,U}(
+            "TemperateBroadleavedEvergreen",
+            U(1),
+            T(0.2),
+            T(4.8),
+            T(-99.9),
+            T(-99.9),
+            T(0.67),
+            T(18.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.8),
+            T(0.6),
+            false,
+            T(0.40),
+            T(5.0),
+            T(1.0),
+            T(1.4),
+            T(1.2),
+            false,
+            (
+                tcm=[-Inf, +Inf],
+                min=[T(-8.0), T(5.0)],
+                gdd=[T(1200), +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct BorealEvergreen <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-BorealEvergreen() = BorealEvergreen(PFTCharacteristics{Float64, Int}(
-    name="BorealEvergreen",
-    phenological_type=1,
-    max_min_canopy_conductance=0.5,
-    Emax=4.5,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.83,
-    leaf_longevity=24.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.8,
-    kk=0.5,
-    c4=false,
-    threshold=0.33,
-    t0=0.0,
-    tcurve=0.8,
-    respfact=4.0,
-    allocfact=1.2,
-    grass=false,
-    constraints=(
-        tcm=[-32.5, -2.0],
-        min=[-Inf, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, 21.0],
-        snow=[-Inf, +Inf]
+TemperateBroadleavedEvergreen() = TemperateBroadleavedEvergreen{Float64,Int}()
+
+# 5) TemperateDeciduous
+struct TemperateDeciduous{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
+    return TemperateDeciduous{T,U}(
+        PFTCharacteristics{T,U}(
+            "TemperateDeciduous",
+            U(2),
+            T(0.8),
+            T(10.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.65),
+            T(7.0),
+            T(200.0),
+            T(-99.9),
+            U(1),
+            T(0.8),
+            T(0.6),
+            false,
+            T(0.33),
+            T(4.0),
+            T(1.0),
+            T(1.6),
+            T(1.2),
+            false,
+            (
+                tcm=[T(-15.0), +Inf],
+                min=[-Inf, T(-8.0)],
+                gdd=[T(1200), +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[-Inf, +Inf],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct BorealDeciduous <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-BorealDeciduous() = BorealDeciduous(PFTCharacteristics{Float64, Int}(
-    name="BorealDeciduous",
-    phenological_type=2,
-    max_min_canopy_conductance=0.8,
-    Emax=10.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.83,
-    leaf_longevity=24.0,
-    GDD5_full_leaf_out=200.0,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.9,
-    kk=0.4,
-    c4=false,
-    threshold=0.33,
-    t0=0.0,
-    tcurve=0.8,
-    respfact=4.0,
-    allocfact=1.2,
-    grass=false,
-    constraints=(
-        tcm=[-Inf, 5.0],
-        min=[-Inf, -10.0],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, 21.0],
-        snow=[-Inf, +Inf]
+TemperateDeciduous() = TemperateDeciduous{Float64,Int}()
+
+# 6) CoolConifer
+struct CoolConifer{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function CoolConifer{T,U}() where {T<:Real,U<:Int}
+    return CoolConifer{T,U}(
+        PFTCharacteristics{T,U}(
+            "CoolConifer",
+            U(1),
+            T(0.2),
+            T(4.8),
+            T(-99.9),
+            T(-99.9),
+            T(0.52),
+            T(30.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.9),
+            T(0.5),
+            false,
+            T(0.40),
+            T(3.0),
+            T(0.9),
+            T(0.8),
+            T(1.2),
+            false,
+            (
+                tcm=[T(-2.0), +Inf],
+                min=[-Inf, T(10.0)],
+                gdd=[T(900), +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct LichenForb <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-LichenForb() = LichenForb(PFTCharacteristics{Float64, Int}(
-    name="LichenForb",
-    phenological_type=1,
-    max_min_canopy_conductance=0.8,
-    Emax=1.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.93,
-    leaf_longevity=8.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.80,
-    kk=0.6,
-    c4=false,
-    threshold=0.33,
-    t0=-12.0,
-    tcurve=0.5,
-    respfact=4.0,
-    allocfact=1.5,
-    grass=false,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[-Inf, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, 15.0],
-        snow=[-Inf, +Inf]
+CoolConifer() = CoolConifer{Float64,Int}()
+
+# 7) BorealEvergreen
+struct BorealEvergreen{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
+    return BorealEvergreen{T,U}(
+        PFTCharacteristics{T,U}(
+            "BorealEvergreen",
+            U(1),
+            T(0.5),
+            T(4.5),
+            T(-99.9),
+            T(-99.9),
+            T(0.83),
+            T(24.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.8),
+            T(0.5),
+            false,
+            T(0.33),
+            T(0.0),
+            T(0.8),
+            T(4.0),
+            T(1.2),
+            false,
+            (
+                tcm=[T(-32.5), T(-2.0)],
+                min=[-Inf, +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[-Inf, T(21.0)],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct TundraShrubs <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-TundraShrubs() = TundraShrubs(PFTCharacteristics{Float64, Int}(
-    name="TundraShrubs",
-    phenological_type=1,
-    max_min_canopy_conductance=0.8,
-    Emax=1.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.93,
-    leaf_longevity=8.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=1,
-    optratioa=0.90,
-    kk=0.5,
-    c4=false,
-    threshold=0.33,
-    t0=-7.0,
-    tcurve=0.6,
-    respfact=4.0,
-    allocfact=1.0,
-    grass=true,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[-Inf, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[50.0, +Inf],
-        twm=[-Inf, 15.0],
-        snow=[15.0, +Inf]
+BorealEvergreen() = BorealEvergreen{Float64,Int}()
+
+# 8) BorealDeciduous
+struct BorealDeciduous{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function BorealDeciduous{T,U}() where {T<:Real,U<:Int}
+    return BorealDeciduous{T,U}(
+        PFTCharacteristics{T,U}(
+            "BorealDeciduous",
+            U(2),
+            T(0.8),
+            T(10.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.83),
+            T(24.0),
+            T(200.0),
+            T(-99.9),
+            U(1),
+            T(0.9),
+            T(0.4),
+            false,
+            T(0.33),
+            T(0.0),
+            T(0.8),
+            T(4.0),
+            T(1.2),
+            false,
+            (
+                tcm=[-Inf, T(5.0)],
+                min=[-Inf, T(-10.0)],
+                gdd=[-Inf, +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[-Inf, T(21.0)],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct C3C4TemperateGrass <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-C3C4TemperateGrass() = C3C4TemperateGrass(PFTCharacteristics{Float64, Int}(
-    name="C3C4TemperateGrass",
-    phenological_type=3,
-    max_min_canopy_conductance=0.8,
-    Emax=6.5,
-    sw_drop=0.2,
-    sw_appear=0.3,
-    root_fraction_top_soil=0.83,
-    leaf_longevity=8.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=100.0,
-    sapwood_respiration=2,
-    optratioa=0.65,
-    kk=0.4,
-    c4=false,
-    threshold=0.40,
-    t0=4.5,
-    tcurve=1.0,
-    respfact=1.6,
-    allocfact=1.0,
-    grass=true,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[-Inf, 0.0],
-        gdd=[550.0, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, +Inf],
-        snow=[-Inf, +Inf]
+BorealDeciduous() = BorealDeciduous{Float64,Int}()
+
+# 9) C3C4TemperateGrass
+struct C3C4TemperateGrass{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function C3C4TemperateGrass{T,U}() where {T<:Real,U<:Int}
+    return C3C4TemperateGrass{T,U}(
+        PFTCharacteristics{T,U}(
+            "C3C4TemperateGrass",
+            U(3),
+            T(0.8),
+            T(6.5),
+            T(0.2),
+            T(0.3),
+            T(0.83),
+            T(8.0),
+            T(-99.9),
+            T(100.0),
+            U(2),
+            T(0.65),
+            T(0.4),
+            false,
+            T(0.40),
+            T(4.5),
+            T(1.0),
+            T(1.6),
+            T(1.0),
+            true,
+            (
+                tcm=[-Inf, +Inf],
+                min=[-Inf, T(0.0)],
+                gdd=[T(550), +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[-Inf, +Inf],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct C4TropicalGrass <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-C4TropicalGrass() = C4TropicalGrass(PFTCharacteristics{Float64, Int}(
-    name="C4TropicalGrass",
-    phenological_type=3,
-    max_min_canopy_conductance=0.8,
-    Emax=8.0,
-    sw_drop=0.2,
-    sw_appear=0.3,
-    root_fraction_top_soil=0.57,
-    leaf_longevity=10.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=-99.9,
-    sapwood_respiration=2,
-    optratioa=0.65,
-    kk=0.4,
-    c4=true,
-    threshold=0.40,
-    t0=10.0,
-    tcurve=1.0,
-    respfact=0.8,
-    allocfact=1.0,
-    grass=true,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[-3.0, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[10.0, +Inf],
-        snow=[-Inf, +Inf]
+C3C4TemperateGrass() = C3C4TemperateGrass{Float64,Int}()
+
+# 10) C4TropicalGrass
+struct C4TropicalGrass{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
+    return C4TropicalGrass{T,U}(
+        PFTCharacteristics{T,U}(
+            "C4TropicalGrass",
+            U(3),
+            T(0.8),
+            T(8.0),
+            T(0.2),
+            T(0.3),
+            T(0.57),
+            T(10.0),
+            T(-99.9),
+            T(-99.9),
+            U(2),
+            T(0.65),
+            T(0.4),
+            true,
+            T(0.40),
+            T(10.0),
+            T(1.0),
+            T(0.8),
+            T(1.0),
+            true,
+            (
+                tcm=[-Inf, +Inf],
+                min=[T(-3.0), +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf]
+            )
+        )
     )
-))
-
-struct ColdHerbaceous <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-ColdHerbaceous() = ColdHerbaceous(PFTCharacteristics{Float64, Int}(
-    name="ColdHerbaceous",
-    phenological_type=2,
-    max_min_canopy_conductance=0.8,
-    Emax=1.0,
-    sw_drop=-99.9,
-    sw_appear=-99.9,
-    root_fraction_top_soil=0.93,
-    leaf_longevity=8.0,
-    GDD5_full_leaf_out=-99.9,
-    GDD0_full_leaf_out=25.0,
-    sapwood_respiration=2,
-    optratioa=0.75,
-    kk=0.3,
-    c4=false,
-    threshold=0.33,
-    t0=-7.0,
-    tcurve=0.6,
-    respfact=4.0,
-    allocfact=1.0,
-    grass=true,
-    constraints=(
-        tcm=[-Inf, +Inf],
-        min=[-Inf, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[50.0, +Inf],
-        twm=[-Inf, 15.0],
-        snow=[-Inf, +Inf]
+C4TropicalGrass() = C4TropicalGrass{Float64,Int}()
+
+# 11) TundraShrubs
+struct TundraShrubs{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function TundraShrubs{T,U}() where {T<:Real,U<:Int}
+    return TundraShrubs{T,U}(
+        PFTCharacteristics{T,U}(
+            "TundraShrubs",
+            U(1),
+            T(0.8),
+            T(1.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.93),
+            T(8.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.9),
+            T(0.5),
+            false,
+            T(0.33),
+            T(-7.0),
+            T(0.6),
+            T(4.0),
+            T(1.0),
+            true,
+            (
+                tcm=[-Inf, +Inf],
+                min=[-Inf, +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[T(50.0), +Inf],
+                twm=[-Inf, T(15.0)],
+                snow=[T(15.0), +Inf]
+            )
+        )
     )
-))
-
-
-"""
-    Default <: AbstractPFT
-
-A default plant functional type (PFT) that ressembles a savanna grass and is defined as a generic PFT
-with no specific characteristics. This PFT can be used as a default when no other PFT is suited to the environment.
-"""
-struct Default <: AbstractPFT
-    characteristics::PFTCharacteristics
 end
 
-Default() = Default(PFTCharacteristics{Float64, Int}())
+TundraShrubs() = TundraShrubs{Float64,Int}()
 
-"""
-    None<: AbstractPFT
-
-A None type plant functional type (PFT) that is chosen when no PFT is applicable to the environment.
-This PFT will lead to a Barren type biome
-"""
-struct None <: AbstractPFT
-    characteristics::PFTCharacteristics
+# 12) ColdHerbaceous
+struct ColdHerbaceous{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
 end
 
-None() = None(PFTCharacteristics{Float64, Int}())
+function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
+    return ColdHerbaceous{T,U}(
+        PFTCharacteristics{T,U}(
+            "ColdHerbaceous",
+            U(2),
+            T(0.8),
+            T(1.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.93),
+            T(8.0),
+            T(-99.9),
+            T(25.0),
+            U(2),
+            T(0.75),
+            T(0.3),
+            false,
+            T(0.33),
+            T(-7.0),
+            T(0.6),
+            T(4.0),
+            T(1.0),
+            true,
+            (
+                tcm=[-Inf, +Inf],
+                min=[-Inf, +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[T(50.0), +Inf],
+                twm=[-Inf, T(15.0)],
+                snow=[-Inf, +Inf]
+            )
+        )
+    )
+end
 
-struct PFTClassification <: AbstractPFTList
+ColdHerbaceous() = ColdHerbaceous{Float64,Int}()
+
+# 13) LichenForb
+struct LichenForb{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+function LichenForb{T,U}() where {T<:Real,U<:Int}
+    return LichenForb{T,U}(
+        PFTCharacteristics{T,U}(
+            "LichenForb",
+            U(1),
+            T(0.8),
+            T(1.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.93),
+            T(8.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.8),
+            T(0.6),
+            false,
+            T(0.33),
+            T(-12.0),
+            T(0.5),
+            T(4.0),
+            T(1.5),
+            false,
+            (
+                tcm=[-Inf, +Inf],
+                min=[-Inf, +Inf],
+                gdd=[-Inf, +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[-Inf, T(15.0)],
+                snow=[-Inf, +Inf]
+            )
+        )
+    )
+end
+
+LichenForb() = LichenForb{Float64,Int}()
+
+# 14) Default
+struct Default{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+Default{T,U}() where {T<:Real,U<:Int} = Default{T,U}(PFTCharacteristics{T,U}())
+Default() = Default{Float64,Int}()
+
+# 15) NonePFT
+struct None{T<:Real,U<:Int} <: AbstractPFT
+    characteristics::PFTCharacteristics{T,U}
+end
+
+None{T,U}() where {T<:Real,U<:Int} = None{T,U}(PFTCharacteristics{T,U}())
+None() = None{Float64,Int}()
+
+struct PFTClassification{T<:Real,U<:Int} <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end
 
-# TOFIX: not sure this is needed, but could be used to define functions 
-# that are uniquely defined for specific biome classifications
-PFTClassification() = PFTClassification([
-    TropicalEvergreen(),
-    TropicalDroughtDeciduous(),
-    TemperateBroadleavedEvergreen(),
-    TemperateDeciduous(),
-    CoolConifer(),
-    BorealEvergreen(),
-    BorealDeciduous(),
-    C3C4TemperateGrass(),
-    C4TropicalGrass(),
-    WoodyDesert(),
-    TundraShrubs(),
-    ColdHerbaceous(),
-    LichenForb()
-])
+function PFTClassification{T,U}() where {T<:Real,U<:Int}
+    return PFTClassification{T,U}([
+        TropicalEvergreen{T,U}(),
+        TropicalDroughtDeciduous{T,U}(),
+        TemperateBroadleavedEvergreen{T,U}(),
+        TemperateDeciduous{T,U}(),
+        CoolConifer{T,U}(),
+        BorealEvergreen{T,U}(),
+        BorealDeciduous{T,U}(),
+        C3C4TemperateGrass{T,U}(),
+        C4TropicalGrass{T,U}(),
+        WoodyDesert{T,U}(),
+        TundraShrubs{T,U}(),
+        ColdHerbaceous{T,U}(),
+        LichenForb{T,U}()
+    ])
+end
 
-"""
-    get_characteristic(pft::AbstractPFT, prop::Symbol)
+PFTClassification() = PFTClassification{Float64,Int}()
 
-Pulls out any field `prop` from `pft.characteristics`
-"""
 function get_characteristic(pft::AbstractPFT, prop::Symbol)
     if hasproperty(pft.characteristics, prop)
         return getproperty(pft.characteristics, prop)
