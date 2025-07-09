@@ -1,40 +1,37 @@
-name: Run pre-commit in blueprint
+name: Run tests
 
 on:
   push:
     branches:
-    - main
+      - master
+      - main
   pull_request:
-    branches:
-    - main
+
+# needed to allow julia-actions/cache to delete old caches that it has created
+permissions:
+  actions: write
+  contents: read
 
 jobs:
-  blueprint-pre-commit:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version: ['lts', '1', 'pre']
+        julia-arch: [x64, x86]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        exclude:
+          - os: macOS-latest
+            julia-arch: x86
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.11.0
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-        channels: conda-forge
-        channel-priority: flexible
-        show-channel-urls: true
-    - name: Create env from unpinned reqs
-      run: |
-        conda env create --name dev_env --file requirements/requirements.yml
-    - name: Install project into env
-      run: |
-        conda run --name dev_env pip install --no-deps .
-    - name: Install pre-commit hooks
-      run: |
-        conda run --name dev_env pre-commit install-hooks
-    - name: Run pre-commit hooks
-      run: |
-        conda run --name dev_env pre-commit run --all-files
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        # with:
+        #   annotate: true
