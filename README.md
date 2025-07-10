@@ -1,3 +1,5 @@
+[![CI](https://github.com/clechartre/BIOME5.jl/actions/workflows/pre-commit.yml/badge.svg?branch=${BRANCH})](https://github.com/clechartre/BIOME5.jl/actions/workflows/pre-commit.yml?query=branch%3A${BRANCH})
+
 # BIOME4jl: Julia version of the BIOME4 model from [Jed Kaplan, 1999](https://github.com/jedokaplan/BIOME4)
 
 This is the BIOME4 equilibrium global vegetation model, that was first used in experiments described in Kaplan et al. (2003). The computational core of the model was last updated in 1999, and at the time was called BIOME4 v4.2b2. For more information about the original model, please refer to: [Kaplan, Jed & Prentice, Iain. (2001). Geophysical Applications of Vegetation Modeling.](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling)
