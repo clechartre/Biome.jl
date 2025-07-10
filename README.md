@@ -10,8 +10,10 @@ This GitHub repository contains the translation to Julia of the original FORTRAN
 
 The original code works with a main routine and subroutines. You can see the infrastructure in the following graph. In this Julia version, we kept the overall structure where higher level modules call functions from sub-modules.
 
+Below an example of output generated with the model using the Kaplan BIOME4 logic.
+
 <p align="middle">
-  <img src="figures/infrastructure_biome4jl.jpg"/>
+  <img src="/Users/capucinelechartre/Documents/PhD/BIOME/figures/example_model_output.png"/>
 </p>
 
 
