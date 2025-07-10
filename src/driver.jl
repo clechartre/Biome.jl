@@ -9,26 +9,21 @@ Thornthwaite, Koppen-Geiger, and Troll-Pfaffen classifications.
 """
 
 using Pkg
-Pkg.instantiate() 
 
+Pkg.instantiate() 
 using BIOME   
 
 # Standard library
-using Base.Threads
-using Base.Iterators
-using Printf
 using Statistics
-using Dates
 using Missings
 
 # Third-party
 using ArgParse
-using ComponentArrays
 using NCDatasets
+import ArchGDAL # Dependency to Rasters
+using Rasters
 using DataStructures: OrderedDict
-using Plots
 using DimensionalData
-gr()
 
 """
     main(coordstring, co2, tempfile, precfile, sunfile, soilfile, year, model)
@@ -64,7 +59,8 @@ function main(
     soilfile::String,
     year::String,
     model::String
-) where {T<:Real}
+) where {T<:Real} # FIXME also if working with these biome schemes should be able to no provide the 
+# datasets that are not needed
     # Check the model in use
     model_instance = if model == "biome4"
         BIOME4Model()
@@ -81,14 +77,13 @@ function main(
     end
 
     # Open the first dataset to get dimensions, then close
-    temp_ds = NCDataset(tempfile, "a")
-    lon_full = temp_ds["lon"][:]
-    lat_full = temp_ds["lat"][:]
+    temp_raster = Raster(tempfile)
+    lon_full = collect(dims(temp_raster, X))
+    lat_full = collect(dims(temp_raster, Y))
     xlen = length(lon_full)
     ylen = length(lat_full)
     llen = 2
     tlen = 12
-    close(temp_ds)
     dz = T[5, 10, 15, 30, 40, 100]
 
     if coordstring == "alldata"
@@ -99,18 +94,12 @@ function main(
         endx = strx + cntx - 1
         endy = stry + cnty - 1
     else
-        boundingbox = [parse(T, x) for x in split(coordstring, "/")]
-        lon_min = boundingbox[1]
-        lon_max = boundingbox[2]
-        lat_min = boundingbox[3]
-        lat_max = boundingbox[4]
-
-        strx, stry, cntx, cnty = get_array_indices(
-            lon_full, lat_full, lon_min, lon_max, lat_min, lat_max
-        )
-
+        coords = parse_coordinates(coordstring)
+        strx, cntx, stry, cnty = get_array_indices(lon_full, lat_full, coords...)
         endx = strx + cntx - 1
         endy = stry + cnty - 1
+        lon = lon_full[strx:endx]
+        lat = lat_full[stry:endy]
     end
 
     println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
@@ -122,6 +111,8 @@ function main(
     # Dynamically create the output filename
     outfile = "./output_$(year).nc"
     if isfile(outfile)
+        # FIXME not sure about how to do this - technically could keep ncdatasets if this is our unique output type
+        # >I guess it could also bde a flag for users
         println("File $outfile already exists. Resuming from last processed row.")
         output_dataset = NCDataset(outfile, "a")
 
@@ -219,9 +210,8 @@ function main(
     lat_chunk = nothing
 
     # Read latitude (only once since it's the same for all x chunks)
-    Dataset(tempfile) do ds
-        lat_chunk = ds["lat"][stry:endy]
-    end
+    temp_raster = Raster(tempfile)
+    lat_chunk = collect(dims(temp_raster, Y))[stry:endy]
 
     for x_chunk_start in strx:chunk_size:endx
         x_chunk_end = min(x_chunk_start + x_chunk_size - 1, endx)
@@ -241,10 +231,12 @@ function main(
         # Read longitude for this chunk
         lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
-        Dataset(tempfile) do ds
-            temp_chunk = ds["temp"][x_chunk_start:x_chunk_end, stry:endy, :]
-            temp_chunk = uniform_fill_value(temp_chunk)
-        end
+        # Read temperature data
+        temp_raster = Raster(tempfile, name = "temp")
+        # println("temp_raster", temp_raster)
+        temp_chunk = temp_raster[x_chunk_start:x_chunk_end, stry:endy, :]
+        temp_chunk = Array(temp_chunk)
+        temp_chunk = uniform_fill_value(temp_chunk)
 
         # Compute tcm_chunk as the minimum of temp_chunk over months
         tcm_chunk = minimum(temp_chunk, dims=3)
@@ -252,37 +244,42 @@ function main(
         # Define missing value
         missval_sp = T(-9999.0)
 
-        # Ensure the calculation is applied element-wise, skipping -9999
+        # Calculate tmin_chunk
         tmin_chunk = ifelse.(
             tcm_chunk .!= missval_sp, 
             T(0.006) .* tcm_chunk.^2 .+ T(1.316) .* tcm_chunk .- T(21.9), 
             missval_sp
         )
 
-        Dataset(precfile) do ds
-            prec_chunk = ds["prec"][x_chunk_start:x_chunk_end, stry:endy, :]
-            prec_chunk = uniform_fill_value(prec_chunk)
-        end
+        # Read precipitation data
+        prec_raster = Raster(precfile,name = "prec")
+        prec_chunk = prec_raster[x_chunk_start:x_chunk_end, stry:endy, :]
+        prec_chunk = Array(prec_chunk)
+        prec_chunk = uniform_fill_value(prec_chunk)
 
-        Dataset(sunfile) do ds
-            cldp_chunk = ds["sun"][x_chunk_start:x_chunk_end, stry:endy, :]
-            cldp_chunk = uniform_fill_value(cldp_chunk)
-        end
+        # Read cloud/sun data
+        sun_raster = Raster(sunfile, name = "sun")
+        cldp_chunk = sun_raster[x_chunk_start:x_chunk_end, stry:endy, :]
+        cldp_chunk = Array(cldp_chunk)
+        cldp_chunk = uniform_fill_value(cldp_chunk)
 
-        Dataset(soilfile) do ds
-            ksat_chunk = ds["Ksat"][x_chunk_start:x_chunk_end, stry:endy, :]
-            ksat_chunk = uniform_fill_value(ksat_chunk)
-            whc_chunk = ds["whc"][x_chunk_start:x_chunk_end, stry:endy, :]
-            whc_chunk = uniform_fill_value(whc_chunk)
-            dz = ds["dz"][:]
-        end
+        # Read soil data
+        ksat_raster = Raster(soilfile, name = "Ksat")
+        ksat_chunk = ksat_raster[x_chunk_start:x_chunk_end, stry:endy, :]
+        ksat_chunk = Array(ksat_chunk)
+        ksat_chunk = uniform_fill_value(ksat_chunk)
+
+        whc_raster = Raster(soilfile, name = "whc")
+        whc_chunk = whc_raster[x_chunk_start:x_chunk_end, stry:endy, :]
+        whc_chunk = Array(whc_chunk)
+        whc_chunk = uniform_fill_value(whc_chunk)
 
         # Read elevation data if available
         if @isdefined(elvfile) && isfile(elvfile)
-            Dataset(elvfile) do ds
-                elv_chunk = ds["elv"][x_chunk_start:x_chunk_end, stry:endy]
-                elv_chunk = uniform_fill_value(elv_chunk)
-            end
+            elv_raster = Raster(elvfile)
+            elv_chunk = elv_raster[x_chunk_start:x_chunk_end, stry:endy]
+            elv_chunk = Array(elv_chunk)
+            elv_chunk = uniform_fill_value(elv_chunk)
         else
             elv_chunk = zeros(T, (current_chunk_size, cnty))
         end
