@@ -1,13 +1,10 @@
 name: Run tests
-
 on:
   push:
     branches:
       - master
       - main
   pull_request:
-
-# needed to allow julia-actions/cache to delete old caches that it has created
 permissions:
   actions: write
   contents: read
@@ -15,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -23,5 +20,16 @@ jobs:
           version: '1'
           arch: x64
       - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+
+      # Make sure Julia knows where to find our local BIOME package,
+      # and instantiate all dependencies.
+      - name: Develop & instantiate
+        run: |
+          julia --project=. -e 'using Pkg;
+                                Pkg.develop(path=".");
+                                Pkg.instantiate()'
+
+
+      # Now run the tests in our project.
+      - name: Run tests
+        run: julia --project=. -e 'using Pkg; Pkg.test(coverage=true)'
