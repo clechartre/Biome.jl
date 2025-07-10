@@ -2,7 +2,7 @@
 using Statistics
 
 # Define the Köppen-Geiger classification function
-function run(m::KoppenModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
+function run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Köppen-Geiger classes
     KG = Dict(
         :Af => 1,  # Equatorial, fully humid
@@ -66,6 +66,8 @@ function run(m::KoppenModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <
     biome = classify_kg(temp, temp_min, temp_max, temp_mean, precip_sum, precip_min, winter_precip, summer_precip, KG)
 
     # Write results to the output
+    output = Vector{Any}(undef, 50)
+    fill!(output, T(0.0))
     output[1] = biome
     output[48] = lon
     output[49] = lat

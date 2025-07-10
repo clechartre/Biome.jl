@@ -1,6 +1,6 @@
 using Statistics
 
-function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
+function run(m::WissmannModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Wissmann climate zones
     WI = Dict(
         :IA  => 1, #("I A", "Rainforest, equatorial"),
@@ -27,6 +27,9 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U
         :VI  => 22, #("VI", "Polar frost")
     )
 
+    # Initialize output object
+    output = [0]
+
     # Extract temperature and precipitation data
     temp = vars_in[5:16]    # Monthly temperatures
     precip = vars_in[17:28] # Monthly precipitation
@@ -51,25 +54,31 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U
 
     # VI - Polar frost
     if temp_max < 0
-        return WI[:VI]
+        output[1] = WI[:VI]
+        return output
     # V - Polar tundra
     elseif temp_max < 10
-        return WI[:V]
+        output[1] = WI[:V]
+        return output
     end
 
     # IV - Boreal climates
     if temp_mean < 4
         if precip_sum > 2.5 * t_threshold
-            return WI[:IV_F]
+            output[1] = WI[:IV_F]
+            return output
 
         elseif precip_sum > 2.0 * t_threshold
-            return WI[:IV_T]
+            output[1] = WI[:IV_T]
+            return output
 
         elseif precip_sum > 1.0 * t_threshold
-            return WI[:IV_S]
+            output[1] = WI[:IV_S]
+            return output
 
         else
-            return WI[:IV_D]
+            output[1] = WI[:IV_D]
+            return output
 
         end
     end
@@ -77,16 +86,20 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U
     # III - Cool temperate
     if temp_min < 2
         if precip_sum > 2.5 * t_threshold
-            return WI[:III_F]
+            output[1] = WI[:III_F]
+            return output
 
         elseif precip_sum > 2.0 * t_threshold
-            return winter_precip < summer_precip ? WI[:III_Tw] : WI[:III_Ts]
+            output[1] = winter_precip < summer_precip ? WI[:III_Tw] : WI[:III_Ts]
+            return output
 
         elseif precip_sum > 1.0 * t_threshold
-            return WI[:III_S]
+            output[1] = WI[:III_S]
+            return output
 
         else
-            return WI[:III_D]
+            output[1] = WI[:III_D]
+            return output
 
         end
     end
@@ -94,16 +107,20 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U
     # II - Warm temperate
     if temp_min < 13
         if precip_sum > 2.5 * t_threshold
-            return temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb]
+            output[1] = temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb]
+            return output
 
         elseif precip_sum > 2.0 * t_threshold
-            return winter_precip < summer_precip ? WI[:II_Tw] : WI[:II_Ts]
+            output[1] = winter_precip < summer_precip ? WI[:II_Tw] : WI[:II_Ts]
+            return output
 
         elseif precip_sum > 1.0 * t_threshold
-            return WI[:IS]
+            output[1] = WI[:IS]
+            return output
 
         else
-            return WI[:ID]
+            output[1] = WI[:ID]
+            return output
 
         end
     end
@@ -111,23 +128,28 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U
     # I - Tropical
     if temp_min >= 13
         if precip_min >= 60
-            return WI[:IA]
+            output[1] = WI[:IA]
+            return output
 
         elseif precip_sum > 2.5 * t_threshold
-            return WI[:IF]
+            output[1] = WI[:IF]
+            return output
 
         elseif precip_sum > 2.0 * t_threshold
-            return WI[:IT]
+            output[1] = WI[:IT]
+            return output
 
         elseif precip_sum > 1.0 * t_threshold
-            return WI[:IS]
+            output[1] = WI[:IS]
+            return output
 
         else
-            return WI[:ID]
+            output[1] = WI[:ID]
+            return output
 
         end
     end
 
-    return 0 # Default case, should not happen
+    return output # Default case, should not happen
 
 end

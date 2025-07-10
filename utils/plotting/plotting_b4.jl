@@ -2,7 +2,7 @@ import ArchGDAL
 using NCDatasets
 using Rasters, Plots, Colors
 
-include("../../src/model.jl")
+include("../../src/abstractmodel.jl")
 
 function plot_biomes(m::BIOME4Model, filename::String, output_file::String)
     # Define the biome names and their corresponding index
@@ -108,6 +108,6 @@ function plot_biomes(m::BIOME4Model, filename::String, output_file::String)
 end
 
 # Example usage:
-filename = "/Users/capucinelechartre/Documents/PhD/BIOME5/output_all_int.nc"
-output_file = "/Users/capucinelechartre/Documents/PhD/BIOME5/output_all_int.png"
-plot_biomes(BIOME4Model(), filename, output_file)
+filename = ""
+output_file = ""
+plot_biomes(filename, output_file)

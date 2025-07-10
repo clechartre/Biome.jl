@@ -1,8 +1,8 @@
 using Rasters, Plots, Colors, NCDatasets
 
-include("../../src/model.jl")
+include("../../src/abstractmodel.jl")
 
-function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String, pftdict::none)
+function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String)
     # Define Thornthwaite climate categories
     THORN_LABELS = ["Wet", "Humid", "Subhumid", "Semiarid", "Arid"]
     THORN_TEMP_LABELS = ["Tropical", "Mesothermal", "Microthermal", "Taiga", "Tundra", "Frost"]
@@ -112,6 +112,6 @@ function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String
 end
 
 # Run the plotting function
-filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_thornthwaite.nc"
-output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_thornthwaite.png"
+filename = ""
+output_file = ""
 plot_biomes(ThornthwaiteModel(), filename, output_file)

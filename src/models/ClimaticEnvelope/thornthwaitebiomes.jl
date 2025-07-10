@@ -1,6 +1,6 @@
 using Statistics
 
-function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
+function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Thornthwaite climate zones with numerical values
     THORN = Dict(
         :Wet        => 1,
@@ -75,6 +75,10 @@ function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}) where {T <: Rea
         end
 
     # Store results in output
-    return temperature_zone, moisture_zone
+    output = Vector{Any}(undef, 50)
+    fill!(output, T(0.0))
+    output[1] = temperature_zone
+    output[2] = moisture_zone
+    return output
 
 end
