@@ -1,8 +1,8 @@
 using Rasters, Plots, Colors, NCDatasets
 
-include("../../src/model.jl")
+include("../../src/abstractmodel.jl")
 
-function plot_biomes(m::WissmannModel, filename::String, output_file::String, pftdict::none)
+function plot_biomes(m::WissmannModel, filename::String, output_file::String)
     # Define Wissmann climate zone names and their corresponding indices
     wissmann_names = [
         "Rainforest, equatorial", "Rainforest, weak dry period", "Savannah and monsoonal rainforest",
@@ -75,6 +75,6 @@ function plot_biomes(m::WissmannModel, filename::String, output_file::String, pf
 end
 
 # Example usage
-filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_wissmann.nc"
-output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_wissmann.png"
+filename = ""
+output_file = ""
 plot_biomes(WissmannModel(), filename, output_file)
