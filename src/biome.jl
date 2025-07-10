@@ -71,7 +71,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
        A, ES, A1, B3, B,
        
        # PFT types and functions
-       PFTClassification, Default, None, get_characteristic, PFTState,
+       PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment,
        TropicalEvergreen, TropicalDroughtDeciduous, TemperateBroadleavedEvergreen,
        TemperateDeciduous, CoolConifer, BorealEvergreen, BorealDeciduous,
        C4TropicalGrass, LichenForb, TundraShrubs, ColdHerbaceous,
