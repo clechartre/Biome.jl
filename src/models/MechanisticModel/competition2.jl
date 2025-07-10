@@ -69,16 +69,26 @@ function competition2(
     # Determine the subdominant woody PFT
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, BIOME4PFTS, PFTStates)
 
-    # Determine the optimal PFT based on various conditions
-    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft_Kaplan(
+    # Determine the optimal PFT based on various conditionsoptpft::AbstractPFT, subpft::AbstractPFT, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState{T,U}}
+    # optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft_Kaplan(
+    #     optpft,
+    #     wdom,
+    #     subpft,
+    #     grasspft,
+    #     tmin,
+    #     gdd5,
+    #     tcm,
+    #     tprec,
+    #     wetness,
+    #     BIOME4PFTS,
+    #     PFTStates
+    # )
+
+    # FIXME then I need to implement here a model keyword and have args and kwargs to choose between the versions of determine_optimal_pft 
+    # so that we can use the Kaplan version or this one
+    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
         optpft,
-        wdom,
         subpft,
-        grasspft,
-        tmin,
-        gdd5,
-        tcm,
-        tprec,
         wetness,
         BIOME4PFTS,
         PFTStates
@@ -127,7 +137,7 @@ for PFT `i`.
 function calculate_soil_moisture(
     BIOME4PFTS::AbstractPFTList,
     PFTStates::Dict{AbstractPFT,PFTState{T,U}}
-) where {T<:Real, U<:Int}
+)::AbstractArray{T} where {T<:Real, U<:Int}
     # pre‐allocate the output
     wetness = zeros(T, length(BIOME4PFTS.pft_list))
 
@@ -160,6 +170,103 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
 
      return optpft, wdom, subpft, subnpp
  end
+
+ function determine_optimal_pft(optpft::AbstractPFT, subpft::AbstractPFT, wetness::AbstractArray{T}, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState{T,U}}) where {T <: Real, U <: Int}
+    # Initialize variables
+    wdom = optpft
+    gdom = DEFAULT_INSTANCE
+    woodnpp = 0.0
+    woodylai = 0.0
+    grasslai = 0.0
+    greendays = 0
+    nppdif = 0.0
+
+    # Filter presence depending on whether the species can tolerate the wetness value
+    for (i, pft) in enumerate(BIOME4PFTS.pft_list)
+        if !PFTStates[pft].present
+            continue  # Skip if PFT is not present
+        else
+            valid = true
+            cons = get_characteristic(pft, :constraints)[:swb]
+            lower, upper = cons[1], cons[2]
+            if !((lower == -Inf || wetness[i]*10 ≥ lower) &&
+                (upper == Inf  || wetness[i]*10  < upper) )
+                valid = false
+            end
+            # write into the runtime-state
+            PFTStates[pft].present = valid
+        end
+    end
+
+    # Calculate weighted NPP (NPP * dominance) for all present PFTs
+    weighted_npps = T[]
+    pfts = AbstractPFT[]
+    
+    for pft in BIOME4PFTS.pft_list
+        if PFTStates[pft].present
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
+            push!(weighted_npps, weighted_npp)
+            push!(pfts, pft)
+        end
+    end
+    
+    # Find PFT with highest weighted NPP (optpft)
+    if !isempty(weighted_npps)
+        max_idx = argmax(weighted_npps)
+        optpft = pfts[max_idx]
+        
+        # Find second highest (subpft)
+        if length(weighted_npps) > 1
+            # Remove the max value and find second max
+            remaining_npps = copy(weighted_npps)
+            remaining_pfts = copy(pfts)
+            deleteat!(remaining_npps, max_idx)
+            deleteat!(remaining_pfts, max_idx)
+            
+            if !isempty(remaining_npps)
+                second_max_idx = argmax(remaining_npps)
+                subpft = remaining_pfts[second_max_idx]
+            end
+        end
+    end
+    
+    # Find dominant woody PFT (wdom) - highest weighted NPP among non-grass PFTs
+    max_woody_weighted_npp = 0.0
+    for pft in BIOME4PFTS.pft_list
+        if PFTStates[pft].present && !get_characteristic(pft, :grass)
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
+            if weighted_npp > max_woody_weighted_npp
+                max_woody_weighted_npp = weighted_npp
+                wdom = pft
+            end
+        end
+    end
+    
+    # Find dominant grass PFT (gdom) - highest weighted NPP among grass PFTs
+    max_grass_weighted_npp = 0.0
+    for pft in BIOME4PFTS.pft_list
+        if PFTStates[pft].present && get_characteristic(pft, :grass)
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
+            if weighted_npp > max_grass_weighted_npp
+                max_grass_weighted_npp = weighted_npp
+                gdom = pft
+            end
+        end
+    end
+    
+    # Get woody PFT values
+    woodnpp = PFTStates[wdom].npp
+    woodylai = PFTStates[wdom].lai
+    greendays = PFTStates[wdom].greendays
+
+    # Get grass LAI
+    grassnpp = PFTStates[gdom].npp
+    grasslai = PFTStates[gdom].lai
+    nppdif = woodnpp - grassnpp
+
+    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
+end
+    
 
 function determine_optimal_pft_Kaplan(
     optpft::Union{AbstractPFT},

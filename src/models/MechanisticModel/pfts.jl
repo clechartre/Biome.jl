@@ -12,7 +12,7 @@ using Parameters: @kwdef
     leaf_longevity::T = T(0.0)
     GDD5_full_leaf_out::T = T(0.0)
     GDD0_full_leaf_out::T = T(0.0)
-    sapwood_respiration::U = U(0)
+    sapwood_respiration::U = U(1)
     optratioa::T = T(0.0)
     kk::T = T(0.0)
     c4::Bool = false
@@ -22,16 +22,37 @@ using Parameters: @kwdef
     respfact::T = T(0.0)
     allocfact::T = T(0.0)
     grass::Bool = false
+
+    # Corrected NamedTuple defaults using the semicolon syntax
     constraints::NamedTuple{
-        (:tcm, :min, :gdd, :gdd0, :twm, :snow),
-        NTuple{6,Vector{T}}
-    } = (
-        tcm=[-Inf, +Inf],
-        min=[-Inf, +Inf],
-        gdd=[-Inf, +Inf],
-        gdd0=[-Inf, +Inf],
-        twm=[-Inf, +Inf],
-        snow=[-Inf, +Inf]
+        (:tcm, :min, :gdd, :gdd0, :twm, :snow, :swb),
+        NTuple{7,Vector{T}}
+    } = (; 
+        tcm   = [-Inf, +Inf],
+        min   = [-Inf, +Inf],
+        gdd   = [-Inf, +Inf],
+        gdd0  = [-Inf, +Inf],
+        twm   = [-Inf, +Inf],
+        snow  = [-Inf, +Inf],
+        swb = [-Inf, +Inf]
+    )
+
+    mean_val::NamedTuple{
+        (:clt, :prec, :temp),
+        NTuple{3,T}
+    } = (; 
+        clt   = T(0.0),
+        prec  = T(0.0),
+        temp  = T(0.0)
+    )
+
+    sd_val::NamedTuple{
+        (:clt, :prec, :temp),
+        NTuple{3,T}
+    } = (; 
+        clt   = T(1.0),
+        prec  = T(1.0),
+        temp  = T(1.0)
     )
 end
 
@@ -77,12 +98,23 @@ function WoodyDesert{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             false,
             (
-                tcm=[-Inf, +Inf],
-                min=[T(-45.0), +Inf],
-                gdd=[T(500), +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ T(-45.0), +Inf ],
+                gdd   = [ T(500), +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ T(10.0), +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ -Inf, 500 ]
+            ),
+            (
+                clt   = T(9.2),
+                prec  = T(2.5),
+                temp  = T(23.9)
+            ),
+            (
+                clt   = T(2.2),
+                prec  = T(2.8),
+                temp  = T(2.7)
             )
         )
     )
@@ -119,12 +151,23 @@ function TropicalEvergreen{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             false,
             (
-                tcm=[-Inf, +Inf],
-                min=[T(0.0), +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ T(0.0), +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ T(10.0), +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ 700, +Inf ]
+            ),
+            (
+                clt   = T(50.2),
+                prec  = T(169.6),
+                temp  = T(24.7)
+            ),
+            (
+                clt   = T(4.9),
+                prec  = T(41.9),
+                temp  = T(1.2)
             )
         )
     )
@@ -161,12 +204,23 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             false,
             (
-                tcm=[-Inf, +Inf],
-                min=[T(0.0), +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ T(0.0), +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ T(10.0), +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ 500, +Inf ]
+            ),
+            (
+                clt   = T(44.0),
+                prec  = T(163.3),
+                temp  = T(23.7)
+            ),
+            (
+                clt   = T(12.9),
+                prec  = T(81.5),
+                temp  = T(2.3)
             )
         )
     )
@@ -203,12 +257,23 @@ function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
             T(1.2),
             false,
             (
-                tcm=[-Inf, +Inf],
-                min=[T(-8.0), T(5.0)],
-                gdd=[T(1200), +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ T(-8.0), T(5.0) ],
+                gdd   = [ T(1200), +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ T(10.0), +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ 300, +Inf ]
+            ),
+            (
+                clt   = T(33.4),
+                prec  = T(106.3),
+                temp  = T(18.7)
+            ),
+            (
+                clt   = T(13.3),
+                prec  = T(83.6),
+                temp  = T(3.2)
             )
         )
     )
@@ -245,12 +310,23 @@ function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
             T(1.2),
             false,
             (
-                tcm=[T(-15.0), +Inf],
-                min=[-Inf, T(-8.0)],
-                gdd=[T(1200), +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[-Inf, +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ T(-15.0), +Inf ],
+                min   = [ -Inf, T(-8.0) ],
+                gdd   = [ T(1200), +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ -Inf, +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ 200, +Inf ]
+            ),
+            (
+                clt   = T(40.9),
+                prec  = T(70.2),
+                temp  = T(8.4)
+            ),
+            (
+                clt   = T(8.6),
+                prec  = T(41.9),
+                temp  = T(4.7)
             )
         )
     )
@@ -287,12 +363,23 @@ function CoolConifer{T,U}() where {T<:Real,U<:Int}
             T(1.2),
             false,
             (
-                tcm=[T(-2.0), +Inf],
-                min=[-Inf, T(10.0)],
-                gdd=[T(900), +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ T(-2.0), +Inf ],
+                min   = [ -Inf, T(10.0) ],
+                gdd   = [ T(900), +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ T(10.0), +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ 500, +Inf ]
+            ),
+            (
+                clt   = T(28.1),
+                prec  = T(54.5),
+                temp  = T(13.9)
+            ),
+            (
+                clt   = T(8.6),
+                prec  = T(49.9),
+                temp  = T(3.4)
             )
         )
     )
@@ -329,12 +416,23 @@ function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
             T(1.2),
             false,
             (
-                tcm=[T(-32.5), T(-2.0)],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[-Inf, T(21.0)],
-                snow=[-Inf, +Inf]
+                tcm   = [ T(-32.5), T(-2.0) ],
+                min   = [ -Inf, +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ -Inf, T(21.0) ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ -Inf, +Inf ]
+            ),
+            (
+                clt   = T(48.1),
+                prec  = T(58.7),
+                temp  = T(-2.7)
+            ),
+            (
+                clt   = T(7.6),
+                prec  = T(35.7),
+                temp  = T(4.0)
             )
         )
     )
@@ -371,12 +469,23 @@ function BorealDeciduous{T,U}() where {T<:Real,U<:Int}
             T(1.2),
             false,
             (
-                tcm=[-Inf, T(5.0)],
-                min=[-Inf, T(-10.0)],
-                gdd=[-Inf, +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[-Inf, T(21.0)],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, T(5.0) ],
+                min   = [ -Inf, T(-10.0) ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ -Inf, T(21.0) ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ 300, +Inf ]
+            ),
+            (
+                clt   = T(47.4),
+                prec  = T(65.0),
+                temp  = T(-6.4)
+            ),
+            (
+                clt   = T(8.3),
+                prec  = T(83.6),
+                temp  = T(7.7)
             )
         )
     )
@@ -413,12 +522,23 @@ function C3C4TemperateGrass{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             true,
             (
-                tcm=[-Inf, +Inf],
-                min=[-Inf, T(0.0)],
-                gdd=[T(550), +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[-Inf, +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ -Inf, T(0.0) ],
+                gdd   = [ T(550), +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ -Inf, +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ -Inf, +Inf ]
+            ),
+            (
+                clt   = T(16.6),
+                prec  = T(12.2),
+                temp  = T(21.3)
+            ),
+            (
+                clt   = T(6.9),
+                prec  = T(13.4),
+                temp  = T(6.2)
             )
         )
     )
@@ -455,12 +575,23 @@ function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             true,
             (
-                tcm=[-Inf, +Inf],
-                min=[T(-3.0), +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ T(-3.0), +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ T(10.0), +Inf ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ T(200), +Inf ]
+            ),
+            (
+                clt   = T(9.4),
+                prec  = T(1.7),
+                temp  = T(23.2)
+            ),
+            (
+                clt   = T(1.4),
+                prec  = T(2.1),
+                temp  = T(2.2)
             )
         )
     )
@@ -497,12 +628,23 @@ function TundraShrubs{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             true,
             (
-                tcm=[-Inf, +Inf],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[T(50.0), +Inf],
-                twm=[-Inf, T(15.0)],
-                snow=[T(15.0), +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ -Inf, +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ T(50.0), +Inf ],
+                twm   = [ -Inf, T(15.0) ],
+                snow  = [ T(15.0), +Inf ],
+                swb   = [ T(250),  +Inf ]
+            ),
+            (
+                clt   = T(9.2),
+                prec  = T(2.5),
+                temp  = T(23.9)
+            ),
+            (
+                clt   = T(2.2),
+                prec  = T(2.8),
+                temp  = T(2.7)
             )
         )
     )
@@ -539,12 +681,23 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
             T(1.0),
             true,
             (
-                tcm=[-Inf, +Inf],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[T(50.0), +Inf],
-                twm=[-Inf, T(15.0)],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ -Inf, +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ T(50.0), +Inf ],
+                twm   = [ -Inf, T(15.0) ],
+                snow  = [ -Inf, +Inf ],
+                swb   = [ T(300),  +Inf ]
+            ),
+            (
+                clt   = T(10.4),
+                prec  = T(2.0),
+                temp  = T(23.5)
+            ),
+            (
+                clt   = T(2.5),
+                prec  = T(1.6),
+                temp  = T(2.3)
             )
         )
     )
@@ -581,12 +734,23 @@ function LichenForb{T,U}() where {T<:Real,U<:Int}
             T(1.5),
             false,
             (
-                tcm=[-Inf, +Inf],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
-                gdd0=[-Inf, +Inf],
-                twm=[-Inf, T(15.0)],
-                snow=[-Inf, +Inf]
+                tcm   = [ -Inf, +Inf ],
+                min   = [ -Inf, +Inf ],
+                gdd   = [ -Inf, +Inf ],
+                gdd0  = [ -Inf, +Inf ],
+                twm   = [ -Inf, T(15.0) ],
+                snow  = [ -Inf, +Inf ], 
+                swb   = [ -Inf, +Inf ]
+            ),
+            (
+                clt   = T(43.9),
+                prec  = T(53.3),
+                temp  = T(-18.4)
+            ),
+            (
+                clt   = T(9.0),
+                prec  = T(52.1),
+                temp  = T(4.1)
             )
         )
     )
@@ -598,7 +762,6 @@ LichenForb() = LichenForb{Float64,Int}()
 struct Default{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
 end
-
 Default{T,U}() where {T<:Real,U<:Int} = Default{T,U}(PFTCharacteristics{T,U}())
 Default() = Default{Float64,Int}()
 
@@ -606,7 +769,6 @@ Default() = Default{Float64,Int}()
 struct None{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
 end
-
 None{T,U}() where {T<:Real,U<:Int} = None{T,U}(PFTCharacteristics{T,U}())
 None() = None{Float64,Int}()
 
@@ -631,7 +793,6 @@ function PFTClassification{T,U}() where {T<:Real,U<:Int}
         LichenForb{T,U}()
     ])
 end
-
 PFTClassification() = PFTClassification{Float64,Int}()
 
 function get_characteristic(pft::AbstractPFT, prop::Symbol)
@@ -640,4 +801,20 @@ function get_characteristic(pft::AbstractPFT, prop::Symbol)
     else
         throw(ArgumentError("`$(prop)` is not a field of PFTCharacteristics"))
     end
+end
+
+"""
+    dominance_environment(pft, variable, clt)
+
+Calculate the normalized environmental dominance value for a given climate trait.
+
+Returns a value in [0,1], where 1 is at the species' optimal mean and values fall off according to its tolerance.
+"""
+function dominance_environment(pft::AbstractPFT, variable::Symbol, clt)
+    mean_val = get_characteristic(pft, :mean_val)[variable]
+    std_val  = get_characteristic(pft, :sd_val)[variable]
+    dist     = Normal(mean_val, std_val)
+    pdf_clt  = pdf(dist, clt)
+    pdf_mean = pdf(dist, mean_val)
+    return pdf_clt / pdf_mean
 end

@@ -13,6 +13,7 @@ using ComponentArrays: ComponentArray
 using DimensionalData
 using LinearAlgebra
 using Printf
+using Statistics
 
 
 # Create global singleton instances at module level
@@ -68,8 +69,11 @@ function run(
     p = vars_in[3]
     tminin = vars_in[4]
     temp = @views vars_in[5:16]    # 12 months of temperature
+    mtemp = mean(temp)  # mean temperature for the year
     prec = @views vars_in[17:28]   # 12 months of precipitation
+    mprec = mean(prec)  # mean precipitation for the year
     clou = @views vars_in[29:40]   # 12 months of cloud cover
+    mclou = mean(clou)  # mean cloud cover for the year
     soil = @views vars_in[41:44]   # soil parameters
     lon = vars_in[49]
 
@@ -126,6 +130,7 @@ function run(
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(BIOME4PFTS.pft_list)
+        PFTStates[pft].dominance = dominance_environment(pft, :clt, mclou) + dominance_environment(pft, :temp, mtemp) + dominance_environment(pft, :prec, mprec)
         if PFTStates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
