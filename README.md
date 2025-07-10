@@ -1,4 +1,4 @@
-[![CI](https://github.com/clechartre/BIOME5.jl/actions/workflows/pre-commit.yml/badge.svg?branch=${BRANCH})](https://github.com/clechartre/BIOME5.jl/actions/workflows/pre-commit.yml?query=branch%3A${BRANCH})
+[![Run tests](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml)
 
 # BIOME4jl: Julia version of the BIOME4 model from [Jed Kaplan, 1999](https://github.com/jedokaplan/BIOME4)
 
