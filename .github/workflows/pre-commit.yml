@@ -5,6 +5,7 @@ on:
       - master
       - main
   pull_request:
+
 permissions:
   actions: write
   contents: read
@@ -21,15 +22,11 @@ jobs:
           arch: x64
       - uses: julia-actions/cache@v2
 
-      # Make sure Julia knows where to find our local BIOME package,
-      # and instantiate all dependencies.
-      - name: Develop & instantiate
-        run: |
-          julia --project=. -e 'using Pkg;
-                                Pkg.develop(path=".");
-                                Pkg.instantiate()'
+      # Instantiate all dependencies for the BIOME project
+      - name: Instantiate dependencies
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
 
 
-      # Now run the tests in our project.
+      # Run tests (with coverage if you like)
       - name: Run tests
         run: julia --project=. -e 'using Pkg; Pkg.test(coverage=true)'
