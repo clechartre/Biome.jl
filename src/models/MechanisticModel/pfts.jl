@@ -263,7 +263,7 @@ function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
                 gdd0  = [ -Inf, +Inf ],
                 twm   = [ T(10.0), +Inf ],
                 snow  = [ -Inf, +Inf ],
-                swb   = [ 300, +Inf ]
+                swb   = [ 400, +Inf ]
             ),
             (
                 clt   = T(33.4),
