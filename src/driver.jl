@@ -25,6 +25,7 @@ using Rasters
 using DataStructures: OrderedDict
 using DimensionalData
 
+
 """
     main(coordstring, co2, tempfile, precfile, sunfile, soilfile, year, model)
 
@@ -59,8 +60,7 @@ function main(
     soilfile::String,
     year::String,
     model::String
-) where {T<:Real} # FIXME also if working with these biome schemes should be able to no provide the 
-# datasets that are not needed
+) where {T<:Real}
     # Check the model in use
     model_instance = if model == "biome4"
         BIOME4Model()
@@ -82,8 +82,6 @@ function main(
     lat_full = collect(dims(temp_raster, Y))
     xlen = length(lon_full)
     ylen = length(lat_full)
-    llen = 2
-    tlen = 12
     dz = T[5, 10, 15, 30, 40, 100]
 
     if coordstring == "alldata"
@@ -95,11 +93,9 @@ function main(
         endy = stry + cnty - 1
     else
         coords = parse_coordinates(coordstring)
-        strx, cntx, stry, cnty = get_array_indices(lon_full, lat_full, coords...)
+        strx, stry, cntx, cnty = get_array_indices(lon_full, lat_full, coords...)
         endx = strx + cntx - 1
         endy = stry + cnty - 1
-        lon = lon_full[strx:endx]
-        lat = lat_full[stry:endy]
     end
 
     println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
@@ -109,108 +105,24 @@ function main(
     lat = lat_full[stry:endy]
 
     # Dynamically create the output filename
-    outfile = "./output_$(year).nc"
+    outfile = "./output_$(model)_$(year).nc"
+    
     if isfile(outfile)
-        # FIXME not sure about how to do this - technically could keep ncdatasets if this is our unique output type
-        # >I guess it could also bde a flag for users
         println("File $outfile already exists. Resuming from last processed row.")
         output_dataset = NCDataset(outfile, "a")
-
-        # Extract existing variables
-        biome_var = output_dataset["biome"]
-        wdom_var = output_dataset["wdom"]
-        gdom_var = output_dataset["gdom"]
-        npp_var = output_dataset["npp"]
-        tcm_var = output_dataset["tcm"]
-        gdd0_var = output_dataset["gdd0"]
-        gdd5_var = output_dataset["gdd5"]
-        subpft_var = output_dataset["subpft"]
-        wetness_var = output_dataset["wetness"]
+        output_stack = load_existing_rasterstack(output_dataset, model_instance, lon, lat)
     else
         output_dataset = NCDataset(outfile, "c")
-
-        # Define dimensions and variables if creating the file
-        defDim(output_dataset, "lon", size(lon, 1))
-        defDim(output_dataset, "lat", size(lat, 1))
-        defDim(output_dataset, "time", llen)
-        defDim(output_dataset, "months", tlen)
-        defDim(output_dataset, "pft", 14)
-
-        # Define variables with appropriate types and dimensions
-        lon_var = defVar(
-            output_dataset, "lon", T, ("lon",), 
-            attrib=OrderedDict("units" => "degrees_east")
-        )
-        lat_var = defVar(
-            output_dataset, "lat", T, ("lat",), 
-            attrib=OrderedDict("units" => "degrees_north")
-        )
-        biome_var = defVar(
-            output_dataset, "biome", Int16, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "Biome classification")
-        )
-        wdom_var = defVar(
-            output_dataset, "wdom", Int16, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "Dominant woody vegetation")
-        )
-        gdom_var = defVar(
-            output_dataset, "gdom", Int16, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "Dominant grass vegetation")
-        )
-        npp_var = defVar(
-            output_dataset, "npp", T, ("lon", "lat", "pft"), 
-            attrib=OrderedDict(
-                "units" => "gC/m^2/month", 
-                "description" => "Net primary productivity"
-            )
-        )
-        tcm_var = defVar(
-            output_dataset, "tcm", T, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "tcm")
-        )
-        gdd0_var = defVar(
-            output_dataset, "gdd0", T, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "gdd0")
-        )
-        gdd5_var = defVar(
-            output_dataset, "gdd5", T, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "gdd5")
-        )
-        subpft_var = defVar(
-            output_dataset, "subpft", T, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "subpft")
-        )
-        wetness_var = defVar(
-            output_dataset, "wetness", T, ("lon", "lat"), 
-            attrib=OrderedDict("description" => "wetness")
-        )
-
-        # Add global attributes to the dataset
-        output_dataset.attrib["title"] = "Biome prediction output"
-        output_dataset.attrib["institution"] = "WSL"
-        output_dataset.attrib["source"] = "BIOME4 Model"
-
-        # Fill with placeholder values initially
-        lon_var[:] = lon
-        lat_var[:] = lat
-        biome_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        wdom_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        gdom_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        npp_var[:, :, :] = fill(T(-9999.0), cntx, cnty, 14)
-        tcm_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        gdd0_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        gdd5_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        subpft_var[:, :] = fill(T(-9999.0), cntx, cnty)
-        wetness_var[:, :] = fill(T(-9999.0), cntx, cnty)
+        println("Creating new output file: $outfile")
+        create_output_variables(output_dataset, model_instance, lon, lat, cntx, cnty)
+        output_stack = create_output_rasterstack(model_instance, lon, lat, cntx, cnty)
     end
 
     # Set up chunking variables
     x_chunk_size = 1000
     chunk_size = x_chunk_size
-    lat_chunk = nothing
 
     # Read latitude (only once since it's the same for all x chunks)
-    temp_raster = Raster(tempfile)
     lat_chunk = collect(dims(temp_raster, Y))[stry:endy]
 
     for x_chunk_start in strx:chunk_size:endx
@@ -219,21 +131,11 @@ function main(
 
         println("Processing x indices from $x_chunk_start to $x_chunk_end")
 
-        # Initialize variables for this chunk
-        temp_chunk = zeros(T, (current_chunk_size, cnty, 12))
-        tmin_chunk = zeros(T, (current_chunk_size, cnty))
-        prec_chunk = zeros(T, (current_chunk_size, cnty, 12))
-        cldp_chunk = zeros(T, (current_chunk_size, cnty, 12))
-        ksat_chunk = zeros(T, (current_chunk_size, cnty, 2))
-        whc_chunk = zeros(T, (current_chunk_size, cnty, 2))
-        elv_chunk = zeros(T, (current_chunk_size, cnty))
-
         # Read longitude for this chunk
         lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
         # Read temperature data
         temp_raster = Raster(tempfile, name = "temp")
-        # println("temp_raster", temp_raster)
         temp_chunk = temp_raster[x_chunk_start:x_chunk_end, stry:endy, :]
         temp_chunk = Array(temp_chunk)
         temp_chunk = uniform_fill_value(temp_chunk)
@@ -252,7 +154,7 @@ function main(
         )
 
         # Read precipitation data
-        prec_raster = Raster(precfile,name = "prec")
+        prec_raster = Raster(precfile, name = "prec")
         prec_chunk = prec_raster[x_chunk_start:x_chunk_end, stry:endy, :]
         prec_chunk = Array(prec_chunk)
         prec_chunk = uniform_fill_value(prec_chunk)
@@ -309,15 +211,7 @@ function main(
             whc_chunk,
             dz, 
             lon_chunk,
-            biome_var,
-            wdom_var,
-            gdom_var,
-            npp_var,
-            tcm_var,
-            gdd0_var,
-            gdd5_var,
-            subpft_var,
-            wetness_var,
+            output_stack,  # Changed to RasterStack
             output_dataset,
             strx,
             model_instance,
@@ -325,122 +219,152 @@ function main(
         )
     end
 
-    # Close the NetCDF file
+    # Final sync before closing
+    sync_rasterstack_to_netcdf(output_stack, output_dataset, model_instance)
     close(output_dataset)
 end
 
 """
-    process_chunk(current_chunk_size, cnty, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, output_dataset, strx, model_instance)
+    create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
 
-Process a spatial chunk of data by iterating through grid cells.
+Create a RasterStack for output variables based on the model type.
+"""
+function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
+    # Create coordinate dimensions
+    lon_dim = X(lon)
+    lat_dim = Y(lat)
+    
+    # Get model schema
+    schema = get_output_schema(model)
+    
+    # Create rasters for each variable
+    rasters = []
+    
+    for (var_name, var_info) in schema
+        if var_info.dims == ("lon", "lat")
+            raster = Raster(
+                fill(-9999.0, cntx, cnty),
+                dims=(lon_dim, lat_dim),
+                name=Symbol(var_name)
+            )
+        elseif var_info.dims == ("lon", "lat", "pft")
+            pft_dim = Dim{:pft}(1:14)
+            raster = Raster(
+                fill(-9999.0, cntx, cnty, 14),
+                dims=(lon_dim, lat_dim, pft_dim),
+                name=Symbol(var_name)
+            )
+        end
+        push!(rasters, raster)
+    end
+    
+    # Convert to tuple and create RasterStack
+    return RasterStack(Tuple(rasters))
+end
 
-Handles parallel processing of a spatial chunk, skipping already processed
-cells and managing data synchronization with the output file.
+"""
+    load_existing_rasterstack(dataset, model, lon, lat)
 
-# Arguments
-- `current_chunk_size`: Number of longitude indices in current chunk
-- `cnty`: Number of latitude indices
-- `temp_chunk`: Temperature data chunk (x, y, month)
-- `elv_chunk`: Elevation data chunk (x, y)
-- `lat_chunk`: Latitude values for chunk
-- `co2`: CO2 concentration
-- `tmin_chunk`: Minimum temperature chunk (x, y)
-- `prec_chunk`: Precipitation data chunk (x, y, month)
-- `cldp_chunk`: Cloud cover data chunk (x, y, month)
-- `ksat_chunk`: Saturated conductivity chunk (x, y, layer)
-- `whc_chunk`: Water holding capacity chunk (x, y, layer)
-- `dz`: Soil layer thickness vector
-- `lon_chunk`: Longitude values for chunk
-- `*_var`: NetCDF output variables
-- `output_dataset`: NetCDF dataset handle
-- `strx`: Starting x index in global grid
-- `model_instance`: Biome model instance to run
+Load existing data from NetCDF into a RasterStack for resume functionality.
+"""
+function load_existing_rasterstack(dataset, model::BiomeModel, lon, lat)
+    # Create coordinate dimensions
+    lon_dim = X(lon)
+    lat_dim = Y(lat)
+    
+    # Get model schema
+    schema = get_output_schema(model)
+    
+    # Load existing rasters
+    rasters = []
+    
+    for (var_name, var_info) in schema
+        if haskey(dataset, var_name)
+            if var_info.dims == ("lon", "lat")
+                data = Array(dataset[var_name][:, :])
+                raster = Raster(
+                    data,
+                    dims=(lon_dim, lat_dim),
+                    name=Symbol(var_name)
+                )
+            elseif var_info.dims == ("lon", "lat", "pft")
+                pft_dim = Dim{:pft}(1:14)
+                data = Array(dataset[var_name][:, :, :])
+                raster = Raster(
+                    data,
+                    dims=(lon_dim, lat_dim, pft_dim),
+                    name=Symbol(var_name)
+                )
+            end
+            push!(rasters, raster)
+        end
+    end
+    
+    # Convert to tuple and create RasterStack
+    return RasterStack(Tuple(rasters))
+end
 
-# Notes
-- Skips cells that are already processed (non-missing values)
-- Synchronizes output every 10 rows to prevent data loss
-- Handles missing data appropriately
+"""
+    process_chunk(current_chunk_size, cnty, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, output_stack, output_dataset, strx, model_instance, PFTS)
+
+Process a spatial chunk of data by iterating through grid cells using RasterStack.
 """
 function process_chunk(
     current_chunk_size, cnty,
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, biome_var, wdom_var, gdom_var, 
-    npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var,
+    lon_chunk, output_stack::RasterStack,
     output_dataset, strx, model_instance::BiomeModel, PFTS::AbstractPFTList
 )
     for y in 1:cnty
         println("Serially processing y index $y")
 
-        y_global_index = y
-
-        # Check if the row is already processed. If yes, skip
-        if all(biome_var[:, y_global_index] .!= -9999.0)
+        # Check if the row is already processed using the primary variable
+        primary_var = get_primary_variable(model_instance)
+        if any(output_stack[primary_var][:, y] .!= -9999.0)
+            println("Row $y already processed, skipping.")
             continue
         end
 
         for x in 1:current_chunk_size
-            if temp_chunk[x, y, 1] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
+            if temp_chunk[x, y, 1] == -9999.0 || any(whc_chunk[x, y, :] .== -9999.0)
                 continue
             end
 
             process_cell(
                 x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, biome_var, wdom_var, gdom_var, npp_var, 
-                tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, 
-                model_instance, PFTS
+                dz, lon_chunk, output_stack, model_instance, PFTS
             )
         end
 
+        # Sync to NetCDF every 10 rows
         if y % 10 == 0
-            sync(output_dataset)
+            sync_rasterstack_to_netcdf(output_stack, output_dataset, model_instance)
         end
     end
 end
 
 """
-    process_cell(x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var, gdd5_var, subpft_var, wetness_var, model)
+    process_cell(x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, output_stack, model, PFTS)
 
-Process a single grid cell for biome classification.
-
-Extracts data for a single grid cell, prepares model inputs, runs the 
-selected biome model, and writes results to output variables.
-
-# Arguments
-- `x, y`: Local indices within the current chunk
-- `strx`: Starting x index in global grid
-- Various `*_chunk` arrays: Climate and soil data for the chunk
-- `dz`: Soil layer thickness vector
-- `lon_chunk`: Longitude values for chunk
-- Various `*_var`: NetCDF output variables to write to
-- `model`: Biome model instance to run
-
-# Notes
-- Skips already processed cells to support resume functionality
-- Calculates atmospheric pressure from elevation
-- Aggregates soil properties by layer
-- Formats input vector for model execution
-- Handles coordinate transformations between local and global indices
+Process a single grid cell for biome classification using RasterStack.
 """
 function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk,
-    biome_var, wdom_var, gdom_var, npp_var, tcm_var, gdd0_var,
-    gdd5_var, subpft_var, wetness_var, model::BiomeModel, PFTS::AbstractPFTList
+    lon_chunk, output_stack::RasterStack, model::BiomeModel, PFTS::AbstractPFTList
 ) where {T<:Real}
-    # Convert local indices to global indices
-    x_global_index = x
-    y_global_index = y
-
-    if biome_var[x_global_index, y_global_index] != -9999
+    # Check if already processed
+    primary_var = get_primary_variable(model)
+    if output_stack[primary_var][x, y] != -9999.0
         println("Cell ($x_global_index, $y_global_index) already processed, skipping.")
         return
     end
 
-    if temp_chunk[x, y, :] == -9999.0 || (whc_chunk[x, y, :] == -9999.0)
+    # Skip if missing data
+    if temp_chunk[x, y, 1] == -9999.0 || any(whc_chunk[x, y, :] .== -9999.0)
         return
     end    
 
@@ -465,63 +389,201 @@ function process_cell(
 
     # Run the model 
     output = BIOME.run(model, input, PFTS)
-
-    # Write results to the output variables
-    biome_var[x_global_index, y_global_index] = output[1]
-    wdom_var[x_global_index, y_global_index] = output[2]
-    npp_var[x_global_index, y_global_index, :] = output[3:16]
+    
+    # Write results using model-specific function
+    process_cell_output(model, x, y, output, output_stack)
 end
 
 """
-    round_to_nearest(value, base=0.05)
+    get_primary_variable(model::BiomeModel)
 
-Round a floating-point value to the nearest multiple of a base value.
-
-# Arguments
-- `value::T`: Value to round
-- `base::T`: Base value to round to (default: 0.05)
-
-# Returns
-- Rounded value as multiple of base
+Get the primary variable name for each model type (used for checking if processed).
 """
-function round_to_nearest(value::T, base::T=T(0.05)) where {T<:AbstractFloat}
-    return round(value / base) * base
+function get_primary_variable(model::BIOME4Model)
+    return :biome
+end
+
+function get_primary_variable(model::WissmannModel)
+    return :climate_zone
+end
+
+function get_primary_variable(model::KoppenModel)
+    return :koppen_class
+end
+
+function get_primary_variable(model::ThornthwaiteModel)
+    return :temperature_zone
+end
+
+function get_primary_variable(model::TrollPfaffenModel)
+    return :troll_zone
+end
+
+
+"""
+    process_cell_output(model, x, y, output, output_stack)
+
+Write model output to the RasterStack based on model type.
+"""
+function process_cell_output(model::BIOME4Model, x, y, output, output_stack::RasterStack)
+    output_stack[:biome][x, y] = output[1]
+    output_stack[:wdom][x, y] = output[2]
+    output_stack[:npp][x, y, :] = output[3:16]
+end
+
+function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack)
+    output_stack[:climate_zone][x, y] = output[1]
+end
+
+function process_cell_output(model::KoppenModel, x, y, output, output_stack::RasterStack)
+    output_stack[:koppen_class][x, y] = output[1]
+end
+
+function process_cell_output(model::ThornthwaiteModel, x, y, output, output_stack::RasterStack)
+    output_stack[:temperature_zone][x, y] = output[1]
+    output_stack[:moisture_zone][x, y] = output[2]
+end
+
+function process_cell_output(model::TrollPfaffenModel, x, y, output, output_stack::RasterStack)
+    output_stack[:troll_zone][x, y] = output[1]
+end
+
+"""
+    sync_rasterstack_to_netcdf(output_stack, dataset, model)
+
+Synchronize RasterStack data to NetCDF file.
+"""
+function sync_rasterstack_to_netcdf(output_stack::RasterStack, dataset, model::BiomeModel)
+    schema = get_output_schema(model)
+    
+    for (var_name, _) in schema
+        if haskey(dataset, var_name)
+            dataset[var_name][:] = output_stack[Symbol(var_name)][:]
+        end
+    end
+    
+    # Force write to disk
+    sync(dataset)
+end
+
+"""
+    get_output_schema(model::BiomeModel)
+
+Define the output variables and their properties for different biome models.
+"""
+function get_output_schema(model::BIOME4Model)
+    return Dict(
+        "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
+        "wdom" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant woody vegetation")),
+        "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "gC/m^2/month", "description" => "Net primary productivity")),
+    )
+end
+
+function get_output_schema(model::WissmannModel)
+    return Dict(
+        "climate_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Wissmann climate zone classification")),
+    )
+end
+
+function get_output_schema(model::KoppenModel)
+    return Dict(
+        "koppen_class" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Köppen-Geiger climate classification")),
+    )
+end
+
+function get_output_schema(model::ThornthwaiteModel)
+    return Dict(
+        "temperature_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Thornthwaite temperature zone")),
+        "moisture_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Thornthwaite moisture zone")),
+    )
+end
+
+function get_output_schema(model::TrollPfaffenModel)
+    return Dict(
+        "troll_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Troll-Pfaffen climate zone")),
+    )
+end
+
+"""
+    get_required_dimensions(model::BiomeModel, cntx, cnty)
+
+Get the dimensions required for each model type.
+"""
+function get_required_dimensions(model::BIOME4Model, cntx, cnty)
+    return Dict(
+        "lon" => cntx,
+        "lat" => cnty,
+        "pft" => 14
+    )
+end
+
+function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel}, cntx, cnty)
+    return Dict(
+        "lon" => cntx,
+        "lat" => cnty
+    )
+end
+
+"""
+    create_output_variables(dataset, model, lon, lat, cntx, cnty)
+
+Create output variables in NetCDF dataset based on the model type.
+"""
+function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnty)
+    # Define dimensions
+    dims = get_required_dimensions(model, cntx, cnty)
+    for (name, size) in dims
+        defDim(dataset, name, size)
+    end
+    
+    # Define coordinate variables
+    lon_var = defVar(dataset, "lon", Float64, ("lon",), attrib=Dict("units" => "degrees_east"))
+    lat_var = defVar(dataset, "lat", Float64, ("lat",), attrib=Dict("units" => "degrees_north"))
+    
+    # Fill coordinate variables
+    lon_var[:] = lon
+    lat_var[:] = lat
+    
+    # Define model-specific variables
+    schema = get_output_schema(model)
+    
+    for (var_name, var_info) in schema
+        var = defVar(dataset, var_name, var_info.type, var_info.dims, attrib=var_info.attrs)
+        
+        # Initialize with fill values
+        if var_info.dims == ("lon", "lat")
+            var[:, :] = fill(-9999, cntx, cnty)
+        elseif var_info.dims == ("lon", "lat", "pft")
+            var[:, :, :] = fill(-9999, cntx, cnty, 14)
+        end
+    end
+    
+    # Add global attributes
+    dataset.attrib["title"] = "$(typeof(model)) output"
+    dataset.attrib["institution"] = "WSL"
+    dataset.attrib["source"] = "BIOME Model Suite"
+    dataset.attrib["model"] = string(typeof(model))
+end
+
+"""
+    parse_coordinates(coordstring)
+
+Parse coordinate string into numeric bounds.
+"""
+function parse_coordinates(coordstring::String)
+    coords = split(coordstring, "/")
+    if length(coords) != 4
+        error("Coordinate string must have format: lon_min/lon_max/lat_min/lat_max")
+    end
+    return parse.(Float64, coords)
 end
 
 """
     get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
 
 Calculate array indices for a geographic bounding box.
-
-Determines the start indices and counts for longitude and latitude arrays
-based on specified geographic bounds.
-
-# Arguments
-- `lon_full, lat_full`: Full coordinate arrays
-- `lon_min, lon_max, lat_min, lat_max`: Geographic bounding box coordinates
-
-# Returns
-- `strx, stry`: Starting indices for longitude and latitude
-- `cntx, cnty`: Counts of elements in longitude and latitude directions
-
-# Notes
-- Requires sorted coordinate arrays
-- Handles both ascending and descending latitude arrays
-- Does not support longitude wrapping around 180°
 """
 function get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
-    # Ensure longitude and latitude arrays are sorted
-    lon_sorted = issorted(lon_full)
-    lat_sorted = issorted(lat_full) || issorted(lat_full, rev=true)
-    if !lon_sorted || !lat_sorted
-        error("Longitude and latitude arrays must be sorted")
-    end
-
-    # Check if longitude wraps around
-    if lon_min > lon_max
-        error("Bounding box longitude min is greater than max, wrapping not supported")
-    end
-
     # Find indices for longitude
     strx = findfirst(x -> x >= lon_min, lon_full)
     endx = findlast(x -> x <= lon_max, lon_full)
@@ -552,20 +614,6 @@ end
     uniform_fill_value(data; fill_value=-9999.0)
 
 Replace missing and fill values with a uniform fill value.
-
-Replaces `_FillValue` and `Missing` values with the specified `fill_value`
-to ensure consistent handling of missing data throughout the processing pipeline.
-
-# Arguments
-- `data::Array{T,N}`: Input data array
-- `fill_value`: Value to use for missing data (default: -9999.0)
-
-# Returns
-- Modified array with uniform fill values
-
-# Notes
-- Converts fill_value to match the input array type
-- Uses `coalesce` to handle both missing and existing fill values
 """
 function uniform_fill_value(data::Array{T,N}; fill_value=-9999.0) where {T,N}
     fill_value = convert(T, fill_value)
@@ -577,20 +625,6 @@ end
     parse_command_line()
 
 Parse command-line arguments for the BIOME model driver.
-
-Sets up argument parsing for all required and optional parameters needed
-to run the biome classification models.
-
-# Returns
-- Dictionary of parsed command-line arguments
-
-# Arguments Parsed
-- `--coordstring`: Geographic bounds or "alldata"
-- `--outfile`: Output NetCDF filename
-- `--co2`: Atmospheric CO2 concentration (ppm)
-- `--tempfile, --precfile, --sunfile, --soilfile`: Input data file paths
-- `--year`: Year identifier for output
-- `--model`: Model type to run
 """
 function parse_command_line()
     s = ArgParseSettings()
@@ -599,11 +633,6 @@ function parse_command_line()
         help = "Coordinate string or 'alldata'"
         arg_type = String
         default = "alldata"
-
-        "--outfile"
-        help = "Output file"
-        arg_type = String
-        default = "output.nc"
 
         "--co2"
         help = "CO2 concentration"
@@ -642,9 +671,6 @@ end
     main()
 
 Entry point for command-line execution.
-
-Parses command-line arguments and calls the main processing function
-with the appropriate parameters.
 """
 function main()
     args = parse_command_line()
@@ -665,4 +691,3 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
-# End of module

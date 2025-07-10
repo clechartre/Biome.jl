@@ -42,14 +42,14 @@ function plot_biomes(m::WissmannModel, filename::String, output_file::String)
     ]
 
     # Load the NetCDF dataset and extract Wissmann classification data
-    A = Raster(filename, name="biome")
+    A = Raster(filename, name="climate_zone")
     wissmann_data = Int.(A[:, :])  # Convert raster data to integers
 
     # Replace missing values (assume -9999 is the fill value)
     wissmann_data[wissmann_data .== -9999] .= 23  # NA index
 
     # Create a new raster with modified Wissmann classification data
-    wissmann_raster = Raster(wissmann_data, dims(A); name="biome")
+    wissmann_raster = Raster(wissmann_data, dims(A); name="climate_zone")
 
     # Extract longitude and latitude dimensions for axis labels
     lon = dims(A)[1]

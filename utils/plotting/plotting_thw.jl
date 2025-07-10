@@ -60,8 +60,8 @@ function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String
     ordered_colors = vcat(ordered_colors, na_color)  # Add NA color at the end
 
     # Load the NetCDF dataset and extract biome data
-    A_moisture = Raster(filename, name="wetness")
-    A_temperature = Raster(filename, name="biome")
+    A_moisture = Raster(filename, name="moisture_zone")
+    A_temperature = Raster(filename, name="temperature_zone")
 
     moisture_data = Int.(A_moisture[:, :])  # Convert raster data to integers
     temperature_data = Int.(A_temperature[:, :])

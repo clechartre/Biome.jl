@@ -60,7 +60,7 @@ function plot_biomes(m::KoppenModel, filename::String, output_file::String)
     ]
 
     # Load the NetCDF dataset and extract biome data
-    A = Raster(filename, name="biome")
+    A = Raster(filename, name="koppen_class")
     biome_data = Int.(A[:, :])  # Convert raster data to integers
 
     # Replace missing values (assume -9999 is the fill value)
@@ -68,7 +68,7 @@ function plot_biomes(m::KoppenModel, filename::String, output_file::String)
     biome_data[biome_data .== -1] .= 100000
 
     # Create a new raster with modified biome data
-    biome_raster = Raster(biome_data, dims(A); name="biome")
+    biome_raster = Raster(biome_data, dims(A); name="koppen_class")
 
     # Extract longitude and latitude dimensions for axis labels
     lon = dims(A)[1]

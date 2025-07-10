@@ -110,4 +110,4 @@ end
 # Example usage:
 filename = ""
 output_file = ""
-plot_biomes(filename, output_file)
+plot_biomes(BIOME4Model(), filename, output_file)
