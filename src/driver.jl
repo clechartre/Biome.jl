@@ -76,6 +76,8 @@ function main(
         KoppenModel()
     elseif model == "trollpfaffen"
         TrollPfaffenModel()
+    elseif model == "dominance"
+        BIOMEDominanceModel()
     else
         error("Unknown model: $model")
     end

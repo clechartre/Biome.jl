@@ -41,18 +41,18 @@ using Parameters: @kwdef
         (:clt, :prec, :temp),
         NTuple{3,T}
     } = (; 
-        clt   = T(0.0),
-        prec  = T(0.0),
-        temp  = T(0.0)
+        clt   = T(30.6),
+        prec  = T(72.0),
+        temp  = T(24.5)
     )
 
     sd_val::NamedTuple{
         (:clt, :prec, :temp),
         NTuple{3,T}
     } = (; 
-        clt   = T(1.0),
-        prec  = T(1.0),
-        temp  = T(1.0)
+        clt   = T(9.7),
+        prec  = T(39.0),
+        temp  = T(3.2)
     )
 end
 
@@ -316,7 +316,7 @@ function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
                 gdd0  = [ -Inf, +Inf ],
                 twm   = [ -Inf, +Inf ],
                 snow  = [ -Inf, +Inf ],
-                swb   = [ 200, +Inf ]
+                swb   = [ 300, +Inf ]
             ),
             (
                 clt   = T(40.9),
@@ -634,7 +634,7 @@ function TundraShrubs{T,U}() where {T<:Real,U<:Int}
                 gdd0  = [ T(50.0), +Inf ],
                 twm   = [ -Inf, T(15.0) ],
                 snow  = [ T(15.0), +Inf ],
-                swb   = [ T(250),  +Inf ]
+                swb   = [ T(150),  +Inf ]
             ),
             (
                 clt   = T(9.2),
@@ -687,7 +687,7 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
                 gdd0  = [ T(50.0), +Inf ],
                 twm   = [ -Inf, T(15.0) ],
                 snow  = [ -Inf, +Inf ],
-                swb   = [ T(300),  +Inf ]
+                swb   = [ T(150),  +Inf ]
             ),
             (
                 clt   = T(10.4),

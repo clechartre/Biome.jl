@@ -7,10 +7,11 @@ using Statistics: mean
 using Printf: @sprintf
 
 """
-Classic BIOME4 Competition function.
+BIOME4/BIOMEDominance Competition function.
 """
 
 function competition2(
+    m::Union{BIOME4Model, BIOMEDominanceModel},
     tmin::T,
     tprec::T,
     numofpfts::U,
@@ -69,29 +70,20 @@ function competition2(
     # Determine the subdominant woody PFT
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, BIOME4PFTS, PFTStates)
 
-    # Determine the optimal PFT based on various conditionsoptpft::AbstractPFT, subpft::AbstractPFT, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState{T,U}}
-    # optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft_Kaplan(
-    #     optpft,
-    #     wdom,
-    #     subpft,
-    #     grasspft,
-    #     tmin,
-    #     gdd5,
-    #     tcm,
-    #     tprec,
-    #     wetness,
-    #     BIOME4PFTS,
-    #     PFTStates
-    # )
-
-    # FIXME then I need to implement here a model keyword and have args and kwargs to choose between the versions of determine_optimal_pft 
-    # so that we can use the Kaplan version or this one
+    # Competition
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
+        m,
         optpft,
         subpft,
         wetness,
         BIOME4PFTS,
-        PFTStates
+        PFTStates;
+        wdom=wdom,
+        grasspft=grasspft,
+        tmin=tmin,
+        gdd5=gdd5,
+        tcm=tcm,
+        tprec=tprec
     )
 
     # Format values for output
@@ -171,7 +163,18 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
      return optpft, wdom, subpft, subnpp
  end
 
- function determine_optimal_pft(optpft::AbstractPFT, subpft::AbstractPFT, wetness::AbstractArray{T}, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState{T,U}}) where {T <: Real, U <: Int}
+ """
+    Determine the optimal PFT based on PFT dominance in the pixel's environment
+    and wetness conditions.
+ """
+ function determine_optimal_pft( 
+    m::BIOMEDominanceModel,
+    optpft::AbstractPFT,
+    subpft::AbstractPFT,
+    wetness::AbstractArray{T},
+    BIOME4PFTS::AbstractPFTList,
+    PFTStates::Dict{AbstractPFT,PFTState{T,U}};
+    kwargs...) where {T <: Real, U <: Int}
     # Initialize variables
     wdom = optpft
     gdom = DEFAULT_INSTANCE
@@ -202,6 +205,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
     weighted_npps = T[]
     pfts = AbstractPFT[]
     
+    # Process regular PFTs
     for pft in BIOME4PFTS.pft_list
         if PFTStates[pft].present
             weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
@@ -209,6 +213,11 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
             push!(pfts, pft)
         end
     end
+    
+    # Process DEFAULT_INSTANCE
+    weighted_npp = 1 * PFTStates[DEFAULT_INSTANCE].dominance
+    push!(weighted_npps, weighted_npp)
+    push!(pfts, DEFAULT_INSTANCE)
     
     # Find PFT with highest weighted NPP (optpft)
     if !isempty(weighted_npps)
@@ -268,18 +277,22 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
 end
     
 
-function determine_optimal_pft_Kaplan(
-    optpft::Union{AbstractPFT},
+"""
+Determine the optimal PFT based on the BIOME4 logic from Kaplan.
+"""
+function determine_optimal_pft( 
+    m::BIOME4Model,
+    optpft::AbstractPFT,
+    subpft::AbstractPFT,
+    wetness::AbstractArray{T},
+    BIOME4PFTS::AbstractPFTList,
+    PFTStates::Dict{AbstractPFT,PFTState{T,U}};
     wdom::Union{AbstractPFT},
-    subpft::Union{AbstractPFT},
     grasspft::Union{AbstractPFT},
     tmin::T,
     gdd5::T,
     tcm::T,
     tprec::T,
-    wetness::AbstractArray{T},
-    BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}}
 ) where {T <: Real, U<:Int} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
     flop = false
 

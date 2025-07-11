@@ -59,7 +59,7 @@ NPP optimization, and biome classification.
 - Accounts for environmental constraints on PFT presence
 """
 function run(
-    m::BIOME4Model, 
+    m::Union{BIOME4Model, BIOMEDominanceModel}, 
     vars_in::Vector{Union{T,U}},
     BIOME4PFTS::AbstractPFTList
 ) where {T<:Real,U<:Int}
@@ -88,6 +88,7 @@ function run(
     # Add None and Default abstract PFT types
     PFTStates[NONE_INSTANCE] = PFTState{Float64,Int}()
     PFTStates[DEFAULT_INSTANCE] = PFTState{Float64,Int}()
+    PFTStates[DEFAULT_INSTANCE].dominance = dominance_environment(DEFAULT_INSTANCE, :clt, mclou) + dominance_environment(DEFAULT_INSTANCE, :temp, mtemp) + dominance_environment(DEFAULT_INSTANCE, :prec, mprec)
     
     # Initialize arrays for calculations
     dphen = ones(T, 365, 2)
@@ -150,9 +151,9 @@ function run(
         end
     end
 
-    # Determine winning biome through PFT competition
+# Determine winning biome through PFT competition
     biome, optpft, npp = competition2(
-        tmin, tprec, numofpfts, gdd0, gdd5, cold, BIOME4PFTS, PFTStates
+        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, BIOME4PFTS, PFTStates
     )
 
     # Convert optimal PFT to index

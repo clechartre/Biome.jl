@@ -59,7 +59,7 @@ include("models/ClimaticEnvelope/wissmannbiomes.jl")
 # Export all necessary types and functions
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
        AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList, PFTCharacteristics,
-       BiomeModel, WissmannModel, BIOME4Model, ThornthwaiteModel, KoppenModel, TrollPfaffenModel,
+       BiomeModel,BIOMEDominanceModel, WissmannModel, BIOME4Model, ThornthwaiteModel, KoppenModel, TrollPfaffenModel,
        
        # Constants
        T, P0, CP, T0, G, M, R0,
