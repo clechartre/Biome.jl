@@ -1,8 +1,8 @@
 using Rasters, Plots, Colors, NCDatasets
 
-include("../../src/model.jl")
+include("../../src/abstractmodel.jl")
 
-function plot_biomes(m::TrollPfaffenModel, filename::String, output_file::String, pftdict::none)
+function plot_biomes(m::TrollPfaffenModel, filename::String, output_file::String)
     # Define Troll-Paffen biome names and their corresponding indices
     biome_names = [
         "Polar ice-deserts", "Polar frost-debris belt", "Tundra", 
@@ -70,14 +70,14 @@ function plot_biomes(m::TrollPfaffenModel, filename::String, output_file::String
     ]
 
     # Load the NetCDF dataset and extract biome data
-    A = Raster(filename, name="biome")
+    A = Raster(filename, name="troll_zone")
     biome_data = Int.(A[:, :])  # Convert raster data to integers
 
     # Replace missing values (assume -9999 is the fill value)
     biome_data[biome_data .== -9999] .= 38  # NA index
 
     # Create a new raster with modified biome data
-    biome_raster = Raster(biome_data, dims(A); name="biome")
+    biome_raster = Raster(biome_data, dims(A); name="troll_zone")
 
     # Extract longitude and latitude dimensions for axis labels
     lon = dims(A)[1]
@@ -103,6 +103,6 @@ function plot_biomes(m::TrollPfaffenModel, filename::String, output_file::String
 end
 
 # Example usage
-filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_trollpfaffen.nc"
-output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_trollpfaffen.png"
+filename = ""
+output_file = ""
 plot_biomes(TrollPfaffenModel(), filename, output_file)

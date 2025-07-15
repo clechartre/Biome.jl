@@ -1,7 +1,7 @@
 # Third-Party
 using Statistics
 
-function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}) where {T <: Real, U <: Int}
+function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
 
     # Define Troll-Paffen climate zones with numerical values and descriptions
     TROLL = Dict(
@@ -136,7 +136,11 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}) where {T <: Rea
             TROLL[:NA]
         end
 
-    return zone
+    output = Vector{Any}(undef, 50)
+    fill!(output, T(0.0))
+    output[1] = zone  # Store the zone classification
+
+    return output
 end
 
 # Utility functions

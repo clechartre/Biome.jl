@@ -1,13 +1,23 @@
-# BIOME4jl: Julia version of the BIOME4 model from [Jed Kaplan, 1999](https://github.com/jedokaplan/BIOME4)
+<p align="middle">
+  <img src="figures/biomelogo_grey.svg"/>
+</p>
 
-This is the BIOME4 equilibrium global vegetation model, that was first used in experiments described in Kaplan et al. (2003). The computational core of the model was last updated in 1999, and at the time was called BIOME4 v4.2b2. For more information about the original model, please refer to: [Kaplan, Jed & Prentice, Iain. (2001). Geophysical Applications of Vegetation Modeling.](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling)
+[![Run tests](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml)
+
+# Biome.jl: A Package for simulating biome schemes
+
+This package provides a platform for simulating climate-driven biome classification schemes alongside the mechanistic model BIOME4. 
+
+The BIOME4 equilibrium global vegetation model was first used in experiments described in Kaplan et al. (2003). The computational core of the model was last updated in 1999, and at the time was called [BIOME4 v4.2b2 ](https://github.com/jedokaplan/BIOME4). For more information about the original model, please refer to: [Kaplan, Jed & Prentice, Iain. (2001). Geophysical Applications of Vegetation Modeling.](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling)
 
 This GitHub repository contains the translation to Julia of the original FORTRAN77 computational core to run on sample input data, also provided in this repository.
 
 The original code works with a main routine and subroutines. You can see the infrastructure in the following graph. In this Julia version, we kept the overall structure where higher level modules call functions from sub-modules.
 
+Below an example of output generated with the model using the Kaplan BIOME4 logic.
+
 <p align="middle">
-  <img src="figures/infrastructure_biome4jl.jpg"/>
+  <img src="figures/example_model_output.jpg"/>
 </p>
 
 
@@ -33,22 +43,10 @@ The gridded input data can be at any resolution, but this version of the driver 
 ### The input generation scripts
 Since we want to be able to generate our own input data, we've created 3 input generation scripts, available in `utils/data_generation`. 
 - Climatological data 
-- Water holding capacity (soil) data
-- Saturated conductivity data 
+
 
 At this stage, we are running the model on a 0.5 grid, all data was therefore reshaped to 720,360 within the data generation codes themselves. On the longer run, we hope to be able the model on 1km resolution grids, and therefore will make this feature less constrained (remove hardcoding on input size)
 
-The input data generation relies on a `data/downloaded_data` folder containing baseline data. Its contents are:
-- Sand content at 0-5cm
-- Clay content at 0-5cm
-- Ksat at 0 and 30cm 
-- Soil water content at 10kPa at 0-5cm
-- Soil water content at 10kPa at 15-30cm
-- Soil water content at 33kPa at 0-5cm
-- Soil water content at 33kPa at 15-30cm
-- Soil water content at 15000kPa at 0-5cm
-- Soil water content at 15000kPa at 15-30cm
-- Countries shapefile folder
      
 See the previous sections for description of the datasets and where to retrieve them.
 
@@ -56,24 +54,8 @@ See the previous sections for description of the datasets and where to retrieve 
 The Climatological data, temperature, tmin, cloud cover, and precipitation is downloaded from the [CHELSA database](https://chelsa-climate.org/bioclim/). Each variable is downloaded for a specified year, for each month of the year. 
 Aside for yearly data, the CHELSA database also provides averaged datasets over longer time periods. 
 
-#### 2. Water Holding Capacity 
-No dataset is available for global water holding capacity (to not be confused with the AWC, available water capacity of the soil). We therefore generate a new dataset from available maps at field capacity (10 or 33 kPa) and wilting point (1500 kPa). 
-We are determining field capacity from the sand and clay proportions of the soil and make the assumption that the soil is either of the types. If a soil is mostly sandy, its field capacity will be attributed 10kPa, else 33kPa. Based on this intermediate classification, we extract the moisture content of the soil. 
-Sand and clay contents were extracted from [SoilGrids](https://files.isric.org/soilgrids/latest/data_aggregated/1000m/). We assumed that soil type would be the same at all depths and therefore only calculated soil type based on 0cm depth. Future model improvement could consider calculating values individually for all soil layers.
-
-If you subtract the moisture content at wilting point from that at field capacity, and then multiply by the depth you're interested in, you will get the volume—this means plant-available soil water or water holding capacity.
-We are using maps of available capactiy extracted from for depths 0-5cm and 15 to 30cm:       
-- WV 100 cm: https://doi.org/10.17027/isric-soilgrids.c6cb5073-78dd-4d8d-be81-9d546a1c004f
-- WV 330 cm: https://doi.org/10.17027/isric-soilgrids.14e7c761-6f87-4f4c-9035-adb282439a44
-- WV 15,000 cm: https://doi.org/10.17027/isric-soilgrids.f5a1188a-09f8-4ef6-b841-93f08e3903f4
-
-#### 3. Ksat 
-The ksat dataset was generated by the CoGTF framework  from Gupta, S., Lehmann, P., Bonetti, S., Papritz, A., and Or, D., (2020):
-Global prediction of soil saturated hydraulic conductivity using random forest in a Covariate-based Geo Transfer Functions (CoGTF) framework.
-Journal of Advances in Modeling Earth Systems, 13(4), e2020MS002242. https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020MS002242"""
-One can download dataset source [here](https://zenodo.org/records/3935359). We extracted values for depth 0 and 30cm.
-
-We are masking the WHC and Ksat datasets with landmass data downloaded from [Natural Earth](https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/) to make sure we only have soil values in continents. 
+#### 2. Soil characteristics data
+The data on soil characteristics are generated using the [makesoil](https://github.com/ARVE-Research/makesoil) module from Arve research. This script will automatically generate a NetCDF file with the two variables that are necessary to run BIOME4: the soil water holding capacity (whc), and the soil saturated conductivity (Ksat).
 
 ## How to use the model
 This package includes a Julia script that can be executed to run the BIOME4 model using specific environmental data files. The script requires several input files (e.g., temperature, precipitation, etc.), a CO2 concentration, and the coordinates of the region where the model will run.
