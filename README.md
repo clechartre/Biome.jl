@@ -1,6 +1,10 @@
+<p align="middle">
+  <img src="figures/biomelogo.svg"/>
+</p>
+
 [![Run tests](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml)
 
-# BIOME.jl: A Package for simulating biome schemes
+# Biome.jl: A Package for simulating biome schemes
 
 This package provides a platform for simulating climate-driven biome classification schemes alongside the mechanistic model BIOME4. 
 
@@ -13,7 +17,7 @@ The original code works with a main routine and subroutines. You can see the inf
 Below an example of output generated with the model using the Kaplan BIOME4 logic.
 
 <p align="middle">
-  <img src="/Users/capucinelechartre/Documents/PhD/BIOME/figures/example_model_output.jpg"/>
+  <img src="figures/example_model_output.jpg"/>
 </p>
 
 
