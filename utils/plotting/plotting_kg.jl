@@ -1,8 +1,8 @@
 using Rasters, Plots, Colors, NCDatasets
 
-include("../../src/abstractmodel.jl")
+include("../../src/model.jl")
 
-function plot_biomes(m::KoppenModel, filename::String, output_file::String)
+function plot_biomes(m::KoppenModel, filename::String, output_file::String, pftdict::none)
     # Define Köppen-Geiger biome names and their corresponding indices
     biome_names = [ 
         "Equatorial fully humid (Af)", "Equatorial monsoonal (Am)", "Equatorial summer dry (As)",
@@ -60,7 +60,7 @@ function plot_biomes(m::KoppenModel, filename::String, output_file::String)
     ]
 
     # Load the NetCDF dataset and extract biome data
-    A = Raster(filename, name="koppen_class")
+    A = Raster(filename, name="biome")
     biome_data = Int.(A[:, :])  # Convert raster data to integers
 
     # Replace missing values (assume -9999 is the fill value)
@@ -68,7 +68,7 @@ function plot_biomes(m::KoppenModel, filename::String, output_file::String)
     biome_data[biome_data .== -1] .= 100000
 
     # Create a new raster with modified biome data
-    biome_raster = Raster(biome_data, dims(A); name="koppen_class")
+    biome_raster = Raster(biome_data, dims(A); name="biome")
 
     # Extract longitude and latitude dimensions for axis labels
     lon = dims(A)[1]
@@ -94,6 +94,6 @@ function plot_biomes(m::KoppenModel, filename::String, output_file::String)
 end
 
 # Example usage
-filename = ""
-output_file = ""
+filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_koppengeiger.nc"
+output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_koppengeiger.png"
 plot_biomes(KoppenModel(), filename, output_file)

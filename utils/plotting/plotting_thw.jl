@@ -1,8 +1,8 @@
 using Rasters, Plots, Colors, NCDatasets
 
-include("../../src/abstractmodel.jl")
+include("../../src/model.jl")
 
-function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String)
+function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String, pftdict::none)
     # Define Thornthwaite climate categories
     THORN_LABELS = ["Wet", "Humid", "Subhumid", "Semiarid", "Arid"]
     THORN_TEMP_LABELS = ["Tropical", "Mesothermal", "Microthermal", "Taiga", "Tundra", "Frost"]
@@ -60,8 +60,8 @@ function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String
     ordered_colors = vcat(ordered_colors, na_color)  # Add NA color at the end
 
     # Load the NetCDF dataset and extract biome data
-    A_moisture = Raster(filename, name="moisture_zone")
-    A_temperature = Raster(filename, name="temperature_zone")
+    A_moisture = Raster(filename, name="wetness")
+    A_temperature = Raster(filename, name="biome")
 
     moisture_data = Int.(A_moisture[:, :])  # Convert raster data to integers
     temperature_data = Int.(A_temperature[:, :])
@@ -112,6 +112,6 @@ function plot_biomes(m::ThornthwaiteModel, filename::String, output_file::String
 end
 
 # Run the plotting function
-filename = ""
-output_file = ""
+filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_thornthwaite.nc"
+output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_thornthwaite.png"
 plot_biomes(ThornthwaiteModel(), filename, output_file)

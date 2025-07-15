@@ -1,8 +1,8 @@
 using Rasters, Plots, Colors, NCDatasets
 
-include("../../src/abstractmodel.jl")
+include("../../src/model.jl")
 
-function plot_biomes(m::WissmannModel, filename::String, output_file::String)
+function plot_biomes(m::WissmannModel, filename::String, output_file::String, pftdict::none)
     # Define Wissmann climate zone names and their corresponding indices
     wissmann_names = [
         "Rainforest, equatorial", "Rainforest, weak dry period", "Savannah and monsoonal rainforest",
@@ -42,14 +42,14 @@ function plot_biomes(m::WissmannModel, filename::String, output_file::String)
     ]
 
     # Load the NetCDF dataset and extract Wissmann classification data
-    A = Raster(filename, name="climate_zone")
+    A = Raster(filename, name="biome")
     wissmann_data = Int.(A[:, :])  # Convert raster data to integers
 
     # Replace missing values (assume -9999 is the fill value)
     wissmann_data[wissmann_data .== -9999] .= 23  # NA index
 
     # Create a new raster with modified Wissmann classification data
-    wissmann_raster = Raster(wissmann_data, dims(A); name="climate_zone")
+    wissmann_raster = Raster(wissmann_data, dims(A); name="biome")
 
     # Extract longitude and latitude dimensions for axis labels
     lon = dims(A)[1]
@@ -75,6 +75,6 @@ function plot_biomes(m::WissmannModel, filename::String, output_file::String)
 end
 
 # Example usage
-filename = ""
-output_file = ""
+filename = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_wissmann.nc"
+output_file = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/output_wissmann.png"
 plot_biomes(WissmannModel(), filename, output_file)
