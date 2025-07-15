@@ -1,40 +1,32 @@
-name: Run pre-commit in blueprint
-
+name: Run tests
 on:
   push:
     branches:
-    - main
+      - master
+      - main
   pull_request:
-    branches:
-    - main
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
-  blueprint-pre-commit:
+  test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.11.0
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-        channels: conda-forge
-        channel-priority: flexible
-        show-channel-urls: true
-    - name: Create env from unpinned reqs
-      run: |
-        conda env create --name dev_env --file requirements/requirements.yml
-    - name: Install project into env
-      run: |
-        conda run --name dev_env pip install --no-deps .
-    - name: Install pre-commit hooks
-      run: |
-        conda run --name dev_env pre-commit install-hooks
-    - name: Run pre-commit hooks
-      run: |
-        conda run --name dev_env pre-commit run --all-files
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+          arch: x64
+      - uses: julia-actions/cache@v2
+
+      # Instantiate all dependencies for the BIOME project
+      - name: Instantiate dependencies
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+
+
+      # Run tests (with coverage if you like)
+      - name: Run tests
+        run: julia --project=. -e 'using Pkg; Pkg.test(coverage=true)'
