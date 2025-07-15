@@ -1,5 +1,5 @@
 <p align="middle">
-  <img src="figures/biomelogo.svg"/>
+  <img src="figures/biomelogo_grey.svg"/>
 </p>
 
 [![Run tests](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml)
