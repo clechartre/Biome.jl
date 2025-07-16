@@ -51,7 +51,6 @@ include("models/MechanisticModel/growth_subroutines/respiration.jl")
 include("models/MechanisticModel/biome4.jl")
 include("models/MechanisticModel/BIOME4/pfts.jl")
 using .BIOME4
-include("models/MechanisticModel/BIOME4/biome4assignbiome.jl")
 
 # Climatic envelope models
 include("models/ClimaticEnvelope/koppenbiomes.jl")
