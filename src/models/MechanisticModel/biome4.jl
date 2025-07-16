@@ -59,7 +59,7 @@ NPP optimization, and biome classification.
 - Accounts for environmental constraints on PFT presence
 """
 function run(
-    m::Union{BIOME4Model, BIOMEDominanceModel}, 
+    m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, 
     vars_in::Vector{Union{T,U}},
     BIOME4PFTS::AbstractPFTList
 ) where {T<:Real,U<:Int}
@@ -182,7 +182,7 @@ function run(
     fill!(output, T(0.0))
     output[1] = biomeindex
     output[2] = optindex
-    output[3:16] = nppindex[1:14]  # Ensure we don't exceed bounds
+    output[3:3+numofpfts] = nppindex[1:numofpfts+1]  # Ensure we don't exceed bounds
     output[48] = lon
     output[49] = lat
 

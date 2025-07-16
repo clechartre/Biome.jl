@@ -11,7 +11,7 @@ BIOME4/BIOMEDominance Competition function.
 """
 
 function competition2(
-    m::Union{BIOME4Model, BIOMEDominanceModel},
+    m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel},
     tmin::T,
     tprec::T,
     numofpfts::U,
@@ -88,12 +88,18 @@ function competition2(
 
     # Format values for output
     dom, npp, lai, grasslai, optpft = calculate_vegetation_dominance(
-        optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, BIOME4PFTS, PFTStates
+        optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, PFTStates
     )
 
     # Call the newassignbiome function
-    biome = assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-     gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates)
+    if m isa BIOME4Model || m isa BIOMEDominanceModel
+        biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
+            gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates)
+    else 
+        biome = assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
+            gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates
+        )
+    end
 
     return biome, optpft, npp
 end
@@ -107,13 +113,15 @@ function initialize_presence(numofpfts::U, BIOME4PFTS::AbstractPFTList, PFTState
     end
 
     # Find ColdHerbaceous PFT by type checking
-    cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
-    if cold_herb_index !== nothing
-        # set_characteristic(BIOME4PFTS.pft_list[cold_herb_index], :present, true) # Special case
-        cold_herb = BIOME4PFTS.pft_list[cold_herb_index]
-        PFTStates[cold_herb].present = true
-    else
-        @warn "ColdHerbaceous not found in pft_list"
+    try
+        cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), BIOME4PFTS.pft_list)
+        if cold_herb_index !== nothing
+            # set_characteristic(BIOME4PFTS.pft_list[cold_herb_index], :present, true) # Special case
+            cold_herb = BIOME4PFTS.pft_list[cold_herb_index]
+            PFTStates[cold_herb].present = true
+        end
+    catch
+        # Skip if ColdHerbaceous type doesn't exist
     end
 
     return PFTStates
@@ -168,7 +176,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
     and wetness conditions.
  """
  function determine_optimal_pft( 
-    m::BIOMEDominanceModel,
+    m::Union{BIOMEDominanceModel, BaseModel},
     optpft::AbstractPFT,
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
@@ -345,27 +353,27 @@ function determine_optimal_pft(
         nppdif = woodnpp - (isa(grasspft, None) ? T(0) : PFTStates[grasspft].npp)
 
         # Temperate broadleaved evergreen or cool conifer with warm conditions
-        if (isa(wdom, TemperateBroadleavedEvergreen) || isa(wdom, CoolConifer)) && tmin > T(0.0)
+        if (isa(wdom, BIOME4.TemperateBroadleavedEvergreen) || isa(wdom, BIOME4.CoolConifer)) && tmin > T(0.0)
             if gdd5 > T(5000.0)
-                wdom = get_pft_by_type(TropicalDroughtDeciduous)
+                wdom = get_pft_by_type(BIOME4.TropicalDroughtDeciduous)
                 continue
             end
         end
 
         # Tropical evergreen
-        if isa(wdom, TropicalEvergreen)
+        if isa(wdom, BIOME4.TropicalEvergreen)
             if  PFTStates[wdom].npp < T(2000.0)
-                wdom = get_pft_by_type(TropicalDroughtDeciduous)
-                subpft = get_pft_by_type(TropicalEvergreen)
+                wdom = get_pft_by_type(BIOME4.TropicalDroughtDeciduous)
+                subpft = get_pft_by_type(BIOME4.TropicalEvergreen)
                 continue
             end
         end
 
         # Tropical drought deciduous
-        if isa(wdom, TropicalDroughtDeciduous)
+        if isa(wdom, BIOME4.TropicalDroughtDeciduous)
             if woodylai < T(2.0)
                 optpft = grasspft
-            elseif isa(grasspft, C4TropicalGrass) && woodylai < T(3.6)
+            elseif isa(grasspft, BIOME4.C4TropicalGrass) && woodylai < T(3.6)
                 optpft = DEFAULT_INSTANCE # Mixed woody/grass (equivalent to index 14)
             elseif greendays < (270) && tcm > T(21.0) && tprec < T(1700.0)
                 optpft = DEFAULT_INSTANCE # Mixed woody/grass
@@ -375,7 +383,7 @@ function determine_optimal_pft(
         end
 
         # Temperate broadleaved evergreen
-        if isa(wdom, TemperateBroadleavedEvergreen)
+        if isa(wdom, BIOME4.TemperateBroadleavedEvergreen)
             if  PFTStates[wdom].npp < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.0)
@@ -388,13 +396,13 @@ function determine_optimal_pft(
         end
 
         # Temperate deciduous
-        if isa(wdom, TemperateDeciduous)
+        if isa(wdom, BIOME4.TemperateDeciduous)
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
                 if !flop && subpft !== None
                     wdom = subpft
-                    subpft = get_pft_by_type(TemperateDeciduous)
+                    subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
                     flop = true
                     continue
                 else
@@ -405,7 +413,7 @@ function determine_optimal_pft(
                     optpft = DEFAULT_INSTANCE # Mixed woody/grass - PFT 14
                 elseif !flop && subpft !== None
                     wdom = subpft
-                    subpft = get_pft_by_type(TemperateDeciduous)
+                    subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
                     flop = true
                     continue
                 end
@@ -415,11 +423,11 @@ function determine_optimal_pft(
         end
 
         # Cool conifer
-        if isa(wdom, CoolConifer)
-            temperate_evergreen = get_pft_by_type(TemperateBroadleavedEvergreen)
+        if isa(wdom, BIOME4.CoolConifer)
+            temperate_evergreen = get_pft_by_type(BIOME4.TemperateBroadleavedEvergreen)
             if temperate_evergreen !== nothing && PFTStates[temperate_evergreen].present
                 wdom = temperate_evergreen
-                subpft = get_pft_by_type(CoolConifer)
+                subpft = get_pft_by_type(BIOME4.CoolConifer)
                 continue
             elseif  PFTStates[wdom].npp < T(140.0)
                 optpft = grasspft
@@ -431,13 +439,13 @@ function determine_optimal_pft(
         end
 
         # Boreal evergreen
-        if isa(wdom, BorealEvergreen)
+        if isa(wdom, BIOME4.BorealEvergreen)
             if PFTStates[wdom].npp < T(140.0)
                 optpft = grasspft
             elseif firedays > 90
                 if !flop && subpft !== None
                     wdom = subpft
-                    subpft = get_pft_by_type(BorealEvergreen)
+                    subpft = get_pft_by_type(BIOME4.BorealEvergreen)
                     flop = true
                     continue
                 else
@@ -447,7 +455,7 @@ function determine_optimal_pft(
         end
 
         # Boreal deciduous
-        if isa(wdom, BorealDeciduous)
+        if isa(wdom, BIOME4.BorealDeciduous)
             if PFTStates[wdom].npp< T(120.0)
                 optpft = grasspft
             elseif wetness[findfirst(pft -> pft === wdom, BIOME4PFTS.pft_list)] < T(30.0) && nppdif < T(0.0)
@@ -462,7 +470,7 @@ function determine_optimal_pft(
             if !isa(grasspft, None)
                 optpft = grasspft
             else
-                lichen_forb = get_pft_by_type(LichenForb)
+                lichen_forb = get_pft_by_type(BIOME4.LichenForb)
                 if lichen_forb !== nothing &&  PFTStates[lichen_forb].npp != 0.0
                     optpft = lichen_forb
                 else
@@ -473,24 +481,24 @@ function determine_optimal_pft(
 
         # Fallback to woody desert
         if isa(wdom, None)
-            woody_desert = get_pft_by_type(WoodyDesert)
+            woody_desert = get_pft_by_type(BIOME4.WoodyDesert)
             if woody_desert !== nothing && PFTStates[woody_desert].present
                 optpft = woody_desert
             end
         end
 
         # Woody desert specific conditions
-        if isa(optpft, WoodyDesert)
-            if !isa(grasspft, C4TropicalGrass) && PFTStates[grasspft].npp > PFTStates[optpft].npp
+        if isa(optpft, BIOME4.WoodyDesert)
+            if !isa(grasspft, BIOME4.C4TropicalGrass) && PFTStates[grasspft].npp > PFTStates[optpft].npp
                 optpft = grasspft
             else
-                optpft = get_pft_by_type(WoodyDesert)
+                optpft = get_pft_by_type(BIOME4.WoodyDesert)
             end
         end
 
         # Grass conditions
         if optpft === grasspft
-            woody_desert = get_pft_by_type(WoodyDesert)
+            woody_desert = get_pft_by_type(BIOME4.WoodyDesert)
 
             if PFTStates[grasspft].lai < 1.8 && woody_desert !== nothing && PFTStates[woody_desert].present
                 optpft = woody_desert
@@ -500,8 +508,8 @@ function determine_optimal_pft(
         end
 
         # Tundra shrubs conditions
-        if isa(optpft, TundraShrubs)
-            cold_herb = get_pft_by_type(ColdHerbaceous)
+        if isa(optpft, BIOME4.TundraShrubs)
+            cold_herb = get_pft_by_type(BIOME4.ColdHerbaceous)
             optpft_idx = findfirst(pft -> pft === optpft, BIOME4PFTS.pft_list)
             if optpft_idx !== nothing && wetness[optpft_idx] <= 25.0 && 
                cold_herb !== nothing && PFTStates[cold_herb].present
@@ -524,7 +532,6 @@ function calculate_vegetation_dominance(
     woodnpp::T,
     woodylai::T,
     grasslai::T,
-    BIOME4PFTS::AbstractPFTList,
     PFTStates::Dict{AbstractPFT,PFTState{T,U}}
 ) where {T <: Real, U <: Int} # ::Tuple{AbstractPFT, T, T, T, U} 
 

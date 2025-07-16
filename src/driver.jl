@@ -11,7 +11,7 @@ Thornthwaite, Koppen-Geiger, and Troll-Pfaffen classifications.
 using Pkg
 
 Pkg.instantiate() 
-using BIOME   
+using Biome   
 
 # Standard library
 using Statistics
@@ -59,7 +59,7 @@ function main(
     sunfile::String,
     soilfile::String,
     year::String,
-    model::String
+    model::String = "Base"
 ) where {T<:Real}
     # Check the model in use
     model_instance = if model == "biome4"
@@ -75,8 +75,11 @@ function main(
     elseif model == "dominance"
         BIOMEDominanceModel()
     else
-        error("Unknown model: $model")
+        BaseModel()
     end
+
+    # Instantiate the PFTs
+    PFTS = get_pft_list(model_instance)
 
     # Open the first dataset to get dimensions, then close
     temp_raster = Raster(tempfile)
@@ -117,7 +120,7 @@ function main(
         output_dataset = NCDataset(outfile, "c")
         println("Creating new output file: $outfile")
         create_output_variables(output_dataset, model_instance, lon, lat, cntx, cnty)
-        output_stack = create_output_rasterstack(model_instance, lon, lat, cntx, cnty)
+        output_stack = create_output_rasterstack(model_instance, lon, lat, cntx, cnty, PFTS)
     end
 
     # Set up chunking variables
@@ -195,9 +198,6 @@ function main(
         println("max ksat: ", maximum(ksat_chunk), ", min ksat: ", minimum(ksat_chunk))
         println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
 
-        # Instantiate the PFTs before going into pixels
-        PFTS = PFTClassification()
-
         # Process the data in this chunk
         process_chunk(
             current_chunk_size,
@@ -231,10 +231,11 @@ end
 
 Create a RasterStack for output variables based on the model type.
 """
-function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
+function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty, PFTS)
     # Create coordinate dimensions
     lon_dim = X(lon)
     lat_dim = Y(lat)
+    numpfts = length(PFTS.pft_list)
     
     # Get model schema
     schema = get_output_schema(model)
@@ -250,9 +251,9 @@ function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
                 name=Symbol(var_name)
             )
         elseif var_info.dims == ("lon", "lat", "pft")
-            pft_dim = Dim{:pft}(1:14)
+            pft_dim = Dim{:pft}(1:numpfts+1)
             raster = Raster(
-                fill(-9999.0, cntx, cnty, 14),
+                fill(-9999.0, cntx, cnty, numpfts+1),
                 dims=(lon_dim, lat_dim, pft_dim),
                 name=Symbol(var_name)
             )
@@ -390,10 +391,28 @@ function process_cell(
     input[49] = lon_chunk[x]
 
     # Run the model 
-    output = BIOME.run(model, input, PFTS)
+    output = Biome.run(model, input, PFTS)
     
     # Write results using model-specific function
     process_cell_output(model, x, y, output, output_stack)
+end
+
+"""
+  get_pft_list(model::Union{BaseModel, BIOME4Model})
+
+Return the AbstractPFTList appropriate for `model`.
+"""
+function get_pft_list(m::BaseModel)
+    return PFTClassification{Float64,Int}([
+        TropicalBase(Float64, Int),
+        TemperateBase(Float64, Int), 
+        BorealBase(Float64, Int),
+        GrassBase(Float64, Int),
+    ])
+end
+
+function get_pft_list(m::Union{BIOME4Model, BIOMEDominanceModel})
+    return BIOME4.PFTClassification()
 end
 
 """
@@ -401,7 +420,7 @@ end
 
 Get the primary variable name for each model type (used for checking if processed).
 """
-function get_primary_variable(model::BIOME4Model)
+function get_primary_variable(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
     return :biome
 end
 
@@ -427,7 +446,7 @@ end
 
 Write model output to the RasterStack based on model type.
 """
-function process_cell_output(model::BIOME4Model, x, y, output, output_stack::RasterStack)
+function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output, output_stack::RasterStack)
     output_stack[:biome][x, y] = output[1]
     output_stack[:wdom][x, y] = output[2]
     output_stack[:npp][x, y, :] = output[3:16]
@@ -473,7 +492,7 @@ end
 
 Define the output variables and their properties for different biome models.
 """
-function get_output_schema(model::BIOME4Model)
+function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
     return Dict(
         "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
         "wdom" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant woody vegetation")),
@@ -511,7 +530,7 @@ end
 
 Get the dimensions required for each model type.
 """
-function get_required_dimensions(model::BIOME4Model, cntx, cnty)
+function get_required_dimensions(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, cntx, cnty)
     return Dict(
         "lon" => cntx,
         "lat" => cnty,
