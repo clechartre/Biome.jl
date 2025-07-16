@@ -15,11 +15,11 @@ abstract type AbstractGrassPFT <: AbstractPFT end
     sw_appear::T = T(0.0)
     root_fraction_top_soil::T = T(0.0)
     leaf_longevity::T = T(0.0)
-    GDD5_full_leaf_out::T = T(0.0)
-    GDD0_full_leaf_out::T = T(0.0)
+    GDD5_full_leaf_out::T = T(1.0)
+    GDD0_full_leaf_out::T = T(1.0)
     sapwood_respiration::U = U(1)
-    optratioa::T = T(0.0)
-    kk::T = T(0.0)
+    optratioa::T = T(1.0)
+    kk::T = T(1.0)
     c4::Bool = false
     threshold::T = T(0.0)
     t0::T = T(0.0)
@@ -91,7 +91,16 @@ function base_tropical_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:In
         tcurve = T(1.0),
         respfact = T(0.8),
         allocfact = T(1.0),
-        grass = false
+        grass = false,
+        constraints = (
+            tcm = [-Inf, +Inf],
+            min = [T(0.0), +Inf],
+            gdd = [-Inf, +Inf],
+            gdd0 = [-Inf, +Inf],
+            twm = [T(10.0), +Inf],
+            snow = [-Inf, +Inf],
+            swb = [T(500.0), +Inf]
+        )
     )
     merged = merge(defaults, kwargs)
     return PFTCharacteristics{T,U}(; name = "TropicalBase", merged...)
@@ -110,6 +119,7 @@ TropicalBase(::Type{T}=Float64, ::Type{U}=Int; kwargs...) where {T<:Real,U<:Int}
 
 function base_temperate_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
     defaults = (
+        Emax = T(5),
         sw_drop = T(-99.9),
         sw_appear = T(-99.9),
         root_fraction_top_soil = T(0.67),
@@ -122,7 +132,16 @@ function base_temperate_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:I
         tcurve = T(1.0),
         respfact = T(1.45),
         allocfact = T(1.2),
-        grass = false
+        grass = false,
+        constraints = (
+            tcm = [T(-15.0), +Inf],
+            min = [-Inf, T(5.0)],
+            gdd = [T(900), +Inf],
+            gdd0 = [-Inf, +Inf],
+            twm = [T(10), +Inf],
+            snow = [-Inf, +Inf],
+            swb = [T(300), +Inf]
+        )
     )
     merged = merge(defaults, kwargs)
     return PFTCharacteristics{T,U}(; name = "TemperateBase", merged...)
@@ -139,6 +158,7 @@ TemperateBase(::Type{T}=Float64, ::Type{U}=Int; kwargs...) where {T<:Real,U<:Int
 
 function base_boreal_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
     defaults = (
+        Emax = T(8),
         sw_drop = T(-99.9),
         sw_appear = T(-99.9),
         root_fraction_top_soil = T(0.83),
@@ -154,7 +174,16 @@ function base_boreal_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
         tcurve = T(0.8),
         respfact = T(4.0),
         allocfact = T(1.2),
-        grass = false
+        grass = false,
+        constraints = (
+            tcm = [-Inf, T(5.0)],
+            min = [-Inf, +Inf],
+            gdd = [-Inf, +Inf],
+            gdd0 = [-Inf, +Inf],
+            twm = [-Inf, T(21.0)],
+            snow = [-Inf, +Inf],
+            swb = [T(300), +Inf]
+        )
     )
     merged = merge(defaults, kwargs)
     return PFTCharacteristics{T,U}(; name = "BorealBase", merged...)
@@ -172,6 +201,7 @@ function base_grass_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
     defaults = (
         phenological_type = U(3),
         max_min_canopy_conductance = T(0.8),
+        Emax = T(7.25),
         sw_drop = T(0.2),
         sw_appear = T(0.3),
         GDD5_full_leaf_out = T(-99.9),
@@ -180,8 +210,18 @@ function base_grass_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
         optratioa = T(0.65),
         kk = T(0.4),
         tcurve = T(1.0),
+        threshold = T(0.40),
         allocfact = T(1.0),
-        grass = true
+        grass = true,
+        constraints = (
+            tcm = [-Inf, +Inf],
+            min = [-Inf, +Inf],
+            gdd = [-Inf, +Inf],
+            gdd0 = [-Inf, +Inf],
+            twm = [-Inf, +Inf],
+            snow = [-Inf, +Inf],
+            swb = [T(100), +Inf]
+        ),
     )
     merged = merge(defaults, kwargs)
     return PFTCharacteristics{T,U}(; name = "GrassBase", merged...)

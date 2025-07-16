@@ -48,10 +48,16 @@ Assign biome for GrassBase plant functional type.
 Returns Grassland.
 """
 function assign_biome(
-    optpft::GrassBase;
+    optpft::Union{GrassBase, Default};
+    PFTStates::Dict{AbstractPFT, PFTState{Float64, Int}},
+    wdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
-    return Grassland()
+    if PFTStates[wdom].npp > 1500
+        return Grassland()
+    else
+        return Desert()
+    end
 end
 
 """
@@ -62,8 +68,9 @@ Assign biome for None/Default plant functional type.
 Returns Desert biomes.
 """
 function assign_biome(
-    optpft::Union{None, Default};
+    optpft::None;
     kwargs...
 )::AbstractBiome
     return Desert()
 end
+
