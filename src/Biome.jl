@@ -61,6 +61,9 @@ include("models/ClimaticEnvelope/wissmannbiomes.jl")
 # Export all necessary types and functions
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4PFT,
        AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList, PFTCharacteristics,
+
+       # Model Types
+       ClimateModel, MechanisticModel, 
        BaseModel, BiomeModel, BIOMEDominanceModel, WissmannModel, BIOME4Model, 
        ThornthwaiteModel, KoppenModel, TrollPfaffenModel,
        BIOME4,
@@ -79,25 +82,8 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        add_deciduous!, add_evergreen!,add_broadleaf!, add_needleleaf!,
        TropicalBase, TemperateBase, BorealBase, GrassBase, TropicalPFT, TemperatePFT, BorealPFT, GrassPFT,
        
-    #    # BIOME4 PFT types (from BIOME4 module)
-    #    WoodyDesert, TropicalEvergreen, TropicalDroughtDeciduous, 
-    #    TemperateBroadleavedEvergreen, TemperateDeciduous, CoolConifer,
-    #    BorealEvergreen, BorealDeciduous, C3C4TemperateGrass, C4TropicalGrass,
-    #    TundraShrubs, ColdHerbaceous, LichenForb,
-       
        # Original biome types
        TropicalForest, TemperateForest, BorealForest, Grassland, Desert,
-       
-    #    # BIOME4 biome types (from BIOME4 module)
-    #    TropicalEvergreenForest, TropicalSemiDeciduousForest, TropicalDeciduousForestWoodland,
-    #    TemperateDeciduousForest, TemperateConiferForest, WarmMixedForest, CoolConiferForest,
-    #    CoolMixedForest, ColdMixedForest, EvergreenTaigaMontaneForest,
-    #    DeciduousTaigaMontaneForest, TropicalSavanna, TropicalXerophyticShrubland,
-    #    TemperateXerophyticShrubland, TemperateSclerophyllWoodland,
-    #    TemperateBroadleavedSavanna, OpenConiferWoodland, BorealParkland,
-    #    TropicalGrassland, TemperateGrassland, SteppeTundra, ShrubTundra,
-    #    DwarfShrubTundra, ProstateShrubTundra, CushionForbsLichenMoss,
-    #    Barren, LandIce,
        
        # Functions
        get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,

@@ -60,7 +60,7 @@ NPP optimization, and biome classification.
 function run(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, 
     vars_in::Vector{Union{T,U}},
-    BIOME4PFTS::AbstractPFTList
+    PFTList::AbstractPFTList
 ) where {T<:Real,U<:Int}
     # Extract input variables from the input vector
     lat = vars_in[1]
@@ -76,11 +76,11 @@ function run(
     soil = @views vars_in[41:44]   # soil parameters
     lon = vars_in[49]
 
-    numofpfts = length(BIOME4PFTS.pft_list)
+    numofpfts = length(PFTList.pft_list)
 
     # Create the Dict that holds the PFT dynamic states
     PFTStates = Dict{AbstractPFT,PFTState{Float64,Int}}()
-    for pft in BIOME4PFTS.pft_list
+    for pft in PFTList.pft_list
         PFTStates[pft] = PFTState{Float64,Int}()
     end
     
@@ -125,11 +125,11 @@ function run(
 
     # Apply environmental constraints to determine PFT presence
     tmin, PFTStates = constraints(
-        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, PFTStates
+        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, PFTList, PFTStates
     )
 
     # Calculate optimal LAI and NPP for each viable PFT
-    for (iv, pft) in enumerate(BIOME4PFTS.pft_list)
+    for (iv, pft) in enumerate(PFTList.pft_list)
         PFTStates[pft].dominance = dominance_environment(pft, :clt, mclou) + dominance_environment(pft, :temp, mtemp) + dominance_environment(pft, :prec, mprec)
         if PFTStates[pft].present == true
             # Calculate phenology for deciduous PFTs
@@ -138,7 +138,7 @@ function run(
             end
 
             # Optimize NPP and LAI for this PFT
-            BIOME4PFTS.pft_list[iv], optlai, optnpp, PFTStates[pft] = findnpp(
+            PFTList.pft_list[iv], optlai, optnpp, PFTStates[pft] = findnpp(
                 pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
                 k, dphen, co2, p, tsoil, PFTStates[pft]
             )
@@ -152,14 +152,14 @@ function run(
 
 # Determine winning biome through PFT competition
     biome, optpft, npp = competition2(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, BIOME4PFTS, PFTStates
+        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, PFTList, PFTStates
     )
 
     # Convert optimal PFT to index
     optindex = if optpft === nothing
         0
     else
-        idx = findfirst(pft -> pft == optpft, BIOME4PFTS.pft_list)
+        idx = findfirst(pft -> pft == optpft, PFTList.pft_list)
         idx === nothing ? 0 : idx
     end
 
@@ -168,7 +168,7 @@ function run(
 
     # Collect NPP values for all PFTs
     nppindex = zeros(T, numofpfts + 1)
-    for (i, pft) in enumerate(BIOME4PFTS.pft_list)
+    for (i, pft) in enumerate(PFTList.pft_list)
         if PFTStates[pft].present == true
             nppindex[i] = PFTStates[pft].npp
         else

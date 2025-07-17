@@ -36,12 +36,10 @@ function c4photo(
     # TODO verify that this gives the same result as the original code
     t0 = T(10.0)
 
-    # Determine qeffc4 and tune based on PFT
-    # FIXME this is a bit of a hack, we should have a better way to handle PFT-specific parameters 
-    #- ask if C4 and then define these parameters in C4 plants
-    qeffc4, tune = if get_characteristic(pft, :name) in ["C3C4TemperateGrass", "C4TropicalGrass"]
+    # Determine qeffc4 and tune based on woodiness
+    qeffc4, tune = if get_characteristic(pft, :grass) && get_characteristic(pft, :c4)
         (T(0.0633), T(1.0))
-    elseif get_characteristic(pft, :name) == "C3C4WoodyDesert"
+    elseif get_characteristic(pft, :grass) == false && get_characteristic(pft, :c4)
         (T(0.0565), T(0.75))
     else
         throw(ArgumentError("Running the c4 subroutine with a non-c4 plant"))

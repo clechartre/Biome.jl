@@ -79,8 +79,8 @@ function main(
     end
 
     # Instantiate the PFTs
-    PFTS = get_pft_list(model_instance)
-    numofpfts = length(PFTS.pft_list)
+    PFTList = get_pft_list(model_instance)
+    numofpfts = length(PFTList.pft_list)
 
     # Open the first dataset to get dimensions, then close
     temp_raster = Raster(tempfile)
@@ -214,11 +214,11 @@ function main(
             whc_chunk,
             dz, 
             lon_chunk,
-            output_stack,  # Changed to RasterStack
+            output_stack,
             output_dataset,
             strx,
             model_instance,
-            PFTS
+            PFTList
         )
     end
 
@@ -317,7 +317,7 @@ function process_chunk(
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
     lon_chunk, output_stack::RasterStack,
-    output_dataset, strx, model_instance::BiomeModel, PFTS::AbstractPFTList
+    output_dataset, strx, model_instance::BiomeModel, PFTList::AbstractPFTList
 )
     for y in 1:cnty
         println("Serially processing y index $y")
@@ -337,7 +337,7 @@ function process_chunk(
             process_cell(
                 x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, output_stack, model_instance, PFTS
+                dz, lon_chunk, output_stack, model_instance, PFTList
             )
         end
 
@@ -357,7 +357,7 @@ function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, output_stack::RasterStack, model::BiomeModel, PFTS::AbstractPFTList
+    lon_chunk, output_stack::RasterStack, model::BiomeModel, PFTList::AbstractPFTList
 ) where {T<:Real}
     # Check if already processed
     primary_var = get_primary_variable(model)
@@ -391,9 +391,9 @@ function process_cell(
     input[49] = lon_chunk[x]
 
     # Run the model 
-    output = Biome.run(model, input, PFTS)
+    output = Biome.run(model, input, PFTList)
 
-    numofpfts = length(PFTS.pft_list)
+    numofpfts = length(PFTList.pft_list)
     
     # Write results using model-specific function
     process_cell_output(model, x, y, output, output_stack; numofpfts = numofpfts)
@@ -417,6 +417,10 @@ end
 
 function get_pft_list(m::Union{BIOME4Model, BIOMEDominanceModel})
     return BIOME4.PFTClassification()
+end
+
+function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel})
+    return PFTClassification()
 end
 
 """
@@ -534,7 +538,7 @@ end
 
 Get the dimensions required for each model type.
 """
-function get_required_dimensions(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, cntx, cnty, numofpfts)
+function get_required_dimensions(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, cntx, cnty; numofpfts)
     return Dict(
         "lon" => cntx,
         "lat" => cnty,
@@ -542,7 +546,7 @@ function get_required_dimensions(model::Union{BIOME4Model, BIOMEDominanceModel, 
     )
 end
 
-function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel}, cntx, cnty)
+function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel}, cntx, cnty; kwargs...)
     return Dict(
         "lon" => cntx,
         "lat" => cnty
@@ -556,7 +560,7 @@ Create output variables in NetCDF dataset based on the model type.
 """
 function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnty, numofpfts)
     # Define dimensions
-    dims = get_required_dimensions(model, cntx, cnty, numofpfts)
+    dims = get_required_dimensions(model, cntx, cnty; numofpfts = numofpfts)
     for (name, size) in dims
         defDim(dataset, name, size)
     end

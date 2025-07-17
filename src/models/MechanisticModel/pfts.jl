@@ -81,13 +81,13 @@ function base_tropical_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:In
         respfact                   = T(0.8),
         allocfact                  = T(1.0),
         constraints = (
-          tcm=[-Inf,+Inf], 
-          min=[T(0.0),+Inf],
-          gdd=[-Inf,+Inf],
-          gdd0=[-Inf,+Inf], 
-          twm=[T(10.0),+Inf], 
-          snow=[-Inf,+Inf],
-          swb=[T(500.0),+Inf]
+          tcm = [-Inf, +Inf], 
+          min = [T(0.0), +Inf],
+          gdd = [-Inf, +Inf],
+          gdd0 = [-Inf, +Inf], 
+          twm = [T(10.0), +Inf], 
+          snow = [-Inf, +Inf],
+          swb = [T(500.0), +Inf]
         )
     )
     return PFTCharacteristics{T,U}(; name="TropicalBase", merge(defaults,kwargs)...)
@@ -106,13 +106,13 @@ function base_temperate_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:I
         respfact                = T(1.45),
         allocfact               = T(1.2),
         constraints = (
-          tcm=[T(-15.0),+Inf],
-          min=[-Inf,T(5.0)], 
-          gdd=[T(900.0),+Inf],
-          gdd0=[-Inf,+Inf],
-          twm=[-Inf,+Inf], 
-          snow=[-Inf,+Inf],
-          swb=[T(300.0),+Inf]
+          tcm = [T(-15.0), +Inf],
+          min = [-Inf, T(5.0)], 
+          gdd = [T(900.0), +Inf],
+          gdd0 = [-Inf, +Inf],
+          twm = [-Inf, +Inf], 
+          snow = [-Inf, +Inf],
+          swb = [T(300.0), +Inf]
         )
     )
     return PFTCharacteristics{T,U}(; name="TemperateBase", merge(defaults,kwargs)...)
