@@ -7,9 +7,8 @@ using Statistics: mean
 using Printf: @sprintf
 
 """
-BIOME4/BIOMEDominance Competition function.
+    BIOME4/BIOMEDominance Competition function.
 """
-
 function competition2(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel},
     tmin::T,

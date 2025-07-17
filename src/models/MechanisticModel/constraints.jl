@@ -1,5 +1,5 @@
 """
-    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, states)
+    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, PFTstates)
 
 Calculate constraints for biome classification based on temperature, GDD, and 
 other parameters. Sets each PFT’s `present` flag in `states`.

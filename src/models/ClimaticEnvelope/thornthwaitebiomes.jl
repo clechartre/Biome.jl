@@ -1,5 +1,37 @@
 using Statistics
 
+"""
+    run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+
+Compute Thornthwaite climate classification zones from monthly temperature and precipitation data.
+
+# Arguments
+- `m::ThornthwaiteModel`
+  The model instance (not directly used in this implementation, provided for dispatch).
+- `vars_in::Vector{Union{T, U}}`
+  A length‑28 vector containing:
+  1. Elements 1–4: (unused placeholders)
+  2. Elements 5–16: twelve monthly mean temperatures (Real values)
+  3. Elements 17–28: twelve monthly total precipitations (Real values)
+
+# Returns
+- `output::Vector{Any}`  
+  A vector of length 50 (initialized to zeros of type `T`), where:
+  - `output[1]` is an `Int` code for the temperature zone:
+    1. Tropical  
+    2. Mesothermal  
+    3. Microthermal  
+    4. Taiga  
+    5. Tundra  
+    6. Frost  
+  - `output[2]` is an `Int` code for the moisture zone:
+    1. Wet  
+    2. Humid  
+    3. Subhumid  
+    4. Semiarid  
+    5. Arid  
+  - All other entries remain zero.
+"""
 function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Thornthwaite climate zones with numerical values
     THORN = Dict(

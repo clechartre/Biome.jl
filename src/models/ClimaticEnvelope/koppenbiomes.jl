@@ -1,6 +1,26 @@
 # Third-party
 using Statistics
 
+"""
+    run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+
+Classify climate data using the Köppen-Geiger climate classification system.
+
+# Arguments
+- `m::KoppenModel`: The Köppen climate model instance
+- `vars_in::Vector{Union{T, U}}`: Vector of climate variables (typically temperature and precipitation data)
+- `args...`: Additional positional arguments
+- `kwargs...`: Additional keyword arguments
+
+# Returns
+- Köppen-Geiger climate class identifier (integer 1-16+ corresponding to climate types)
+
+# Köppen-Geiger Classes
+The function classifies climate into the following categories:
+- **Tropical (A)**: Af (1), Am (2), As (3), Aw (4)
+- **Arid (B)**: BWk (5), BWh (6), BSk (7), BSh (8)  
+- **Temperate (C)**: Cfa (9), Cfb (10), Cfc (11), Csa (12), Csb (13), Csc (14), Cwa (15), Cwb (16)
+"""
 # Define the Köppen-Geiger classification function
 function run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Köppen-Geiger classes

@@ -9,7 +9,6 @@ and biome classification.
 """
 
 # Third-party imports
-using ComponentArrays: ComponentArray
 using DimensionalData
 using LinearAlgebra
 using Printf
