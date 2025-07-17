@@ -1,7 +1,7 @@
 push!(LOAD_PATH, "../src/")
 using Documenter, Biome
 
-__precompile__(false)   # if you still need to disable precomp
+__precompile__(false)
 
 makedocs(
   sitename  = "Biome.jl",

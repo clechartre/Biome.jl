@@ -406,10 +406,12 @@ Return the AbstractPFTList appropriate for `model`.
 """
 function get_pft_list(m::BaseModel)
     return PFTClassification{Float64,Int}([
-        TropicalBase(Float64, Int),
-        TemperateBase(Float64, Int), 
-        BorealBase(Float64, Int),
-        GrassBase(Float64, Int),
+        TropicalPFT{Float64,Int}("TropicalBroadleavedDeciduous", add_deciduous!, add_broadleaf!),
+        TropicalPFT{Float64,Int}("TropicalBroadleavedEvergreen", add_evergreen!, add_broadleaf!),
+        TemperatePFT{Float64,Int}("Oak", add_deciduous!, add_broadleaf!),
+        BorealPFT{Float64,Int}("BorealEvergreen",  add_evergreen!, add_needleleaf!),
+        BorealPFT{Float64,Int}("BorealDeciduous",  add_deciduous!, add_needleleaf!),
+        GrassPFT{Float64,Int}("PrairieGrass",)
     ])
 end
 

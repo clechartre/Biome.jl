@@ -6,7 +6,7 @@ Assign biome for TropicalBase plant functional type.
 Returns TropicalForest.
 """
 function assign_biome(
-    optpft::TropicalBase;
+    optpft::AbstractTropicalPFT;
     kwargs...
 )::AbstractBiome
     return TropicalForest()
@@ -20,7 +20,7 @@ Assign biome for TemperateBase plant functional type.
 Returns TemperateForest.
 """
 function assign_biome(
-    optpft::TemperateBase;
+    optpft::AbstractTemperatePFT;
     kwargs...
 )::AbstractBiome
     return TemperateForest()
@@ -34,7 +34,7 @@ Assign biome for BorealBase plant functional type.
 Returns BorealForest.
 """
 function assign_biome(
-    optpft::BorealBase;
+    optpft::AbstractBorealPFT;
     kwargs...
 )::AbstractBiome
     return BorealForest()
@@ -48,12 +48,12 @@ Assign biome for GrassBase plant functional type.
 Returns Grassland.
 """
 function assign_biome(
-    optpft::Union{GrassBase, Default};
+    optpft::Union{AbstractGrassPFT, Default};
     PFTStates::Dict{AbstractPFT, PFTState{Float64, Int}},
     wdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
-    if PFTStates[wdom].npp > 1500
+    if PFTStates[wdom].npp > 1000
         return Grassland()
     else
         return Desert()
