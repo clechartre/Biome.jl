@@ -1,5 +1,5 @@
 using Test
-using BIOME
+using Biome
 
 # Create mock types for testing
 struct MockPFT <: AbstractPFT
