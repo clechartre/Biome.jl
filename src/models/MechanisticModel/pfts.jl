@@ -126,7 +126,7 @@ function base_temperate_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:I
             gdd0  = [T(-Inf), +Inf],
             twm   = [T(-Inf), +Inf],
             snow  = [T(-Inf), +Inf],
-            swb   = [T(300.0), +Inf]
+            swb   = [T(420.0), +Inf]
         )
     )
     merged = merge(defaults, kwargs)
