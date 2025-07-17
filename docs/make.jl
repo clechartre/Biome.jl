@@ -1,0 +1,19 @@
+push!(LOAD_PATH, "../src/")
+using Documenter, Biome
+
+__precompile__(false)   # if you still need to disable precomp
+
+makedocs(
+  sitename  = "Biome.jl",
+  authors = "Capucine Lechartre and contributors",
+  modules   = [Biome],
+  format    = Documenter.HTML(),
+  checkdocs = :warn,
+  pages = [
+        "Home" => "index.md",
+        "User Guide" => Any[
+        "Getting Started" =>  "getting_started.md"
+        ],
+        "API" => "api.md"
+    ]
+)

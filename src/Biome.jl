@@ -1,5 +1,5 @@
 """
-    BIOME
+    Biome
 
 A Julia module for climate-based biome modeling.
 

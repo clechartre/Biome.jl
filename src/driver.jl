@@ -10,7 +10,7 @@ Thornthwaite, Koppen-Geiger, and Troll-Pfaffen classifications.
 
 using Pkg
 
-Pkg.instantiate() 
+# Pkg.instantiate() 
 using Biome   
 
 # Standard library
