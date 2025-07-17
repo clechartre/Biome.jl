@@ -17,3 +17,7 @@ makedocs(
         "API" => "api.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/clechartre/Biome.jl.git"
+)
