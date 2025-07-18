@@ -11,6 +11,12 @@ This package provides a platform for simulating climate-driven biome classificat
 
 ## Examples
 
+<div style="display: flex; gap: 1rem; align-items: center;">
+  <img src="assets/output_thornthwaite_examples.svg" alt="Example A" width="45%" />
+  <img src="assets/output_wissmann_example.svg" alt="Example B" width="45%" />
+</div>
+
+
 ## Credits
 
 The following people are involved in the development of Biome.jl 
