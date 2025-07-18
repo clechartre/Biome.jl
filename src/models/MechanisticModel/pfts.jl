@@ -6,7 +6,8 @@ using Parameters: @kwdef
 abstract type AbstractTropicalPFT <: AbstractPFT end
 abstract type AbstractTemperatePFT <: AbstractPFT end
 abstract type AbstractBorealPFT    <: AbstractPFT end
-abstract type AbstractGrassPFT     <: AbstractPFT end
+abstract type AbstractTundraPFT  <: AbstractPFT end
+
 struct PFTClassification{T<:Real,U<:Int} <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end
@@ -55,7 +56,7 @@ end
     )
 end
 
-PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
+# PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
     present::Bool = false
@@ -88,6 +89,16 @@ function base_tropical_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:In
           twm = [T(10.0), +Inf], 
           snow = [-Inf, +Inf],
           swb = [T(500.0), +Inf]
+        ),
+        mean_val = (
+            clt  = T(50.0),
+            prec = T(170.0),
+            temp = T(26.0),
+        ),
+        sd_val = (
+            clt  = T(5.0),
+            prec = T(40.0),
+            temp = T(5.0),
         )
     )
     return PFTCharacteristics{T,U}(; name="TropicalBase", merge(defaults,kwargs)...)
@@ -112,8 +123,18 @@ function base_temperate_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:I
           gdd0 = [-Inf, +Inf],
           twm = [-Inf, +Inf], 
           snow = [-Inf, +Inf],
-          swb = [T(300.0), +Inf]
-        )
+          swb = [T(400.0), +Inf]
+        ),        
+        mean_val = (
+            clt  = T(35.0),
+            prec = T(70.0),
+            temp = T(15.0),
+        ),
+        sd_val = (
+            clt  = T(10.0),
+            prec = T(40.0),
+            temp = T(8.0),
+        ),
     )
     return PFTCharacteristics{T,U}(; name="TemperateBase", merge(defaults,kwargs)...)
 end
@@ -138,37 +159,64 @@ function base_boreal_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
           twm=[-Inf,T(21.0)],
           snow=[-Inf,+Inf], 
           swb = [T(300.0),+Inf]
+        ),
+        mean_val = (
+            clt  = T(48.0),
+            prec = T(60.0),
+            temp = T(-2.0),
+        ),
+        sd_val = (
+            clt  = T(15.0),
+            prec = T(30.0),
+            temp = T(5.0),
         )
     )
     return PFTCharacteristics{T,U}(; name="BorealBase", merge(defaults,kwargs)...)
 end
 
-function base_grass_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
+function base_tundra_pft(::Type{T}, ::Type{U}; kwargs...) where {T<:Real,U<:Int}
+    # draw defaults from TundraShrubs, ColdHerbaceous, LichenForb
     defaults = (
-        phenological_type           = U(3),
-        max_min_canopy_conductance  = T(0.8),
-        Emax                        = T(6.5),
-        sw_drop                     = T(0.20),
-        sw_appear                   = T(0.30),
-        leaf_longevity              = T(8.0),
-        sapwood_respiration         = U(2),
-        optratioa                   = T(0.65),
-        kk                          = T(0.4),
-        tcurve                      = T(1.0),
-        threshold                   = T(0.40),
-        allocfact                   = T(1.0),
-        grass                       = true,
+        phenological_type      = U(2),      # mix of herbaceous and shrubs
+        max_min_canopy_conductance = T(0.8),
+        Emax                   = T(1.0),    # low photosynthetic capacity
+        sw_drop                = T(-99.9),
+        sw_appear              = T(-99.9),
+        root_fraction_top_soil = T(0.93),   # deep rooting
+        leaf_longevity         = T(8.0),    # intermediate
+        GDD5_full_leaf_out     = T(50.0),   # low growing degree days
+        GDD0_full_leaf_out     = T(25.0),   # from ColdHerbaceous
+        sapwood_respiration    = U(1),
+        optratioa              = T(0.9),
+        kk                     = T(0.5),
+        c4                     = false,
+        threshold              = T(0.33),
+        t0                     = T(-7.0),  # cold tolerance
+        tcurve                 = T(0.6),
+        respfact               = T(4.0),   # high respiration
+        allocfact              = T(1.0),
+        grass                  = false,
         constraints = (
-          tcm=[-Inf,+Inf], 
-          min=[-Inf,+Inf],
-          gdd=[-Inf,+Inf], 
-          gdd0=[-Inf,+Inf], 
-          twm=[-Inf,+Inf], 
-          snow=[-Inf,+Inf],
-          swb=[T(100.0),+Inf]
+            tcm   = [-Inf, +Inf],
+            min   = [-Inf, +Inf],
+            gdd   = [-Inf, +Inf],
+            gdd0  = [T(50.0), +Inf],
+            twm   = [-Inf, T(15.0)],
+            snow  = [T(15.0), +Inf],
+            swb   = [T(300.0), +Inf]
+        ),
+        mean_val = (
+            clt  = T(30.0),
+            prec = T(40.0),
+            temp = T(-5.0),
+        ),
+        sd_val = (
+            clt  = T(10.0),
+            prec = T(20.0),
+            temp = T(5.0),
         )
     )
-    return PFTCharacteristics{T,U}(; name="GrassBase", merge(defaults,kwargs)...)
+    return PFTCharacteristics{T,U}(; name="TundraBase", merge(defaults, kwargs)...)
 end
 
 # ————— Mixins —————
@@ -204,6 +252,84 @@ function add_needleleaf!(characteristics::PFTCharacteristics{T,U}) where {T<:Rea
     return characteristics
 end
 
+"""
+    add_grass!(c::PFTCharacteristics)
+
+Convert a base PFT into a (generic) grass form:
+- sets grass phenology and physiology
+- adds typical soil‐water stress thresholds
+- marks `grass = true`
+- injects a soil‐water‐balance constraint
+"""
+function add_grass!(characteristics::PFTCharacteristics{T,U}) where {T<:Real,U<:Int}
+    characteristics.phenological_type           = U(3)
+    characteristics.max_min_canopy_conductance = T(0.8)
+    characteristics.Emax                       = T(6.5)
+    characteristics.sw_drop                    = T(0.20)
+    characteristics.sw_appear                  = T(0.30)
+    characteristics.leaf_longevity             = T(8.0)
+    characteristics.sapwood_respiration        = U(2)
+    characteristics.optratioa                  = T(0.65)
+    characteristics.kk                         = T(0.4)
+    characteristics.threshold                  = T(0.40)
+    characteristics.allocfact                  = T(1.0)
+    characteristics.grass                      = true
+    characteristics.constraints = (
+        tcm   = characteristics.constraints.tcm,
+        min   = characteristics.constraints.min,
+        gdd   = characteristics.constraints.gdd,
+        gdd0  = characteristics.constraints.gdd0,
+        twm   = characteristics.constraints.twm,
+        snow  = characteristics.constraints.snow,
+        swb   = [T(200.0), +Inf],
+    )
+    characteristics.mean_val = (
+        clt  = T(10.0),
+        prec = T(10.0),
+        temp = characteristics.mean_val.temp,
+    )
+
+    return characteristics
+end
+
+
+"""
+    add_woody!(c::PFTCharacteristics)
+
+Convert a base PFT into a (generic) woody form:
+- enables sapwood respiration
+- boosts allocation to support wood
+- turns off `grass`
+"""
+function add_woody!(characteristics::PFTCharacteristics{T,U}) where {T<:Real,U<:Int}
+    characteristics.sapwood_respiration = U(1) # enable sapwood respiration
+    characteristics.respfact = T(4.0)     # woody tissues incur extra respiratory cost
+    characteristics.allocfact = T(1.2)     # allocate extra carbon to structural wood
+    characteristics.grass = false # definitely not a grass
+    return characteristics
+end
+
+"""
+    add_forb!(c::PFTCharacteristics)
+
+Convert a base PFT into a (generic) forb/herbaceous form:
+- sets phenology to herbaceous (type 2)
+- moderate leaf longevity
+- moderate optimal‐ratio and light‐use efficiency
+- higher allocation to reproduction/quick turnover
+- ensures `grass` is false
+"""
+function add_forb!(characteristics::PFTCharacteristics{T,U}) where {T<:Real,U<:Int}
+    characteristics.phenological_type = U(2)        # herbaceous phenology
+    characteristics.leaf_longevity    = T(8.0)      # short‐to‐medium leaf lifespan
+    characteristics.optratioa        = T(0.8)       # typical light optimum
+    characteristics.kk               = T(0.6)       # moderate curvature of light‐response
+    characteristics.allocfact        = T(1.5)    # more allocation to rapid turnover tissues
+    characteristics.grass            = false
+    return characteristics
+end
+
+
 # ————— Concrete subtypes + mixin‐powered constructors —————
 
 # ————— Concrete subtypes —————
@@ -219,10 +345,11 @@ end
   @kwdef mutable struct BorealPFT{T<:Real,U<:Int} <: AbstractBorealPFT
     characteristics::PFTCharacteristics{T,U}
   end
-  
-  @kwdef mutable struct GrassPFT{T<:Real,U<:Int}    <: AbstractGrassPFT
+
+  @kwdef mutable struct TundraPFT{T<:Real,U<:Int} <: AbstractTundraPFT
     characteristics::PFTCharacteristics{T,U}
-  end
+end
+
 
 struct Default{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
@@ -238,47 +365,47 @@ end
 None{T,U}() where {T<:Real,U<:Int} = None{T,U}(PFTCharacteristics{T,U}())
 None() = None{Float64,Int}()
   
-  # ————— Type‐call constructors with mixins —————
+# ————— Type‐call constructors with mixins —————
   
-  # Tropical
-  function (::Type{TropicalPFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
+# Tropical
+function (::Type{TropicalPFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
     characteristics = base_tropical_pft(T, U)
     for mix in mixins
       mix(characteristics)
     end
     characteristics.name = name
     return TropicalPFT{T,U}(characteristics)
-  end
+end
   
-  # Temperate
-  function (::Type{TemperatePFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
+# Temperate
+function (::Type{TemperatePFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
     characteristics = base_temperate_pft(T, U)
     for mix in mixins
       mix(characteristics)
     end
     characteristics.name = name
     return TemperatePFT{T,U}(characteristics)
-  end
+end
   
-  # Boreal
-  function (::Type{BorealPFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
+# Boreal
+function (::Type{BorealPFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
     characteristics = base_boreal_pft(T, U)
     for mix in mixins
       mix(characteristics)
     end
     characteristics.name = name
     return BorealPFT{T,U}(characteristics)
-  end
+end
   
-  # Grass
-  function (::Type{GrassPFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
-    characteristics = base_grass_pft(T, U)
+# Tundra
+function (::Type{TundraPFT{T,U}})(name::String, mixins::Function...) where {T<:Real,U<:Int}
+    char = base_tundra_pft(T, U)
     for mix in mixins
-      mix(characteristics)
+        mix(char)
     end
-    characteristics.name = name
-    return GrassPFT{T,U}(characteristics)
-  end
+    char.name = name
+    return TundraPFT{T,U}(char)
+end
 
 """
     get_characteristic(pft, prop)
@@ -305,10 +432,3 @@ function dominance_environment(pft::AbstractPFT, variable::Symbol, clt::Real)
     dist = Normal(mv, sd)
     return pdf(dist, clt) / pdf(dist, mv)
 end
-
-# ————— Usage examples —————
-
-# trop = TropicalPFT{Float64,Int}("RainTree", add_deciduous!, add_broadleaf!)
-# temp = TemperatePFT{Float64,Int}("Oak",   add_deciduous!, add_broadleaf!)
-# bore = BorealPFT{Float64,Int}("Pine",  add_evergreen!, add_needleleaf!)
-# gras = GrassPFT{Float64,Int}("PrairieGrass",)

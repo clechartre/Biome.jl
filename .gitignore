@@ -1,5 +1,6 @@
 # Project specific # 
 data/
+build/
 
 # Byte-compiled
 __pycache__/

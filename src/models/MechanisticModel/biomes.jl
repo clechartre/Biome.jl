@@ -19,6 +19,11 @@ struct Grassland <: AbstractBiome
     Grassland() = new(4)
 end
 
+struct Tundra <: AbstractBiome
+    value::Int
+    Tundra() = new(5)
+end
+
 struct Desert <: AbstractBiome
     value::Int
     Desert() = new(21)

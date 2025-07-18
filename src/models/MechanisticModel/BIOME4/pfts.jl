@@ -2,7 +2,7 @@
 
 module BIOME4
 using ..Biome: AbstractPFT, PFTCharacteristics, PFTClassification,
- base_tropical_pft, base_temperate_pft, base_boreal_pft, base_grass_pft,
+ base_tropical_pft, base_temperate_pft, base_boreal_pft, base_tundra_pft,
   AbstractBiome, AbstractPFTList, PFTState, Default, None, Desert, get_characteristic
 
 abstract type AbstractBIOME4PFT <: AbstractPFT end
@@ -162,9 +162,9 @@ struct C3C4TemperateGrass{T<:Real,U<:Int} <: AbstractBIOME4PFT
     characteristics::PFTCharacteristics{T,U}
 end
 C3C4TemperateGrass{T,U}() where {T<:Real,U<:Int} = C3C4TemperateGrass{T,U}(
-    base_grass_pft(T,U;
+    base_temperate_pft(T,U;
         name="C3C4TemperateGrass", Emax=T(6.5), root_fraction_top_soil=T(0.83), leaf_longevity=T(8.0),
-        GDD0_full_leaf_out=T(100.0), t0=T(4.5), respfact=T(1.6), optratioa = T(0.65), 
+        GDD0_full_leaf_out=T(100.0), t0=T(4.5), respfact=T(1.6), optratioa = T(0.65), grass = true, c4 = true,
         constraints=(tcm=[-Inf,+Inf], min=[-Inf,T(0.0)], gdd=[T(550),+Inf], gdd0=[-Inf,+Inf], twm=[-Inf,+Inf], snow=[-Inf,+Inf], swb=[-Inf,+Inf]),
         mean_val=(clt=T(16.6), prec=T(12.2), temp=T(21.3)), sd_val=(clt=T(6.9), prec=T(13.4), temp=T(6.2))
     )
@@ -175,8 +175,9 @@ struct C4TropicalGrass{T<:Real,U<:Int} <: AbstractBIOME4PFT
     characteristics::PFTCharacteristics{T,U}
 end
 C4TropicalGrass{T,U}() where {T<:Real,U<:Int} = C4TropicalGrass{T,U}(
-    base_grass_pft(T,U;
-        name="C4TropicalGrass", Emax=T(8.0), root_fraction_top_soil=T(0.57), leaf_longevity=T(10.0), GDD0_full_leaf_out=T(-99.9), c4=true, t0=T(10.0), respfact=T(0.8),
+    base_tropical_pft(T,U;
+        name="C4TropicalGrass", Emax=T(8.0), root_fraction_top_soil=T(0.57), leaf_longevity=T(10.0), 
+        GDD0_full_leaf_out=T(-99.9), c4=true, t0=T(10.0), respfact=T(0.8), grass = true,
         constraints=(tcm=[-Inf,+Inf], min=[T(-3.0),+Inf], gdd=[-Inf,+Inf], gdd0=[-Inf,+Inf], twm=[T(10.0),+Inf], snow=[-Inf,+Inf], swb=[T(200),+Inf]),
         mean_val=(clt=T(9.4), prec=T(1.7), temp=T(23.2)), sd_val=(clt=T(1.4), prec=T(2.1), temp=T(2.2))
     )
@@ -187,7 +188,7 @@ struct TundraShrubs{T<:Real,U<:Int} <: AbstractBIOME4PFT
     characteristics::PFTCharacteristics{T,U}
 end
 TundraShrubs{T,U}() where {T<:Real,U<:Int} = TundraShrubs{T,U}(
-    base_grass_pft(T,U;
+    base_tundra_pft(T,U;
         name="TundraShrubs", max_min_canopy_conductance=T(0.8), Emax=T(1.0), root_fraction_top_soil=T(0.93), leaf_longevity=T(8.0),
         sw_drop=T(-99.9), sw_appear=T(-99.9), t0=T(-7.0), tcurve=T(0.6), respfact=T(4.0),
         constraints=(tcm=[-Inf,+Inf], min=[-Inf,+Inf], gdd=[-Inf,+Inf], gdd0=[T(50.0),+Inf], twm=[-Inf,T(15.0)], snow=[T(15.0),+Inf], swb=[T(150),+Inf]),
@@ -200,9 +201,9 @@ struct ColdHerbaceous{T<:Real,U<:Int} <: AbstractBIOME4PFT
     characteristics::PFTCharacteristics{T,U}
 end
 ColdHerbaceous{T,U}() where {T<:Real,U<:Int} = ColdHerbaceous{T,U}(
-    base_grass_pft(T,U;
+    base_tundra_pft(T,U;
         name="ColdHerbaceous", phenological_type=U(2), max_min_canopy_conductance=T(0.8), Emax=T(1.0),
-         root_fraction_top_soil=T(0.93), leaf_longevity=T(8.0),
+         root_fraction_top_soil=T(0.93), leaf_longevity=T(8.0), grass = true,
         GDD0_full_leaf_out=T(25.0), t0=T(-7.0), tcurve=T(0.6), respfact=T(4.0), optratioa = T(0.75), kk = T(0.30), 
         constraints=(tcm=[-Inf,+Inf], min=[-Inf,+Inf], gdd=[-Inf,+Inf], gdd0=[T(50.0),+Inf], twm=[-Inf,T(15.0)], snow=[-Inf,+Inf], swb=[T(150),+Inf]),
         mean_val=(clt=T(10.4), prec=T(2.0), temp=T(23.5)), sd_val=(clt=T(2.5), prec=T(1.6), temp=T(2.3))

@@ -11,7 +11,7 @@ Thornthwaite, Koppen-Geiger, and Troll-Pfaffen classifications.
 using Pkg
 
 # Pkg.instantiate() 
-using Biome   
+using Biome
 
 # Standard library
 using Statistics
@@ -81,6 +81,7 @@ function main(
     # Instantiate the PFTs
     PFTList = get_pft_list(model_instance)
     numofpfts = length(PFTList.pft_list)
+    println("TemperateGrass", TemperatePFT{Float64,Int}("TemperateGrass", add_grass!))
 
     # Open the first dataset to get dimensions, then close
     temp_raster = Raster(tempfile)
@@ -411,7 +412,9 @@ function get_pft_list(m::BaseModel)
         TemperatePFT{Float64,Int}("Oak", add_deciduous!, add_broadleaf!),
         BorealPFT{Float64,Int}("BorealEvergreen",  add_evergreen!, add_needleleaf!),
         BorealPFT{Float64,Int}("BorealDeciduous",  add_deciduous!, add_needleleaf!),
-        GrassPFT{Float64,Int}("PrairieGrass",)
+        TropicalPFT{Float64,Int}("TropicalGrass", add_grass!),
+        TemperatePFT{Float64,Int}("TemperateGrass", add_grass!),
+        TundraPFT{Float64,Int}("Tundra",),
     ])
 end
 

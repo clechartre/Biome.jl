@@ -70,7 +70,7 @@ function competition2(
     optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, BIOME4PFTS, PFTStates)
 
     # Competition
-    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft = determine_optimal_pft(
+    optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft, gdom = determine_optimal_pft(
         m,
         optpft,
         subpft,
@@ -96,7 +96,7 @@ function competition2(
             gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates)
     else 
         biome = assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates
+            gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates, gdom=gdom
         )
     end
 
@@ -280,7 +280,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
     grasslai = PFTStates[gdom].lai
     nppdif = woodnpp - grassnpp
 
-    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
+    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft, gdom
 end
     
 
@@ -519,7 +519,7 @@ function determine_optimal_pft(
         break
     end
 
-    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft
+    return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft, grasspft
 end
 
 # FIXME what does this function do and can we detangle the output stuff from the calculations

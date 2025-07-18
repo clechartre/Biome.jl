@@ -12,7 +12,8 @@ makedocs(
   pages = [
         "Home" => "index.md",
         "User Guide" => Any[
-        "Getting Started" =>  "getting_started.md"
+        "Getting Started" =>  "getting_started.md",
+        "Plant Functional Types" => "pfts.md",
         ],
         "API" => "api.md"
     ]
