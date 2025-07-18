@@ -54,7 +54,7 @@ function assign_biome(
     gdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
-    if PFTStates[gdom].npp > 500
+    if PFTStates[wdom].npp > 1000
         return Grassland()
     else
         return Desert()

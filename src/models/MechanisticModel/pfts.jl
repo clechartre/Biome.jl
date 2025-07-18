@@ -154,7 +154,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             gdd0 = [-Inf, Inf],
             twm  = [-Inf, Inf],
             snow = [-Inf, Inf],
-            swb  = [250.0, Inf]
+            swb  = [100.0, Inf]
         )
     ),
 
