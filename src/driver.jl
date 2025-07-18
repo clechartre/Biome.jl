@@ -81,7 +81,6 @@ function main(
     # Instantiate the PFTs
     PFTList = get_pft_list(model_instance)
     numofpfts = length(PFTList.pft_list)
-    println("TemperateGrass", TemperatePFT{Float64,Int}("TemperateGrass", add_grass!))
 
     # Open the first dataset to get dimensions, then close
     temp_raster = Raster(tempfile)
@@ -407,15 +406,13 @@ Return the AbstractPFTList appropriate for `model`.
 """
 function get_pft_list(m::BaseModel)
     return PFTClassification{Float64,Int}([
-        TropicalPFT{Float64,Int}("TropicalBroadleavedDeciduous", add_deciduous!, add_broadleaf!),
-        TropicalPFT{Float64,Int}("TropicalBroadleavedEvergreen", add_evergreen!, add_broadleaf!),
-        TemperatePFT{Float64,Int}("Oak", add_deciduous!, add_broadleaf!),
-        BorealPFT{Float64,Int}("BorealEvergreen",  add_evergreen!, add_needleleaf!),
-        BorealPFT{Float64,Int}("BorealDeciduous",  add_deciduous!, add_needleleaf!),
-        TropicalPFT{Float64,Int}("TropicalGrass", add_grass!),
-        TemperatePFT{Float64,Int}("TemperateGrass", add_grass!),
-        TundraPFT{Float64,Int}("Tundra",),
-    ])
+        TropicalPFT(),
+        TemperatePFT(),
+        BorealPFT(),
+        GrassPFT(),
+        TundraPFT(),
+        ]
+    )
 end
 
 function get_pft_list(m::Union{BIOME4Model, BIOMEDominanceModel})

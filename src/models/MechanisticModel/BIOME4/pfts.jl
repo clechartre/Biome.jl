@@ -1,6 +1,5 @@
 module BIOME4
 using ..Biome: AbstractPFT, PFTCharacteristics, PFTClassification,
- base_tropical_pft, base_temperate_pft, base_boreal_pft, base_tundra_pft,
   AbstractBiome, AbstractPFTList, PFTState, Default, None, Desert, get_characteristic
 
 abstract type AbstractBIOME4PFT <: AbstractPFT end
