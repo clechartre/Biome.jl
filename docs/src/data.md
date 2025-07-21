@@ -1,8 +1,8 @@
-# Getting Started
+# Data
 
 This user guide describes the basic structures and functions to run the base models provided in the package, and define your biome schemes and run them.
 
-## Requirements in Input data:
+## Requirements in Input data
 
 ## Climatological and soil input
 
