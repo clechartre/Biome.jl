@@ -23,5 +23,6 @@ The following people are involved in the development of Biome.jl
 * [Capucine Lechartre](https://github.com/clechartre) - Main development 
 * [Victor Boussange](https://github.com/vboussange) - Code architecture
 * [Niklaus Zimmermann](https://www.wsl.ch/de/mitarbeitende/zimmerma/) - Theoretical development
+* [Philipp Brun](https://www.wsl.ch/de/mitarbeitende/brunp/) - Theoretical development
 
 All contributors are affiliated with the [Swiss Federal Institute for Forest, Snow, and Landscape Research WSL](https://www.wsl.ch/en/)

@@ -7,6 +7,75 @@ The defintion of PFTs often includes information on their climatic range and on 
 
 In this package, we provide you with base PFTs based on climate zone: Tropical, Temperate, Boreal, and Tundra. And with additional traits you could add onto them to compose your own PFT: Deciduous/Evergreen, Broadleaf/Needleleaf, Grass/Woody/Forb. You also can manually modify these traits. 
 
+# PFTs
+
+We provide you with 5 base PFTs: 3 trees (evergreen): Temperate, Tropical, Boreal; and 2 Grass-like: Grass and Tundra, and a Default and None with 0/default values. We have initialized them with generic parameters. 
+You can modify individual parameters of your base PFT by doing: 
+
+````
+C4Grass =  GrassPFT{Float64,Int64}(PFTCharacteristics{Float64,Int64}(
+             name = "C4Grass",
+             c4 = true))
+
+
+TropicalDeciduous = TropicalPFT{Float64,Int64}(PFTCharacteristics{Float64,Int64}(phenological_type = 2))          
+````
+These subtypes will inherit the supertypes of our base PFTs, useful later on in your biome definition 
+
+`````
+typeof(C4Grass)
+GrassPFT{Float64, Int64}
+
+typeof(TropicalDeciduous)
+TropicalPFT{Float64, Int64}
+`````
+
+You can also completely define your PFT from the base. For example, here is a WoodyDesert plant from BIOME4: 
+
+`````
+function WoodyDesert{T,U}() where {T<:Real,U<:Int}
+    return WoodyDesert{T,U}(
+        PFTCharacteristics{T,U}(
+            "C3C4WoodyDesert",
+            U(1),
+            T(0.1),
+            T(1.0),
+            T(-99.9),
+            T(-99.9),
+            T(0.53),
+            T(12.0),
+            T(-99.9),
+            T(-99.9),
+            U(1),
+            T(0.70),
+            T(0.3),
+            true,
+            T(0.33),
+            T(5.0),
+            T(1.0),
+            T(1.4),
+            T(1.0),
+            false,
+            (
+                tcm=[-Inf, +Inf],
+                min=[T(-45.0), +Inf],
+                gdd=[T(500), +Inf],
+                gdd0=[-Inf, +Inf],
+                twm=[T(10.0), +Inf],
+                snow=[-Inf, +Inf],
+                swb=[-Inf,T(500)]
+            ),
+            (clt=T(9.2), prec=T(2.5), temp=T(23.9)),
+            (clt=T(2.2), prec=T(2.8), temp=T(2.7))
+        )
+    )
+end
+
+
+WoodyDesert() = WoodyDesert{Float64,Int}()
+
+`````
+
 # PFT traits in the model
 
 The model is based on a series traits used to compute the growth of each PFT through photosynthesis, water acquisition, heterotropic respiration, ... 

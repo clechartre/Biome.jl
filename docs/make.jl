@@ -14,8 +14,14 @@ makedocs(
         "User Guide" => Any[
         "Getting Started" =>  "getting_started.md",
         "Plant Functional Types" => "pfts.md",
+        "Climate Models"  => Any[
+            "Koppen-Geiger" => "koppen.md",
+            "Thornthwaite" => "thornthwaite.md",
+            "Troll-Pfaffen" => "trollpfaffen.md",
+            "Wissmann" => "wissmann.md"]
         ],
-        "API" => "api.md"
+        "API" => "api.md",
+        
     ]
 )
 

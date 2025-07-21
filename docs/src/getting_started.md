@@ -15,6 +15,8 @@ The data on soil characteristics are generated using the [makesoil](https://gith
 
 ## Climate Envelope Models
 
+The climate envelope models are a reimplementation in Julia of the [CHELSA module for Mapping climatologies at high resolutions](https://chelsa-climate.org/1-km-global-koppen-geiger-climate-classification-for-present-and-future/). The original code is available for use in [SAGA](https://saga-gis.sourceforge.io/saga_tool_doc/7.3.0/climate_tools_19.html)
+
 The Thornthwaite, TrollPfaffen, and Wissmann models will work with 
 * Temperature climatologies
 * Precipiation climatologies
