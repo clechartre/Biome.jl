@@ -1,5 +1,5 @@
 """
-    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, states)
+    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, PFTstates)
 
 Calculate constraints for biome classification based on temperature, GDD, and 
 other parameters. Sets each PFT’s `present` flag in `states`.
@@ -28,8 +28,8 @@ function constraints(
     gdd0::T,
     maxdepth::T,
     BIOME4PFTS::AbstractPFTList,
-    PFTstates::Dict{AbstractPFT,PFTState{T,Int}}
-)::Tuple{T,Dict{AbstractPFT,PFTState{T,Int}}} where {T<:Real}
+    PFTstates::Dict{AbstractPFT,PFTState}
+)::Tuple{T,Dict{AbstractPFT,PFTState}} where {T<:Real}
 
     # adjust minimum temp for frost delay
     tmin = tminin <= tcm ? tminin : tcm - T(5.0)

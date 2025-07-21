@@ -1,7 +1,7 @@
 using Test
-using BIOME
+using Biome
 
-@testset "BIOME.jl Tests" begin
+@testset "Bione.jl Tests" begin
     @testset "MechanisticModel Tests" begin
         include("test_BIOME/MechanisticModel/test_climdata.jl")
         include("test_BIOME/MechanisticModel/test_constraints.jl")
@@ -15,7 +15,14 @@ using BIOME
         
         @testset "Growth Subroutines Tests" begin
             include("test_BIOME/MechanisticModel/test_growth_subroutines/test_c4photo.jl")
-            # Add other growth subroutine tests here
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_calcphi.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_daily.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_fire.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_hetresp.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_hydrology.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_isotope.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_photosynthesis.jl")
+            include("test_BIOME/MechanisticModel/test_growth_subroutines/test_respiration.jl")
         end
     end
 end

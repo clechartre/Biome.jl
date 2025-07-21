@@ -1,5 +1,29 @@
 using Statistics
 
+"""
+    run(m::WissmannModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
+
+Classify climate by the Wissmann scheme using 12 months of temperature and precipitation.
+
+# Arguments
+- `m::WissmannModel`  
+  Model instance (for dispatch).
+- `vars_in::Vector{Union{T,U}}`  
+  Length‑28 vector where:
+  - indices 5–16: monthly mean temperatures
+  - indices 17–28: monthly precipitation totals
+- `args..., kwargs...`  
+  Ignored extras.
+
+# Returns
+- `output::Vector{Int}` (length 1)  
+  Single-element vector holding the integer code (1–22) of the matched Wissmann zone.
+
+# Notes
+- Computes seasonal totals, mean, min/max temperatures.
+- Determines hemisphere to compare winter vs summer precipitation.
+- Applies tiered thresholds for Polar, Boreal, Temperate, and Tropical groups.
+"""
 function run(m::WissmannModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Wissmann climate zones
     WI = Dict(

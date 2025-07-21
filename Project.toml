@@ -1,7 +1,7 @@
-name = "BIOME"
+name = "Biome"
 uuid = "5eeb3664-5dad-11f0-365e-cf48b074b7a5"
-version = "0.1.0"
 authors = ["Capucine Lechartre <capucine.lechartre@wsl.ch>"]
+version = "0.1.0"
 
 [deps]
 ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
@@ -15,11 +15,13 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
 DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ImageTransformations = "02fcd773-0e25-5acc-982a-7f6622650795"
 Infiltrator = "5903a43b-9cc3-4c30-8d17-598619ec4e9b"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 Missings = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"

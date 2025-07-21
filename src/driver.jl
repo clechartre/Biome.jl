@@ -10,8 +10,8 @@ Thornthwaite, Koppen-Geiger, and Troll-Pfaffen classifications.
 
 using Pkg
 
-Pkg.instantiate() 
-using BIOME   
+# Pkg.instantiate() 
+using Biome
 
 # Standard library
 using Statistics
@@ -59,7 +59,7 @@ function main(
     sunfile::String,
     soilfile::String,
     year::String,
-    model::String
+    model::String = "Base"
 ) where {T<:Real}
     # Check the model in use
     model_instance = if model == "biome4"
@@ -72,9 +72,15 @@ function main(
         KoppenModel()
     elseif model == "trollpfaffen"
         TrollPfaffenModel()
+    elseif model == "dominance"
+        BIOMEDominanceModel()
     else
-        error("Unknown model: $model")
+        BaseModel()
     end
+
+    # Instantiate the PFTs
+    PFTList = get_pft_list(model_instance)
+    numofpfts = length(PFTList.pft_list)
 
     # Open the first dataset to get dimensions, then close
     temp_raster = Raster(tempfile)
@@ -110,12 +116,12 @@ function main(
     if isfile(outfile)
         println("File $outfile already exists. Resuming from last processed row.")
         output_dataset = NCDataset(outfile, "a")
-        output_stack = load_existing_rasterstack(output_dataset, model_instance, lon, lat)
+        output_stack = load_existing_rasterstack(output_dataset, model_instance, lon, lat, numofpfts)
     else
         output_dataset = NCDataset(outfile, "c")
         println("Creating new output file: $outfile")
-        create_output_variables(output_dataset, model_instance, lon, lat, cntx, cnty)
-        output_stack = create_output_rasterstack(model_instance, lon, lat, cntx, cnty)
+        create_output_variables(output_dataset, model_instance, lon, lat, cntx, cnty, numofpfts)
+        output_stack = create_output_rasterstack(model_instance, lon, lat, cntx, cnty, numofpfts)
     end
 
     # Set up chunking variables
@@ -193,9 +199,6 @@ function main(
         println("max ksat: ", maximum(ksat_chunk), ", min ksat: ", minimum(ksat_chunk))
         println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
 
-        # Instantiate the PFTs before going into pixels
-        PFTS = PFTClassification()
-
         # Process the data in this chunk
         process_chunk(
             current_chunk_size,
@@ -211,11 +214,11 @@ function main(
             whc_chunk,
             dz, 
             lon_chunk,
-            output_stack,  # Changed to RasterStack
+            output_stack,
             output_dataset,
             strx,
             model_instance,
-            PFTS
+            PFTList
         )
     end
 
@@ -229,7 +232,7 @@ end
 
 Create a RasterStack for output variables based on the model type.
 """
-function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
+function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty, numofpfts)
     # Create coordinate dimensions
     lon_dim = X(lon)
     lat_dim = Y(lat)
@@ -248,9 +251,9 @@ function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
                 name=Symbol(var_name)
             )
         elseif var_info.dims == ("lon", "lat", "pft")
-            pft_dim = Dim{:pft}(1:14)
+            pft_dim = Dim{:pft}(1:numofpfts+1)
             raster = Raster(
-                fill(-9999.0, cntx, cnty, 14),
+                fill(-9999.0, cntx, cnty, numofpfts+1),
                 dims=(lon_dim, lat_dim, pft_dim),
                 name=Symbol(var_name)
             )
@@ -267,7 +270,7 @@ end
 
 Load existing data from NetCDF into a RasterStack for resume functionality.
 """
-function load_existing_rasterstack(dataset, model::BiomeModel, lon, lat)
+function load_existing_rasterstack(dataset, model::BiomeModel, lon, lat, numofpfts)
     # Create coordinate dimensions
     lon_dim = X(lon)
     lat_dim = Y(lat)
@@ -288,7 +291,7 @@ function load_existing_rasterstack(dataset, model::BiomeModel, lon, lat)
                     name=Symbol(var_name)
                 )
             elseif var_info.dims == ("lon", "lat", "pft")
-                pft_dim = Dim{:pft}(1:14)
+                pft_dim = Dim{:pft}(1:numofpfts+1)
                 data = Array(dataset[var_name][:, :, :])
                 raster = Raster(
                     data,
@@ -314,7 +317,7 @@ function process_chunk(
     temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
     lon_chunk, output_stack::RasterStack,
-    output_dataset, strx, model_instance::BiomeModel, PFTS::AbstractPFTList
+    output_dataset, strx, model_instance::BiomeModel, PFTList::AbstractPFTList
 )
     for y in 1:cnty
         println("Serially processing y index $y")
@@ -334,7 +337,7 @@ function process_chunk(
             process_cell(
                 x, y, strx, temp_chunk, elv_chunk, lat_chunk, co2, tmin_chunk, 
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, output_stack, model_instance, PFTS
+                dz, lon_chunk, output_stack, model_instance, PFTList
             )
         end
 
@@ -354,7 +357,7 @@ function process_cell(
     x, y, strx,
     temp_chunk, elv_chunk, lat_chunk, co2::T, tmin_chunk, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, output_stack::RasterStack, model::BiomeModel, PFTS::AbstractPFTList
+    lon_chunk, output_stack::RasterStack, model::BiomeModel, PFTList::AbstractPFTList
 ) where {T<:Real}
     # Check if already processed
     primary_var = get_primary_variable(model)
@@ -388,10 +391,36 @@ function process_cell(
     input[49] = lon_chunk[x]
 
     # Run the model 
-    output = BIOME.run(model, input, PFTS)
+    output = Biome.run(model, input, PFTList)
+
+    numofpfts = length(PFTList.pft_list)
     
     # Write results using model-specific function
-    process_cell_output(model, x, y, output, output_stack)
+    process_cell_output(model, x, y, output, output_stack; numofpfts = numofpfts)
+end
+
+"""
+  get_pft_list(model::Union{BaseModel, BIOME4Model})
+
+Return the AbstractPFTList appropriate for `model`.
+"""
+function get_pft_list(m::BaseModel)
+    return PFTClassification([
+        TropicalPFT(),
+        TemperatePFT(),
+        BorealPFT(),
+        GrassPFT(),
+        TundraPFT()
+        ]
+    )
+end
+
+function get_pft_list(m::Union{BIOME4Model, BIOMEDominanceModel})
+    return BIOME4.PFTClassification()
+end
+
+function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel})
+    return PFTClassification()
 end
 
 """
@@ -399,7 +428,7 @@ end
 
 Get the primary variable name for each model type (used for checking if processed).
 """
-function get_primary_variable(model::BIOME4Model)
+function get_primary_variable(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
     return :biome
 end
 
@@ -425,26 +454,26 @@ end
 
 Write model output to the RasterStack based on model type.
 """
-function process_cell_output(model::BIOME4Model, x, y, output, output_stack::RasterStack)
+function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output, output_stack::RasterStack; numofpfts)
     output_stack[:biome][x, y] = output[1]
     output_stack[:wdom][x, y] = output[2]
-    output_stack[:npp][x, y, :] = output[3:16]
+    output_stack[:npp][x, y, :] = output[3:3+numofpfts]
 end
 
-function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack)
+function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack; numofpfts)
     output_stack[:climate_zone][x, y] = output[1]
 end
 
-function process_cell_output(model::KoppenModel, x, y, output, output_stack::RasterStack)
+function process_cell_output(model::KoppenModel, x, y, output, output_stack::RasterStack; numofpfts)
     output_stack[:koppen_class][x, y] = output[1]
 end
 
-function process_cell_output(model::ThornthwaiteModel, x, y, output, output_stack::RasterStack)
+function process_cell_output(model::ThornthwaiteModel, x, y, output, output_stack::RasterStack; numofpfts)
     output_stack[:temperature_zone][x, y] = output[1]
     output_stack[:moisture_zone][x, y] = output[2]
 end
 
-function process_cell_output(model::TrollPfaffenModel, x, y, output, output_stack::RasterStack)
+function process_cell_output(model::TrollPfaffenModel, x, y, output, output_stack::RasterStack; numofpfts)
     output_stack[:troll_zone][x, y] = output[1]
 end
 
@@ -471,7 +500,7 @@ end
 
 Define the output variables and their properties for different biome models.
 """
-function get_output_schema(model::BIOME4Model)
+function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
     return Dict(
         "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
         "wdom" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant woody vegetation")),
@@ -509,15 +538,15 @@ end
 
 Get the dimensions required for each model type.
 """
-function get_required_dimensions(model::BIOME4Model, cntx, cnty)
+function get_required_dimensions(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, cntx, cnty; numofpfts)
     return Dict(
         "lon" => cntx,
         "lat" => cnty,
-        "pft" => 14
+        "pft" => numofpfts+1
     )
 end
 
-function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel}, cntx, cnty)
+function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel}, cntx, cnty; kwargs...)
     return Dict(
         "lon" => cntx,
         "lat" => cnty
@@ -529,9 +558,9 @@ end
 
 Create output variables in NetCDF dataset based on the model type.
 """
-function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnty)
+function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnty, numofpfts)
     # Define dimensions
-    dims = get_required_dimensions(model, cntx, cnty)
+    dims = get_required_dimensions(model, cntx, cnty; numofpfts = numofpfts)
     for (name, size) in dims
         defDim(dataset, name, size)
     end
@@ -554,7 +583,7 @@ function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnt
         if var_info.dims == ("lon", "lat")
             var[:, :] = fill(-9999, cntx, cnty)
         elseif var_info.dims == ("lon", "lat", "pft")
-            var[:, :, :] = fill(-9999, cntx, cnty, 14)
+            var[:, :, :] = fill(-9999, cntx, cnty, numofpfts+1)
         end
     end
     

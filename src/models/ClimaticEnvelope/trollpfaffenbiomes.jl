@@ -1,6 +1,31 @@
 # Third-Party
 using Statistics
 
+"""
+    run(m::TrollPfaffenModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
+
+Quickly classify the climate according to the Troll‑Paffen scheme using 12 months of temperature and precipitation.
+
+# Arguments
+- `m::TrollPfaffenModel`  
+  Model instance (for dispatch only).
+- `vars_in::Vector{Union{T,U}}`  
+  Length‑28 vector where:
+  - indices 5–16: monthly mean temperatures (T<:Real)
+  - indices 17–28: monthly total precipitation (T<:Real)
+- `args..., kwargs...`  
+  Ignored extra arguments.
+
+# Returns
+- `output::Vector{Any}` (length 50)  
+  All zeros except:
+  - `output[1]`: integer code (1–38) of the identified Troll‑Paffen climate zone.
+
+# Notes
+- Uses utility functions `get_growing_degree_days`, `get_humid_months`, and `is_between`.
+- Zones range from polar ice‑deserts through tropical rain‑forest, with `38` = Not Classified.
+"""
+
 function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
 
     # Define Troll-Paffen climate zones with numerical values and descriptions

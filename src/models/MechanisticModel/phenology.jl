@@ -22,7 +22,7 @@ to grow a full leaf canopy.
 - `dphen`: Modified daily phenology array (365x2 matrix)
 
 # Notes
-- Phencase 1: Standard phenology based on GDD5
+- Phencase 1: Evergreen Phenology
 - Phencase 2: Alternative phenology based on GDD0
 - Fall leaf drop occurs when temperature < -10°C or day length < 10 hours
 """
