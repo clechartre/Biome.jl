@@ -17,7 +17,7 @@ The original code works with a main routine and subroutines. You can see the inf
 Below an example of output generated with the model using the Kaplan BIOME4 logic.
 
 <p align="middle">
-  <img src="figures/example_model_output.jpg"/>
+  <img src="figures/output_b4.svg"/>
 </p>
 
 

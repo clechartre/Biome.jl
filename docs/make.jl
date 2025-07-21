@@ -18,7 +18,10 @@ makedocs(
             "Koppen-Geiger" => "koppen.md",
             "Thornthwaite" => "thornthwaite.md",
             "Troll-Pfaffen" => "trollpfaffen.md",
-            "Wissmann" => "wissmann.md"]
+            "Wissmann" => "wissmann.md",
+            ],
+        "Mechanistic Model" => Any[
+            "BIOME4" => "biome4.md",]
         ],
         "API" => "api.md",
         
