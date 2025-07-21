@@ -49,7 +49,7 @@ Returns Grassland.
 """
 function assign_biome(
     optpft::Union{AbstractGrassPFT, Default};
-    PFTStates::Dict{AbstractPFT, PFTState{Float64, Int}},
+    PFTStates::Dict{AbstractPFT, PFTState},
     wdom::AbstractPFT,
     gdom::AbstractPFT,
     kwargs...

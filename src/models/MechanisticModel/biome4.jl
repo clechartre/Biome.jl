@@ -79,14 +79,17 @@ function run(
     numofpfts = length(PFTList.pft_list)
 
     # Create the Dict that holds the PFT dynamic states
-    PFTStates = Dict{AbstractPFT,PFTState{Float64,Int}}()
+    PFTStateobj() = PFTState(PFTCharacteristics())
+    PFTStates = Dict{AbstractPFT,PFTState}()
+
     for pft in PFTList.pft_list
-        PFTStates[pft] = PFTState{Float64,Int}()
+        PFTStates[pft] = PFTState(pft)
     end
     
     # Add None and Default abstract PFT types
-    PFTStates[NONE_INSTANCE] = PFTState{Float64,Int}()
-    PFTStates[DEFAULT_INSTANCE] = PFTState{Float64,Int}()
+    # zero-arg constructor uses default characteristic types
+    PFTStates[NONE_INSTANCE] = PFTStateobj()
+    PFTStates[DEFAULT_INSTANCE] = PFTStateobj()
     PFTStates[DEFAULT_INSTANCE].dominance = dominance_environment(DEFAULT_INSTANCE, :clt, mclou) + dominance_environment(DEFAULT_INSTANCE, :temp, mtemp) + dominance_environment(DEFAULT_INSTANCE, :prec, mprec)
     
     # Initialize arrays for calculations

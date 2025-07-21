@@ -70,11 +70,13 @@ function growth(
     tsoil::AbstractArray{T},
     mnpp::Vector{T},
     c4mnpp::Vector{T},
-    PFTStates::PFTState{T,U}
-)::Tuple{T,AbstractArray{T},AbstractArray{T}, PFTState{T,U}} where {T<:Real, U<:Int}
+    PFTStates::PFTState
+)::Tuple{T,AbstractArray{T},AbstractArray{T}, PFTState} where {T<:Real}
     # Initialize variables
     c4_override = nothing
     reprocess = true
+
+    U = typeof(pft.characteristics).parameters[2]
 
     while reprocess == true
         reprocess = false

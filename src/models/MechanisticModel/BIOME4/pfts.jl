@@ -790,9 +790,9 @@ function assign_biome(
     gdd0::T,
     kwargs... 
 )::AbstractBiome where {T<:Real}
-    if gdd0 < T(200.0)
+    if gdd0 < 200.0
         return CushionForbsLichenMoss()
-    elseif gdd0 < T(500.0)
+    elseif gdd0 < 500.0
         return ProstateShrubTundra()
     else
         return DwarfShrubTundra()
@@ -825,10 +825,10 @@ function assign_biome(
     gdd5::T, 
     tcm::T,  
     BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if gdd5 > T(900.0) && tcm > T(-19.0)
+)::AbstractBiome where {T<:Real}
+    if gdd5 > 900.0 && tcm > -19.0
         temperate_deciduous_idx = findfirst(
             pft -> get_characteristic(pft, :name) == "TemperateDeciduous", 
             BIOME4PFTS.pft_list
@@ -873,7 +873,7 @@ function assign_biome(
         return TemperateDeciduousForest()
     elseif subpft !== nothing && isa(subpft, CoolConifer)
         return CoolConiferForest()
-    elseif gdd5 > T(900.0) && tcm > T(-19.0)
+    elseif gdd5 > 900.0 && tcm > -19.0
         return CoolConiferForest()
     else
         return DeciduousTaigaMontaneForest()
@@ -891,12 +891,12 @@ function assign_biome(
     optpft::WoodyDesert;
     subpft::AbstractPFT,
     tmin::T,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0) 
-        if PFTStates[subpft].lai > T(1.0) 
-            return tmin >= T(0.0) ? TropicalXerophyticShrubland() : 
+)::AbstractBiome where {T<:Real}
+    if PFTStates[optpft].npp > 100.0
+        if PFTStates[subpft].lai > 1.0
+            return tmin >= 0.0 ? TropicalXerophyticShrubland() : 
                    TemperateXerophyticShrubland()
         else
             return Desert()
@@ -917,17 +917,17 @@ function assign_biome(
     optpft::C3C4TemperateGrass;
     subpft::AbstractPFT, 
     gdd0::T,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp <= T(100.0)
+)::AbstractBiome where {T<:Real}
+    if PFTStates[optpft].npp <= 100.0
         if subpft !== Default && 
            !(isa(subpft, BorealEvergreen) || isa(subpft, BorealDeciduous))
             return Desert()
         else
             return SteppeTundra()
         end
-    elseif gdd0 >= T(800.0)
+    elseif gdd0 >= 800.0
         return TemperateGrassland()
     else
         return SteppeTundra()
@@ -943,10 +943,10 @@ Uses NPP to determine if mixed forest or desert biome is appropriate.
 """
 function assign_biome(
     optpft::TemperateBroadleavedEvergreen;
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0)
+)::AbstractBiome
+    if PFTStates[optpft].npp > 100.0
         return WarmMixedForest()
     else
         return Desert()
@@ -965,10 +965,10 @@ function assign_biome(
     gdd5::T, 
     tcm::T, 
     BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0)
+)::AbstractBiome where {T<:Real}
+    if PFTStates[optpft].npp > 100.0
         boreal_evergreen_idx = findfirst(
             pft -> get_characteristic(pft, :name) == "BorealEvergreen", 
             BIOME4PFTS.pft_list
@@ -976,7 +976,7 @@ function assign_biome(
         if boreal_evergreen_idx !== nothing
             boreal_evergreen_pft = BIOME4PFTS.pft_list[boreal_evergreen_idx]
             if PFTStates[boreal_evergreen_pft].present
-                if tcm < T(-15.0)
+                if tcm < -15.0
                     return ColdMixedForest()
                 else
                     return CoolMixedForest()
@@ -1003,7 +1003,7 @@ function assign_biome(
         if cool_conifer_idx !== nothing
             cool_conifer_pft = BIOME4PFTS.pft_list[cool_conifer_idx]
             cool_conifer_conditions = PFTStates[cool_conifer_pft].present && 
-                                     gdd5 > T(3000.0) && tcm > T(3.0)
+                                     gdd5 > 3000.0 && tcm > 3.0
         end
         
         if temperate_broadleaved_present || cool_conifer_conditions
@@ -1027,10 +1027,10 @@ function assign_biome(
     optpft::CoolConifer; 
     subpft::AbstractPFT,
     BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0)
+)::AbstractBiome
+    if PFTStates[optpft].npp > 100.0
         temperate_broadleaved_evergreen_idx = findfirst(
             pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", 
             BIOME4PFTS.pft_list
@@ -1063,10 +1063,10 @@ Returns tropical evergreen forest if NPP is sufficient, otherwise desert.
 """
 function assign_biome(
     optpft::TropicalEvergreen;
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0)
+)::AbstractBiome
+    if PFTStates[optpft].npp > 100.0
         return TropicalEvergreenForest()
     else
         return Desert()
@@ -1082,10 +1082,10 @@ Uses NPP and green days to determine tropical forest type.
 """
 function assign_biome(
     optpft::TropicalDroughtDeciduous;
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0)
+)::AbstractBiome
+    if PFTStates[optpft].npp > 100.0
         if PFTStates[optpft].greendays > 300
             return TropicalEvergreenForest()
         elseif PFTStates[optpft].greendays > 250
@@ -1107,10 +1107,10 @@ Returns tropical grassland if NPP is sufficient, otherwise desert.
 """
 function assign_biome(
     optpft::C4TropicalGrass;
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
-    if PFTStates[optpft].npp > T(100.0)
+)::AbstractBiome
+    if PFTStates[optpft].npp > 100.0
         return TropicalGrassland()
     else
         return Desert()
@@ -1127,12 +1127,12 @@ Uses woody dominant PFT to determine appropriate biome type.
 function assign_biome(
     optpft::Default;
     wdom::AbstractPFT, 
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}},
+    PFTStates::Dict{AbstractPFT,PFTState},
     kwargs... 
-)::AbstractBiome where {T<:Real, U<:Int}
+)::AbstractBiome
     if wdom === nothing || isa(wdom, TropicalEvergreen) || 
        isa(wdom, TropicalDroughtDeciduous)
-        if wdom !== nothing && PFTStates[wdom].lai > T(4.0)
+        if wdom !== nothing && PFTStates[wdom].lai > 4.0
             return TropicalSavanna()
         else
             return TropicalXerophyticShrubland()

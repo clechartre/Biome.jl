@@ -28,8 +28,8 @@ function constraints(
     gdd0::T,
     maxdepth::T,
     BIOME4PFTS::AbstractPFTList,
-    PFTstates::Dict{AbstractPFT,PFTState{T,Int}}
-)::Tuple{T,Dict{AbstractPFT,PFTState{T,Int}}} where {T<:Real}
+    PFTstates::Dict{AbstractPFT,PFTState}
+)::Tuple{T,Dict{AbstractPFT,PFTState}} where {T<:Real}
 
     # adjust minimum temp for frost delay
     tmin = tminin <= tcm ? tminin : tcm - T(5.0)

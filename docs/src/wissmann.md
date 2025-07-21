@@ -3,9 +3,7 @@
 The Wissmann scheme partitions climates into six major groups (from Tropical through Polar) and within each applies moisture thresholds to distinguish rainforest, monsoonal, steppe and desert subtypes. 
 
 
-<div style="display: flex; gap: 1rem; align-items: center;">
-  <img src="assets/output_wissmann_example.svg" alt="Example A" width="90%" />
-</div>
+![wissman](assets/output_wissmann_example.svg)
 
 
 In the provided function, the twelve monthly temperatures and precipitations are first summarized (min, max, mean temperatures; total and minimum precipitation; plus seasonal sums for “winter” and “summer” based on hemisphere). A dynamic precipitation threshold (t_threshold) is computed as ten times the mean annual temperature (shifted by +14 °C if summer is wetter than winter). The main classes are applied with thresholds: 

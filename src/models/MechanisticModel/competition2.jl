@@ -18,7 +18,7 @@ function competition2(
     gdd5::T,
     tcm::T,
     BIOME4PFTS::AbstractPFTList,  
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}}
+    PFTStates::Dict{AbstractPFT,PFTState}
 )::Tuple{AbstractBiome, AbstractPFT, T} where {T <: Real, U <: Int}
 
     # Initialize all variables using the singleton instances
@@ -103,7 +103,7 @@ function competition2(
     return biome, optpft, npp
 end
 
-function initialize_presence(numofpfts::U, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState{T,U}})::Dict{AbstractPFT,PFTState{T,U}}where {T<: Real, U <: Int}
+function initialize_presence(numofpfts::U, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState})::Dict{AbstractPFT,PFTState}where {T<: Real, U <: Int}
     # Initialize present dynamically based on optnpp
     for pft in BIOME4PFTS.pft_list
         if PFTStates[pft].npp > 0.0
@@ -135,21 +135,20 @@ for PFT `i`.
 """
 function calculate_soil_moisture(
     BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}}
-)::AbstractArray{T} where {T<:Real, U<:Int}
-    # pre‐allocate the output
-    wetness = zeros(T, length(BIOME4PFTS.pft_list))
-
-    # for each PFT, average its 12 monthly mwet values
+    PFTStates::Dict{AbstractPFT,PFTState}
+)::AbstractVector{<:Real}
+    isempty(BIOME4PFTS.pft_list) && return Real[]
+    elm_t = typeof(BIOME4PFTS.pft_list[1].characteristics).parameters[1]
+    wetness = zeros(elm_t, length(BIOME4PFTS.pft_list))
     for (i, pft) in enumerate(BIOME4PFTS.pft_list)
         total = sum(PFTStates[pft].mwet)
-        wetness[i] = total / 12.0
+        wetness[i] = total / elm_t(12)
     end
     return wetness
 end
 
 
-function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState{T,U}}) where {T <: Real, U <: Int}
+function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4PFTS::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState})
     optpft = pftmaxnpp
     wdom   = optpft
     subnpp = 0.0
@@ -180,8 +179,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
     BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}};
-    kwargs...) where {T <: Real, U <: Int}
+    PFTStates::Dict{AbstractPFT,PFTState};
+    kwargs...) where {T <: Real}
     # Initialize variables
     wdom = optpft
     gdom = DEFAULT_INSTANCE
@@ -293,14 +292,14 @@ function determine_optimal_pft(
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
     BIOME4PFTS::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}};
+    PFTStates::Dict{AbstractPFT,PFTState};
     wdom::Union{AbstractPFT},
     grasspft::Union{AbstractPFT},
     tmin::T,
     gdd5::T,
     tcm::T,
     tprec::T,
-) where {T <: Real, U<:Int} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
+) where {T <: Real} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
     flop = false
 
     # Helper function to find PFT by type
@@ -531,8 +530,8 @@ function calculate_vegetation_dominance(
     woodnpp::T,
     woodylai::T,
     grasslai::T,
-    PFTStates::Dict{AbstractPFT,PFTState{T,U}}
-) where {T <: Real, U <: Int} # ::Tuple{AbstractPFT, T, T, T, U} 
+    PFTStates::Dict{AbstractPFT,PFTState}
+) where {T <: Real} # ::Tuple{AbstractPFT, T, T, T, U} 
 
     dom = optpft
 

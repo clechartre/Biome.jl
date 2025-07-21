@@ -4,11 +4,7 @@ The Köppen–Geiger system divides Earth’s climates into five primary groups:
 This biome classification relies on metrics such as the coldest and warmest monthly mean temperatures, total and driest‑month precipitation, and the relative timing of wet and dry seasons, and outputs subtypes like Af (tropical rainforest), Cfb (oceanic) or BWh (hot desert), each mapped to a unique integer code. 
 
 
-
-<div style="display: flex; gap: 1rem; align-items: center;">
-  <img src="assets/output_koppengeiger_example.svg" alt="Example A" width="90%" />
-</div>
-
+![kg](assets/output_koppengeiger_example.svg)
 
 
 In the provided Julia implementation, the run function unpacks longitude, latitude, monthly temperature and precipitation from the input vector, computes summary statistics (min, max, mean), sums seasonal precipitation (winter vs. summer based on hemisphere), then applies the Köppen–Geiger decision tree against those thresholds and looks up the resulting symbol in a Dict{Symbol,Int} to produce a numeric climate class, finally returning that class along with the original coordinates.

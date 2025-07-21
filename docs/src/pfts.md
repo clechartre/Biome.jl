@@ -13,12 +13,10 @@ We provide you with 5 base PFTs: 3 trees (evergreen): Temperate, Tropical, Borea
 You can modify individual parameters of your base PFT by doing: 
 
 ````
-C4Grass =  GrassPFT{Float64,Int64}(PFTCharacteristics{Float64,Int64}(
-             name = "C4Grass",
-             c4 = true))
+C4Grass =  GrassPFT(c4 = true, name = "C4Grass")
 
 
-TropicalDeciduous = TropicalPFT{Float64,Int64}(PFTCharacteristics{Float64,Int64}(phenological_type = 2))          
+TropicalDeciduous = TropicalPFT(phenological_type = 2)
 ````
 These subtypes will inherit the supertypes of our base PFTs, useful later on in your biome definition 
 

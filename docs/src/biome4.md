@@ -1,10 +1,7 @@
 # BIOME4
 
 
-<div style="display: flex; gap: 1rem; align-items: center;">
-  <img src="assets/output_b4.svg" alt="Example A" width="90%" />
-</div>
-
+![biome4](assets/output_b4.svg)
 
 We offer to run the BIOME4 model two ways. 
 

@@ -9,28 +9,26 @@ abstract type AbstractTundraPFT    <: AbstractPFT end
 
 @kwdef mutable struct PFTCharacteristics{T<:Real,U<:Int}
     name::String = "Default"
-    phenological_type::U = U(1)
-    max_min_canopy_conductance::T = T(0.0)
-    Emax::T = T(0.0)
-    sw_drop::T = T(0.0)
-    sw_appear::T = T(0.0)
-    root_fraction_top_soil::T = T(0.0)
-    leaf_longevity::T = T(0.0)
-    GDD5_full_leaf_out::T = T(1.0)
-    GDD0_full_leaf_out::T = T(1.0)
-    sapwood_respiration::U = U(1)
-    optratioa::T = T(1.0)
-    kk::T = T(1.0)
+    phenological_type::U = 1
+    max_min_canopy_conductance::T = 0.0
+    Emax::T = 0.0
+    sw_drop::T = 0.0
+    sw_appear::T = 0.0
+    root_fraction_top_soil::T = 0.0
+    leaf_longevity::T = 0.0
+    GDD5_full_leaf_out::T = 1.0
+    GDD0_full_leaf_out::T = 1.0
+    sapwood_respiration::U = 1
+    optratioa::T = 1.0
+    kk::T = 1.0
     c4::Bool = false
-    threshold::T = T(0.0)
-    t0::T = T(0.0)
-    tcurve::T = T(0.0)
-    respfact::T = T(1.0)
-    allocfact::T = T(0.0)
+    threshold::T = 0.0
+    t0::T = 0.0
+    tcurve::T = 0.0
+    respfact::T = 1.0
+    allocfact::T = 0.0
     grass::Bool = false
-    constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow, :swb),
-                            NTuple{7,Vector{T}}} = 
-                            (;
+    constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow, :swb),NTuple{7,Vector{T}}} = (
         tcm   = [-Inf, +Inf], 
         min   = [-Inf, +Inf], 
         gdd   = [-Inf, +Inf],
@@ -39,13 +37,11 @@ abstract type AbstractTundraPFT    <: AbstractPFT end
         snow  = [-Inf, +Inf],
         swb   = [-Inf, +Inf]
     )
-
-    mean_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (;
-        clt   = T(30.6), prec  = T(72.0), temp  = T(24.5)
+    mean_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (
+        clt   = 30.6, prec  = 72.0, temp  = 24.5
     )
-
-    sd_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (;
-        clt   = T(9.7), prec  = T(39.0), temp  = T(3.2)
+    sd_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (
+        clt   = 9.7, prec  = 39.0, temp  = 3.2
     )
 end
 
@@ -53,13 +49,17 @@ PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
     present::Bool = false
-    dominance::T   = zero(T)
-    greendays::U   = zero(U)
-    firedays::T    = zero(T)
-    mwet::Vector{T} = zeros(T,12)
-    npp::T         = zero(T)
-    lai::T         = zero(T)
+    dominance::T   = 0.0
+    greendays::U   = 0
+    firedays::T    = 0.0
+    mwet::Vector{T} = zeros(T, 12)
+    npp::T         = 0.0
+    lai::T         = 0.0
 end
+
+PFTState(c::PFTCharacteristics{T,U}) where {T,U} = PFTState{T,U}()
+PFTState(pft::AbstractPFT) = PFTState(pft.characteristics)
+PFTState() = PFTState{Float64,Int}()
 
 const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
     AbstractTropicalPFT => (
@@ -223,92 +223,116 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
     )
 )
 
-function base_pft(::Type{P}, ::Type{T}, ::Type{U}; kwargs...) where {P<:AbstractPFT, T<:Real, U<:Int}
+function base_pft(::Type{P}; kwargs...) where {P<:AbstractPFT}
     defaults = BASE_DEFAULTS[P]
-    merged   = merge(defaults, kwargs)
+    merged = merge(defaults, kwargs)
+    reals = filter(x->x isa Real, values(merged))
+    ints = filter(x->x isa Integer, values(merged))
+    T = isempty(reals) ? Float64 : promote_type(map(typeof, reals)...)
+    U = isempty(ints)  ? Int     : promote_type(map(typeof, ints)...)
     return PFTCharacteristics{T,U}(; merged...)
 end
-
 
 @kwdef mutable struct TropicalPFT{T<:Real,U<:Int} <: AbstractTropicalPFT
     characteristics :: PFTCharacteristics{T,U}
 end
 
-TropicalPFT{T,U}() where {T<:Real,U<:Int} =
-    TropicalPFT{T,U}(base_pft(AbstractTropicalPFT, T, U))
-TropicalPFT() = TropicalPFT{Float64,Int}()
-
+TropicalPFT(c::PFTCharacteristics{T,U}) where {T,U} = TropicalPFT{T,U}(c)
+function TropicalPFT(; kwargs...)
+    c = base_pft(AbstractTropicalPFT; kwargs...)
+    TropicalPFT(c)
+end
 
 @kwdef mutable struct TemperatePFT{T<:Real,U<:Int} <: AbstractTemperatePFT
     characteristics :: PFTCharacteristics{T,U}
 end
 
-TemperatePFT{T,U}() where {T<:Real,U<:Int} =
-    TemperatePFT{T,U}(base_pft(AbstractTemperatePFT, T, U))
-TemperatePFT() = TemperatePFT{Float64,Int}()
-
+TemperatePFT(c::PFTCharacteristics{T,U}) where {T,U} = TemperatePFT{T,U}(c)
+function TemperatePFT(; kwargs...)
+    c = base_pft(AbstractTemperatePFT; kwargs...)
+    TemperatePFT(c)
+end
 
 @kwdef mutable struct BorealPFT{T<:Real,U<:Int} <: AbstractBorealPFT
     characteristics :: PFTCharacteristics{T,U}
 end
 
-BorealPFT{T,U}() where {T<:Real,U<:Int} =
-    BorealPFT{T,U}(base_pft(AbstractBorealPFT, T, U))
-BorealPFT() = BorealPFT{Float64,Int}()
-
+BorealPFT(c::PFTCharacteristics{T,U}) where {T,U} = BorealPFT{T,U}(c)
+function BorealPFT(; kwargs...)
+    c = base_pft(AbstractBorealPFT; kwargs...)
+    BorealPFT(c)
+end
 
 @kwdef mutable struct GrassPFT{T<:Real,U<:Int} <: AbstractGrassPFT
     characteristics :: PFTCharacteristics{T,U}
 end
 
-GrassPFT{T,U}() where {T<:Real,U<:Int} =
-    GrassPFT{T,U}(base_pft(AbstractGrassPFT, T, U))
-GrassPFT() = GrassPFT{Float64,Int}()
+GrassPFT(c::PFTCharacteristics{T,U}) where {T,U} = GrassPFT{T,U}(c)
+function GrassPFT(; kwargs...)
+    c = base_pft(AbstractGrassPFT; kwargs...)
+    GrassPFT(c)
+end
 
-@kwdef mutable  struct TundraPFT{T<:Real,U<:Int} <: AbstractPFT
+@kwdef mutable struct TundraPFT{T<:Real,U<:Int} <: AbstractTundraPFT
     characteristics :: PFTCharacteristics{T,U}
 end
 
-TundraPFT{T,U}() where {T<:Real,U<:Int} =
-    TundraPFT{T,U}(base_pft(AbstractTundraPFT, T, U))
-TundraPFT() = TundraPFT{Float64,Int}()
+TundraPFT(c::PFTCharacteristics{T,U}) where {T,U} = TundraPFT{T,U}(c)
+function TundraPFT(; kwargs...)
+    c = base_pft(AbstractTundraPFT; kwargs...)
+    TundraPFT(c)
+end
 
 struct Default{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
 end
 
-Default{T,U}() where {T<:Real,U<:Int} = Default{T,U}(PFTCharacteristics{T,U}())
-Default() = Default{Float64,Int}()
+Default(c::PFTCharacteristics{T,U}) where {T,U} = Default{T,U}(c)
+function Default(; kwargs...)
+    c = PFTCharacteristics(; kwargs...)
+    Default(c)
+end
 
 struct None{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
 end
 
-None{T,U}() where {T<:Real,U<:Int} = None{T,U}(PFTCharacteristics{T,U}())
-None() = None{Float64,Int}()
-  
+None(c::PFTCharacteristics{T,U}) where {T,U} = None{T,U}(c)
+function None(; kwargs...)
+    c = PFTCharacteristics(; kwargs...)
+    None(c)
+end
+
 struct PFTClassification{T<:Real,U<:Int} <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end
 
+
+function PFTClassification(pfts::Vector{P} ) where P<:AbstractPFT
+    isempty(pfts) && return PFTClassification()
+    T = typeof(pfts[1].characteristics).parameters[1]
+    U = typeof(pfts[1].characteristics).parameters[2]
+    return PFTClassification{T,U}(pfts)
+end
+
+function PFTClassification(p1::AbstractPFT, rest::AbstractPFT...)
+    PFTClassification([p1; rest])
+end
+
 function PFTClassification{T,U}() where {T<:Real,U<:Int}
-    return PFTClassification{T,U}([
-        TropicalPFT{T,U}(),
-        TemperatePFT{T,U}(),
-        BorealPFT{T,U}(),
-        GrassPFT{T,U}(),
-        TundraPFT{T,U}(),
-        Default{T,U}(),
+    PFTClassification{T,U}([
+        TropicalPFT{T,U}(), TemperatePFT{T,U}(), BorealPFT{T,U}(),
+        GrassPFT{T,U}(),    TundraPFT{T,U}(),    Default{T,U}(),
         None{T,U}()
     ])
 end
-PFTClassification() = PFTClassification{Float64,Int}()
 
-"""
-    get_characteristic(pft, prop)
+# default, infer types via the vector‐based constructor
+PFTClassification() = PFTClassification([
+    TropicalPFT(), TemperatePFT(), BorealPFT(),
+    GrassPFT(), TundraPFT(), Default(), None()
+])
 
-Fetch a named characteristic field from a PFT’s characteristics.
-"""
 function get_characteristic(pft::AbstractPFT, prop::Symbol)
     if hasproperty(pft.characteristics, prop)
         return getproperty(pft.characteristics, prop)
@@ -317,15 +341,9 @@ function get_characteristic(pft::AbstractPFT, prop::Symbol)
     end
 end
 
-# Environmental dominance as before:
-"""
-    dominance_environment(pft, variable, clt)
-
-Calculate environmental dominance (0–1) given climate variable.
-"""
 function dominance_environment(pft::AbstractPFT, variable::Symbol, clt::Real)
     mv = get_characteristic(pft, :mean_val)[variable]
     sd = get_characteristic(pft, :sd_val)[variable]
     dist = Normal(mv, sd)
-    return pdf(dist, clt) / pdf(dist, mv)
+    pdf(dist, clt) / pdf(dist, mv)
 end

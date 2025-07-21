@@ -4,11 +4,14 @@
 <svg
    version="1.1"
    id="svg1"
-   width="569.30908"
-   height="225.16364"
-   viewBox="0 0 569.30908 225.16364"
+   width="184.63043"
+   height="193.18103"
+   viewBox="0 0 184.63043 193.18103"
    sodipodi:docname="logo.svg"
    inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   inkscape:export-filename="logo.svg"
+   inkscape:export-xdpi="90.992577"
+   inkscape:export-ydpi="90.992577"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -42,13 +45,23 @@
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="g1" />
+     inkscape:current-layer="g1">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="184.63043"
+       height="193.18103"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
   <g
      inkscape:groupmode="layer"
      inkscape:label="Image"
-     id="g1">
+     id="g1"
+     transform="translate(-181.34753,-4.5672216)">
     <g
-       transform="matrix(0.33483217,0,0,0.35840632,-248.42423,-276.89895)"
+       transform="matrix(0.35505855,0,0,0.35840632,-303.66245,-282.15781)"
        id="g6">
       <g
          id="g5">

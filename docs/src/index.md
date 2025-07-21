@@ -11,10 +11,7 @@ This package provides a platform for simulating climate-driven biome classificat
 
 ## Examples
 
-<div style="display: flex; gap: 1rem; align-items: center;">
-  <img src="assets/output_thornthwaite_examples.svg" alt="Example A" width="45%" />
-  <img src="assets/output_wissmann_example.svg" alt="Example B" width="45%" />
-</div>
+![examples](assets/output_thornthwaite_examples.svg)![example2](assets/output_wissmann_example.svg)
 
 
 ## Credits

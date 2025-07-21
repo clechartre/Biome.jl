@@ -405,12 +405,12 @@ end
 Return the AbstractPFTList appropriate for `model`.
 """
 function get_pft_list(m::BaseModel)
-    return PFTClassification{Float64,Int}([
+    return PFTClassification([
         TropicalPFT(),
         TemperatePFT(),
         BorealPFT(),
         GrassPFT(),
-        TundraPFT(),
+        TundraPFT()
         ]
     )
 end

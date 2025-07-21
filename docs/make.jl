@@ -12,7 +12,8 @@ makedocs(
   pages = [
         "Home" => "index.md",
         "User Guide" => Any[
-        "Getting Started" =>  "getting_started.md",
+        "Getting Started" =>  Any["install.md",
+        "data.md"],
         "Plant Functional Types" => "pfts.md",
         "Climate Models"  => Any[
             "Koppen-Geiger" => "koppen.md",
