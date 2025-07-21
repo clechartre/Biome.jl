@@ -144,9 +144,8 @@ function run(
             )
 
             # Store results in PFT characteristics
-            st = PFTStates[pft]           # look up this PFT’s state
-            st.npp = optnpp            # assign the optimized NPP
-            st.lai = optlai            # assign the optimized LAI
+            PFTStates[pft].npp = optnpp            # assign the optimized NPP
+            PFTStates[pft].lai = optlai            # assign the optimized LAI
         end
     end
 

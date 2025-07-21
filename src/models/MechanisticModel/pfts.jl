@@ -25,7 +25,7 @@ abstract type AbstractTundraPFT    <: AbstractPFT end
     threshold::T = T(0.0)
     t0::T = T(0.0)
     tcurve::T = T(0.0)
-    respfact::T = T(0.0)
+    respfact::T = T(1.0)
     allocfact::T = T(0.0)
     grass::Bool = false
     constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow, :swb),
@@ -82,6 +82,16 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             twm  = [10.0,  Inf],
             snow = [-Inf,  Inf],
             swb  = [500.0, Inf]
+        ),
+        mean_val = (
+            clt  =50.0,
+            prec =170.0,
+            temp =26.0,
+        ),
+        sd_val = (
+            clt  =5.0,
+            prec =40.0,
+            temp =5.0,
         )
     ),
 
@@ -105,7 +115,17 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             twm  = [-Inf,  Inf],
             snow = [-Inf,  Inf],
             swb  = [400.0, Inf]
-        )
+        ),        
+        mean_val = (
+            clt  =35.0,
+            prec =70.0,
+            temp =15.0,
+        ),
+        sd_val = (
+            clt  =10.0,
+            prec =40.0,
+            temp =8.0,
+        ),
     ),
 
     AbstractBorealPFT => (
@@ -129,6 +149,16 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             twm  = [-Inf, 21.0],
             snow = [-Inf, Inf],
             swb  = [300.0, Inf]
+        ),
+        mean_val = (
+            clt  =48.0,
+            prec =60.0,
+            temp =-2.0,
+        ),
+        sd_val = (
+            clt  =15.0,
+            prec =30.0,
+            temp =5.0,
         )
     ),
 
@@ -179,6 +209,16 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             twm  = [-Inf, 15],
             snow = [15.0, Inf],
             swb  = [300.0, Inf]
+        ),
+        mean_val = (
+            clt  =30.0,
+            prec =40.0,
+            temp =-5.0,
+        ),
+        sd_val = (
+            clt  =10.0,
+            prec =20.0,
+            temp =5.0,
         )
     )
 )
@@ -247,16 +287,6 @@ end
 None{T,U}() where {T<:Real,U<:Int} = None{T,U}(PFTCharacteristics{T,U}())
 None() = None{Float64,Int}()
   
-
-# If you want to build your own instance of the PFT: 
-# SpecificGrass = GrassPFT(Float32, Int; Emax=7.1, allocfact=1.3)
-# GrassPFT{Float32,Int64}(PFTCharacteristics{Float32,Int64}(
-#   name = "GrassBase",
-#   phenological_type = 3,
-#   max_min_canopy_conductance = 0.8,
-#   Emax = 7.1,
-#   …))
-
 struct PFTClassification{T<:Real,U<:Int} <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end
