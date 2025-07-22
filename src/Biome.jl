@@ -58,8 +58,8 @@ include("models/ClimaticEnvelope/thornthwaitebiomes.jl")
 include("models/ClimaticEnvelope/trollpfaffenbiomes.jl")
 include("models/ClimaticEnvelope/wissmannbiomes.jl")
 
-include("BiomeEasy.jl")
-using .BiomeEasy
+include("BiomeDriver.jl")
+using .BiomeDriver
 
 
 # Export all necessary types and functions

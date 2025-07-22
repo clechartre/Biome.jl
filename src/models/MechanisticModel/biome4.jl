@@ -66,9 +66,12 @@ function run(
     lat = vars_in[1]
     co2 = vars_in[2]
     p = vars_in[3]
-    tminin = vars_in[4]
     temp = @views vars_in[5:16]    # 12 months of temperature
     mtemp = mean(temp)  # mean temperature for the year
+    missval = T(-9999.0)
+    valid_temps = filter(x -> x != missval, temp)
+    tcm = isempty(valid_temps) ? missval : minimum(valid_temps)
+    tminin = tcm != missval ? T(0.006)*tcm^2 + T(1.316)*tcm - T(21.9) : missval
     prec = @views vars_in[17:28]   # 12 months of precipitation
     mprec = mean(prec)  # mean precipitation for the year
     clou = @views vars_in[29:40]   # 12 months of cloud cover
