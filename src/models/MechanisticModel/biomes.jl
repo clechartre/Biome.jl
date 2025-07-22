@@ -1,17 +1,16 @@
-# Define the Biome structures
-struct TropicalForest <: AbstractBiome
+struct EvergreenForest <: AbstractBiome
     value::Int
-    TropicalForest() = new(1)
+    EvergreenForest() = new(1)
 end
 
-struct TemperateForest <: AbstractBiome
+struct DeciduousForest <: AbstractBiome
     value::Int
-    TemperateForest() = new(2)
+    DeciduousForest() = new(2)
 end
 
-struct BorealForest <: AbstractBiome
+struct MixedForest <: AbstractBiome
     value::Int
-    BorealForest() = new(3)
+    MixedForest() = new(3)
 end
 
 struct Grassland <: AbstractBiome

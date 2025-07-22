@@ -406,9 +406,8 @@ Return the AbstractPFTList appropriate for `model`.
 """
 function get_pft_list(m::BaseModel)
     return PFTClassification([
-        TropicalPFT(),
-        TemperatePFT(),
-        BorealPFT(),
+        EvergreenPFT(),
+        DeciduousPFT(),
         GrassPFT(),
         TundraPFT()
         ]
