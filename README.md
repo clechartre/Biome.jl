@@ -57,8 +57,46 @@ Aside for yearly data, the CHELSA database also provides averaged datasets over 
 #### 2. Soil characteristics data
 The data on soil characteristics are generated using the [makesoil](https://github.com/ARVE-Research/makesoil) module from Arve research. This script will automatically generate a NetCDF file with the two variables that are necessary to run BIOME4: the soil water holding capacity (whc), and the soil saturated conductivity (Ksat).
 
-## How to use the model
-This package includes a Julia script that can be executed to run the BIOME4 model using specific environmental data files. The script requires several input files (e.g., temperature, precipitation, etc.), a CO2 concentration, and the coordinates of the region where the model will run.
+## Running your first Model
+This package can be executed using specific environmental data files. The script requires at minimum a temperature and a precipitation file for the climate enveloppe models. 
+For running the mechanistic models, a cloud cover file, soil characteristics and CO2 will be required. 
+
+```
+using Biome
+using Rasters
+
+tempfile = "temp_1981-2010.nc"
+precfile = "prec_1981-2010.nc"
+cltfile = "sun_1981-2010.nc"
+soilfile = "soils_55km.nc"
+
+temp_raster = Raster(tempfile, name="temp")
+prec_raster = Raster(precfile, name="prec")
+clt_raster = Raster(cltfile, name="sun")
+ksat_raster = Raster(soilfile, name="Ksat")
+whc_raster = Raster(soilfile, name="whc")
+
+PFTList = PFTClassification([
+        TropicalPFT(),
+        TemperatePFT(),
+        BorealPFT(),
+        TundraPFT(),
+        GrassPFT()
+    ]
+)
+
+setup = ModelSetup(BaseModel;
+                   temp=temp_raster,
+                   prec=prec_raster,
+                   sun= clt_raster,
+                   ksat=ksat_raster,
+                   whc= whc_raster,
+                   co2=373.8,
+                   PFTList = PFTList)
+
+run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
+```
+
 
 #### Command Example
 You can run the model using the following SLURM command:

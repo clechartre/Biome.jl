@@ -58,6 +58,10 @@ include("models/ClimaticEnvelope/thornthwaitebiomes.jl")
 include("models/ClimaticEnvelope/trollpfaffenbiomes.jl")
 include("models/ClimaticEnvelope/wissmannbiomes.jl")
 
+include("BiomeEasy.jl")
+using .BiomeEasy
+
+
 # Export all necessary types and functions
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4PFT,
        AbstractBiomeCharacteristics, AbstractBiome, AbstractBiomeList, PFTCharacteristics,
@@ -97,6 +101,9 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        run,
        
        # Constants instances
-       NONE_INSTANCE, DEFAULT_INSTANCE
+       NONE_INSTANCE, DEFAULT_INSTANCE,
+
+       # Driver functions
+       ModelSetup, run!
 
 end # Module

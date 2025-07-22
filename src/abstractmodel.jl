@@ -14,5 +14,3 @@ struct WissmannModel <: ClimateModel end
 struct BaseModel <: MechanisticModel end
 struct BIOME4Model <: MechanisticModel end
 struct BIOMEDominanceModel <: MechanisticModel end
-
-

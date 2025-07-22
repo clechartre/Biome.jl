@@ -54,7 +54,6 @@ function assign_biome(
     gdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
-    println("npp of grass is", PFTStates[gdom].npp)
     if PFTStates[gdom].npp > 400
         return Grassland()
     else
