@@ -192,7 +192,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
 
     # Filter presence depending on whether the species can tolerate the wetness value
     for (i, pft) in enumerate(BIOME4PFTS.pft_list)
-        if !PFTStates[pft].present
+        if !PFTStates[pft].present || PFTStates[pft].npp == 0.0
             continue  # Skip if PFT is not present
         else
             valid = true
@@ -214,14 +214,14 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, BIOME4
     # Process regular PFTs
     for pft in BIOME4PFTS.pft_list
         if PFTStates[pft].present
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance * (1 / get_characteristic(pft, :dominance_factor))
             push!(weighted_npps, weighted_npp)
             push!(pfts, pft)
         end
     end
     
     # Process DEFAULT_INSTANCE
-    weighted_npp = 1 * PFTStates[DEFAULT_INSTANCE].dominance
+    weighted_npp = 1 * PFTStates[DEFAULT_INSTANCE].dominance * (1 / get_characteristic(DEFAULT_INSTANCE, :dominance_factor))
     push!(weighted_npps, weighted_npp)
     push!(pfts, DEFAULT_INSTANCE)
     

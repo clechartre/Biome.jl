@@ -43,6 +43,7 @@ abstract type AbstractTundraPFT    <: AbstractPFT end
     sd_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (
         clt   = 9.7, prec  = 39.0, temp  = 3.2
     )
+    dominance_factor::U = 5
 end
 
 PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
