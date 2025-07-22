@@ -3,10 +3,13 @@
 </p>
 
 [![Run tests](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml)
+  <a href="https://mit-license.org">
+    <img alt="MIT license" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square">
+  </a>
 
 # Biome.jl: A Package for simulating biome schemes
 
-This package provides a platform for simulating climate-driven biome classification schemes alongside the mechanistic model BIOME4. 
+Biome.jl is a package that provides a platform for simulating climate-driven biome classification schemes alongside the mechanistic model BIOME4 and provide a framework for customizing your own mechanistic biome definition based on the scheme of BIOME4. 
 
 The BIOME4 equilibrium global vegetation model was first used in experiments described in Kaplan et al. (2003). The computational core of the model was last updated in 1999, and at the time was called [BIOME4 v4.2b2 ](https://github.com/jedokaplan/BIOME4). For more information about the original model, please refer to: [Kaplan, Jed & Prentice, Iain. (2001). Geophysical Applications of Vegetation Modeling.](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling)
 
@@ -20,11 +23,33 @@ Below an example of output generated with the model using the Kaplan BIOME4 logi
   <img src="figures/output_b4.svg"/>
 </p>
 
+# Installation Instructions
 
-## Requirements in Input data:
+To run Biome.jl using Julia, you need to set up the required environment by installing the necessary dependencies. The environment is defined in the `Project.toml` and `Manifest.toml` files, which ensure reproducibility.
 
-The PFTs and their characteristics are supplied to the model through a JSON file. Default PFT value for BIOME4 can be found on `input\pft.json`
+1. **Install Julia**:  
+   First, ensure that Julia is installed on your system. You can download the latest version from the official Julia website: [https://julialang.org/downloads/](https://julialang.org/downloads/).
 
+2. **Clone the Repository**:  
+   Clone this repository to your local machine:
+   ```bash
+   git clone https://github.com/yourusername/Biome.jl.git
+   cd Biome.jl
+   ```
+
+3. ***Activate the Project**:
+    Inside the repository, activate the project environment using Julia’s built-in package manager. Open a Julia REPL by typing julia in your terminal, then run: 
+    ```
+      using Pkg
+      Pkg.activate(".")
+      Pkg.instantiate()
+    ```
+
+# Requirements in Input data:
+
+## Climate Enveloppe Models 
+
+## Mechanistic Models 
 BIOME4 requires the following variables to run (in the form of gridded fields):
 
 - climatological monthly mean fields of temperature (°C)
@@ -34,20 +59,10 @@ BIOME4 requires the following variables to run (in the form of gridded fields):
 - soil saturated conductivity in two or more layers (mm/h)
 
 BIOME4 also requires a single global value for atmospheric CO₂ concentrations
-The following input variables are optional:
-
-climatological absolute minimum temperature (°C) (will be estimated using a regression function based on mean temperature if not present)
-grid cell elevation above sea level (m) (will be set to sea level if not present)
-The gridded input data can be at any resolution, but this version of the driver expects the input fields to be in unprojected (lon-lat) rasters (this is probably not an issue anyways since everything is processed pixel by pixel)
 
 ### The input generation scripts
 Since we want to be able to generate our own input data, we've created 3 input generation scripts, available in `utils/data_generation`. 
-- Climatological data 
 
-
-At this stage, we are running the model on a 0.5 grid, all data was therefore reshaped to 720,360 within the data generation codes themselves. On the longer run, we hope to be able the model on 1km resolution grids, and therefore will make this feature less constrained (remove hardcoding on input size)
-
-     
 See the previous sections for description of the datasets and where to retrieve them.
 
 #### 1. Climatological data 
@@ -120,29 +135,6 @@ This project has been created from the
 [MeteoSwiss Python blueprint](https://github.com/MeteoSwiss-APN/mch-python-blueprint)
 for the CSCS.
 
-### Installing the Julia Environment
-
-To run the BIOME4 model using Julia, you need to set up the required environment by installing the necessary dependencies. The environment is defined in the `Project.toml` and `Manifest.toml` files, which ensure reproducibility.
-
-### Step-by-step Installation
-
-1. **Install Julia**:  
-   First, ensure that Julia is installed on your system. You can download the latest version from the official Julia website: [https://julialang.org/downloads/](https://julialang.org/downloads/).
-
-2. **Clone the Repository**:  
-   Clone this repository to your local machine:
-   ```bash
-   git clone https://github.com/yourusername/BIOME4jl.git
-   cd BIOME4jl
-   ```
-
-3. ***Activate the Project**:
-    Inside the repository, activate the project environment using Julia’s built-in package manager. Open a Julia REPL by typing julia in your terminal, then run: 
-    ```
-      using Pkg
-      Pkg.activate(".")
-      Pkg.instantiate()
-    ```
 
 ## Credits
 
