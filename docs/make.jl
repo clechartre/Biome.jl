@@ -25,6 +25,7 @@ makedocs(
         "Mechanistic Model" => Any[
             "BIOME4" => "biome4.md",]
         ],
+        "Examples" => "examples.md",
         "API" => "api.md",
         
     ]

@@ -1,3 +1,35 @@
+# Examples 
+
+Here is some basic examples on how to run the package for different model types. 
+
+## Climatological: 
+
+````
+using Biome
+using Rasters
+
+tempfile = ""
+precfile = ""
+
+temp_raster = Raster(tempfile, name="temp")
+prec_raster = Raster(precfile, name="prec")
+
+setup = ModelSetup(KoppenModel;
+                   temp=temp_raster,
+                   prec=prec_raster)
+
+run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
+
+````
+
+## Mechanistics 
+
+### BIOME4
+
+For the classic BIOME4 model, you don't need to provide a PFTList, the orchestrator will automatically fetch the biome classifications and PFTs. 
+If you do define PFTs, they will be overwritten by the classic BIOME4 scheme and we suggest you use [BaseModel]() to work with custom PFTs. 
+
+`````
 using Biome
 using Rasters
 
@@ -12,7 +44,77 @@ clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
-# Any custom PFT you want
+
+setup = ModelSetup(BIOME4Model;
+                   temp=temp_raster,
+                   prec=prec_raster,
+                   sun=clt_raster,
+                   ksat=ksat_raster,
+                   whc=whc_raster,
+                   co2=373.8)
+
+run!(setup; coordstring="alldata", outfile="output_biome4.nc")
+`````
+
+## Base Model 
+
+Without customization. 
+
+
+`````
+using Biome
+using Rasters
+
+tempfile = ""
+precfile = ""
+cltfile = ""
+soilfile = ""
+
+temp_raster = Raster(tempfile, name="temp")
+prec_raster = Raster(precfile, name="prec")
+clt_raster = Raster(cltfile, name="sun")
+ksat_raster = Raster(soilfile, name="Ksat")
+whc_raster = Raster(soilfile, name="whc")
+
+# BasePTS
+PFTList = PFTClassification([
+        EvergreenPFT(),
+        DeciduousPFT(),
+        TundraPFT(),
+        GrassPFT(),
+    ]
+)
+setup = ModelSetup(BaseModel;
+                   temp=temp_raster,
+                   prec=prec_raster,
+                   sun= clt_raster,
+                   ksat=ksat_raster,
+                   whc= whc_raster,
+                   co2=373.8,
+                   PFTList = PFTList)
+
+run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
+`````
+
+
+Creating 3 new PFTs and their associated biomes
+
+`````
+using Biome
+using Rasters
+
+tempfile = ""
+precfile = ""
+cltfile = ""
+soilfile = ""
+
+temp_raster = Raster(tempfile, name="temp")
+prec_raster = Raster(precfile, name="prec")
+clt_raster = Raster(cltfile, name="sun")
+ksat_raster = Raster(soilfile, name="Ksat")
+whc_raster = Raster(soilfile, name="whc")
+
+# Custom PFTs
 C4Grass = GrassPFT(c4 = true)
 
 TropicalEvergreen = EvergreenPFT(
@@ -72,6 +174,7 @@ struct TropicalEvergreenForest <: AbstractBiome
     TemperateDeciduousForest() = new(8)
   end
   
+  
 function my_biome_assign(pft::AbstractPFT;
     subpft,
     wdom,
@@ -109,7 +212,6 @@ PFTList = PFTClassification([
         TemperateDeciduous
     ]
 )
-
 setup = ModelSetup(BaseModel;
                    temp=temp_raster,
                    prec=prec_raster,
@@ -121,3 +223,8 @@ setup = ModelSetup(BaseModel;
                    biome_assignment = my_biome_assign)
 
 run!(setup; coordstring="-180/0/-90/90", outfile="output_CustomModel.nc")
+`````
+
+Such model output will look like: 
+
+![custom_output](assets/output_CustomModel.svg)

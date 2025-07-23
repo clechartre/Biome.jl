@@ -1,10 +1,10 @@
 using Biome
 using Rasters
 
-tempfile = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/climatologies/temp_1981-2010.nc"
-precfile = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/climatologies/prec_1981-2010.nc"
-cltfile = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/climatologies/sun_1981-2010.nc"
-soilfile = "/Users/capucinelechartre/Documents/PhD//makesoil/output/soils_55km.nc"
+tempfile = ""
+precfile = ""
+cltfile = ""
+soilfile = ""
 
 temp_raster = Raster(tempfile, name="temp")
 prec_raster = Raster(precfile, name="prec")
