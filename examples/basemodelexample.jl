@@ -1,0 +1,34 @@
+using Biome
+using Rasters
+
+tempfile = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/climatologies/temp_1981-2010.nc"
+precfile = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/climatologies/prec_1981-2010.nc"
+cltfile = "/Users/capucinelechartre/Documents/PhD/BIOME4Py/data/generated_data/climatologies/sun_1981-2010.nc"
+soilfile = "/Users/capucinelechartre/Documents/PhD//makesoil/output/soils_55km.nc"
+
+temp_raster = Raster(tempfile, name="temp")
+prec_raster = Raster(precfile, name="prec")
+clt_raster = Raster(cltfile, name="sun")
+ksat_raster = Raster(soilfile, name="Ksat")
+whc_raster = Raster(soilfile, name="whc")
+
+# Using the BasePTS
+PFTList = PFTClassification([
+        EvergreenPFT(),
+        DeciduousPFT(),
+        TundraPFT(),
+        GrassPFT(),
+    ]
+)
+# 1. Build a ModelSetup in one line (all kws, no long positional list)
+setup = ModelSetup(BaseModel;
+                   temp=temp_raster,
+                   prec=prec_raster,
+                   sun= clt_raster,
+                   ksat=ksat_raster,
+                   whc= whc_raster,
+                   co2=373.8,
+                   PFTList = PFTList)
+
+# 2. Run it in one line
+run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModelSavanna.nc")

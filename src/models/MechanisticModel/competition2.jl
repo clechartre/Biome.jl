@@ -18,7 +18,8 @@ function competition2(
     gdd5::T,
     tcm::T,
     BIOME4PFTS::AbstractPFTList,  
-    PFTStates::Dict{AbstractPFT,PFTState}
+    PFTStates::Dict{AbstractPFT,PFTState},
+    biome_assignment::Function,
 )::Tuple{AbstractBiome, AbstractPFT, T} where {T <: Real, U <: Int}
 
     # Initialize all variables using the singleton instances
@@ -95,7 +96,7 @@ function competition2(
         biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
             gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates)
     else 
-        biome = assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
+        biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
             gdd5=gdd5, tcm=tcm, tmin=tmin, BIOME4PFTS=BIOME4PFTS, PFTStates=PFTStates, gdom=gdom
         )
     end

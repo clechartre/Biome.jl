@@ -58,7 +58,7 @@ include("models/ClimaticEnvelope/thornthwaitebiomes.jl")
 include("models/ClimaticEnvelope/trollpfaffenbiomes.jl")
 include("models/ClimaticEnvelope/wissmannbiomes.jl")
 
-include("BiomeDriver.jl")
+include("biomedriver.jl")
 using .BiomeDriver
 
 
@@ -83,6 +83,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        
        # Original PFT types and functions
         PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment,
+        AbstractDeciduousPFT, AbstractEvergreenPFT, AbstractGrassPFT, AbstractTundraPFT,
         EvergreenPFT, DeciduousPFT, GrassPFT, TundraPFT,
 
         # Original biome types

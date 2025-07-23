@@ -59,8 +59,9 @@ NPP optimization, and biome classification.
 """
 function run(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, 
-    vars_in::Vector{Union{T,U}},
-    PFTList::AbstractPFTList
+    vars_in::Vector{Union{T,U}};
+    PFTList::AbstractPFTList,
+    biome_assignment::Function
 ) where {T<:Real,U<:Int}
     # Extract input variables from the input vector
     lat = vars_in[1]
@@ -157,7 +158,7 @@ function run(
 
 # Determine winning biome through PFT competition
     biome, optpft, npp = competition2(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, PFTList, PFTStates
+        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, PFTList, PFTStates, biome_assignment
     )
 
     # Convert optimal PFT to index
