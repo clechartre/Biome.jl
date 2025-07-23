@@ -12,7 +12,10 @@ clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
-# BasePTS
+
+# FIXME check what happens if I pass a random PFT list, it should get ovewritten by BIOME4 PFTs but 
+# maybe we should put a warning sign
+
 PFTList = PFTClassification([
         EvergreenPFT(),
         DeciduousPFT(),
@@ -20,13 +23,15 @@ PFTList = PFTClassification([
         GrassPFT(),
     ]
 )
-setup = ModelSetup(BaseModel;
+
+setup = ModelSetup(BIOME4Model;
                    temp=temp_raster,
                    prec=prec_raster,
-                   sun= clt_raster,
+                   sun=clt_raster,
                    ksat=ksat_raster,
-                   whc= whc_raster,
+                   whc=whc_raster,
                    co2=373.8,
                    PFTList = PFTList)
 
-run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModelSavanna.nc")
+# 2. Run it in one line
+run!(setup; coordstring="alldata", outfile="output_biome4_fallbacklist.nc")

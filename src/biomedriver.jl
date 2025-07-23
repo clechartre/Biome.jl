@@ -1,8 +1,9 @@
 module BiomeDriver
 
 using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel,
+        BIOME4, ClimateModel, MechanisticModel,
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
-        AbstractBiomeCharacteristics, AbstractBiome, PFTClassification, P0, G, CP, T0, M, R0, run
+        AbstractBiomeCharacteristics, AbstractBiome, PFTClassification, P0, G, CP, T0, M, R0, run, assign_biome
 
 # Standard library
 using Statistics
@@ -36,7 +37,7 @@ function ModelSetup(::Type{M};
     whc::Union{Raster,Nothing}=nothing,
     co2::Float64 = 378.0,
     PFTList = nothing,
-    biome_assignment::Function = Biome.assign_biome
+    biome_assignment::Function = assign_biome
     ) where {M<:BiomeModel}
 
     lon = collect(dims(temp, X))
@@ -56,13 +57,11 @@ end
 function run!(setup::ModelSetupObj; coordstring::String="alldata", outfile::String="out.nc")
   M = setup.model
   PFTs = setup.PFTList
-  temp, prec, sun, ksat, whc = (
-    setup.rasters[:temp],
-    setup.rasters[:prec],
-    setup.rasters[:sun],
-    setup.rasters[:ksat],
-    setup.rasters[:whc],
-  )
+  temp = setup.rasters[:temp]
+  prec = setup.rasters[:prec]
+  sun  = get(setup.rasters, :sun,  nothing)
+  ksat = get(setup.rasters, :ksat, nothing)
+  whc  = get(setup.rasters, :whc,  nothing)
   BiomeDriver._execute!(
     M, setup.co2, setup.lon, setup.lat, PFTs,
     temp, prec, sun, ksat, whc;
@@ -74,14 +73,28 @@ end
 
 # internal: almost exactly your old `main()`
 function _execute!(
-        model::BiomeModel, co2::T, lon, lat, PFTList,
-        temp_raster::Raster, prec_raster::Raster, clt_raster::Raster, ksat_raster::Raster, whc_raster::Raster;
-        coordstring, outfile, biome_assignment::Function = Biome.assign_biome
+        model::BiomeModel,
+        co2::T, 
+        lon, 
+        lat, 
+        PFTList,
+        temp_raster::Raster, 
+        prec_raster::Raster,
+        clt_raster::Union{Raster,Nothing}, 
+        ksat_raster::Union{Raster,Nothing},
+        whc_raster::Union{Raster,Nothing};
+        coordstring::String, 
+        outfile::String,
+        biome_assignment::Function = Biome.assign_biome
         ) where {T<:Real}
 
     if model !== BaseModel()
+        if PFTList !== nothing 
+            warning("PFTList is provided but will be overwritten by the model's default PFT list.")
+        end
         PFTList = get_pft_list(model)
     end
+    
 
     if PFTList !== nothing
         numofpfts = length(PFTList.pft_list)
@@ -144,27 +157,32 @@ function _execute!(
 
         # Read temperature data
         temp_chunk = temp_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        temp_chunk = Array(temp_chunk)
-        temp_chunk = uniform_fill_value(temp_chunk)
+        temp_chunk = Array(temp_chunk) |> uniform_fill_value
 
         # Read precipitation data
         prec_chunk = prec_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        prec_chunk = Array(prec_chunk)
-        prec_chunk = uniform_fill_value(prec_chunk)
+        prec_chunk = Array(prec_chunk) |> uniform_fill_value
 
-        # Read cloud/sun data
-        cldp_chunk = clt_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        cldp_chunk = Array(cldp_chunk)
-        cldp_chunk = uniform_fill_value(cldp_chunk)
-
+        # Optional Data 
+        # Read cloud cover data
+        if clt_raster !== nothing
+            cldp_chunk = Array(clt_raster[x_chunk_start:x_chunk_end, stry:endy, :]) |> uniform_fill_value
+        else
+            cldp_chunk = fill(0.0, current_chunk_size, cnty, size(temp_chunk,3))
+        end
+        
         # Read soil data
-        ksat_chunk = ksat_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        ksat_chunk = Array(ksat_chunk)
-        ksat_chunk = uniform_fill_value(ksat_chunk)
-
-        whc_chunk = whc_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        whc_chunk = Array(whc_chunk)
-        whc_chunk = uniform_fill_value(whc_chunk)
+        if ksat_raster !== nothing
+            ksat_chunk = Array(ksat_raster[x_chunk_start:x_chunk_end, stry:endy, :]) |> uniform_fill_value
+        else
+            ksat_chunk = fill(0.0, current_chunk_size, cnty, size(temp_chunk,3))
+        end
+        
+        if whc_raster !== nothing
+            whc_chunk = Array(whc_raster[x_chunk_start:x_chunk_end, stry:endy, :]) |> uniform_fill_value
+        else
+            whc_chunk = fill(0.0, current_chunk_size, cnty, size(temp_chunk,3))
+        end
 
         println("max temp: ", maximum(temp_chunk), ", min temp: ", minimum(temp_chunk))
         println("max prec: ", maximum(prec_chunk), ", min prec: ", minimum(prec_chunk))
