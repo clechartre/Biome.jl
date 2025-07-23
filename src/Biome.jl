@@ -78,12 +78,12 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        A, ES, A1, B3, B,
        
        # Original PFT types and functions
-       PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment,
-        TropicalPFT, TemperatePFT, BorealPFT, GrassPFT, TundraPFT,
-       
-       # Original biome types
-       TropicalForest, TemperateForest, BorealForest, Grassland, Desert, Tundra,
-       
+        PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment,
+        EvergreenPFT, DeciduousPFT, GrassPFT, TundraPFT,
+
+        # Original biome types
+        EvergreenForest, DeciduousForest, MixedForest, Grassland, Desert, Tundra,
+
        # Functions
        get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int,

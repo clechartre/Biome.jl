@@ -15,6 +15,7 @@ makedocs(
         "Getting Started" =>  Any["install.md",
         "data.md"],
         "Plant Functional Types" => "pfts.md",
+        "Biomes" => "biomes.md",
         "Climate Models"  => Any[
             "Koppen-Geiger" => "koppen.md",
             "Thornthwaite" => "thornthwaite.md",
