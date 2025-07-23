@@ -45,7 +45,8 @@ function WoodyDesert{T,U}() where {T<:Real,U<:Int}
                 swb=[-Inf,T(500)]
             ),
             (clt=T(9.2), prec=T(2.5), temp=T(23.9)),
-            (clt=T(2.2), prec=T(2.8), temp=T(2.7))
+            (clt=T(2.2), prec=T(2.8), temp=T(2.7)),
+            U(7)
         )
     )
 end
@@ -90,7 +91,8 @@ function TropicalEvergreen{T,U}() where {T<:Real,U<:Int}
                 swb=[T(700),+Inf]
             ),
             (clt=T(50.2), prec=T(169.6), temp=T(24.7)),
-            (clt=T(4.9),  prec=T(41.9),  temp=T(1.2))
+            (clt=T(4.9),  prec=T(41.9),  temp=T(1.2)),
+            U(1)
         )
     )
 end
@@ -135,7 +137,8 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
                 swb=[T(500),+Inf]
             ),
             (clt=T(44.0), prec=T(163.3), temp=T(23.7)),
-            (clt=T(12.9), prec=T(81.5),  temp=T(2.3))
+            (clt=T(12.9), prec=T(81.5),  temp=T(2.3)),
+            U(1)
         )
     )
 end
@@ -180,7 +183,8 @@ function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
                 swb=[T(400),+Inf]
             ),
             (clt=T(33.4), prec=T(106.3), temp=T(18.7)),
-            (clt=T(13.3), prec=T(83.6),  temp=T(3.2))
+            (clt=T(13.3), prec=T(83.6),  temp=T(3.2)),
+            U(2)
         )
     )
 end
@@ -225,7 +229,8 @@ function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
                 swb=[T(300),+Inf]
             ),
             (clt=T(40.9), prec=T(70.2), temp=T(8.4)),
-            (clt=T(8.6), prec=T(41.9), temp=T(4.7))
+            (clt=T(8.6), prec=T(41.9), temp=T(4.7)),
+            U(3)
         )
     )
 end
@@ -267,10 +272,11 @@ function CoolConifer{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 snow=[-Inf, +Inf],
-                swb=[T(500),+Inf]
+                swb=[T(400),+Inf]
             ),
             (clt=T(28.1), prec=T(54.5), temp=T(13.9)),
-            (clt=T(8.6), prec=T(49.9), temp=T(3.4))
+            (clt=T(8.6), prec=T(49.9), temp=T(3.4)),
+            U(3)
         )
     )
 end
@@ -315,7 +321,8 @@ function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
                 swb=[-Inf,+Inf]
             ),
             (clt=T(48.1), prec=T(58.7), temp=T(-2.7)),
-            (clt=T(7.6), prec=T(35.7), temp=T(4.0))
+            (clt=T(7.6), prec=T(35.7), temp=T(4.0)),
+            U(3)
         )
     )
 end
@@ -360,7 +367,8 @@ function BorealDeciduous{T,U}() where {T<:Real,U<:Int}
                 swb=[T(300),+Inf]
             ),
             (clt=T(47.4), prec=T(65.0), temp=T(-6.4)),
-            (clt=T(8.3), prec=T(83.6), temp=T(7.7))
+            (clt=T(8.3), prec=T(83.6), temp=T(7.7)),
+            U(3)
         )
     )
 end
@@ -405,7 +413,8 @@ function C3C4TemperateGrass{T,U}() where {T<:Real,U<:Int}
                 swb=[-Inf,+Inf]
             ),
             (clt=T(16.6), prec=T(12.2), temp=T(21.3)), 
-            (clt=T(6.9), prec=T(13.4), temp=T(6.2))
+            (clt=T(6.9), prec=T(13.4), temp=T(6.2)),
+            U(5)
         )
     )
 end
@@ -450,7 +459,8 @@ function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
                 swb=[T(200),+Inf]
             ),
             (clt=T(9.4), prec=T(1.7), temp=T(23.2)),
-            (clt=T(1.4), prec=T(2.1), temp=T(2.2))
+            (clt=T(1.4), prec=T(2.1), temp=T(2.2)),
+            U(5)
         )
     )
 end
@@ -494,8 +504,9 @@ function TundraShrubs{T,U}() where {T<:Real,U<:Int}
                 snow=[T(15.0), +Inf],
                 swb=[T(150),+Inf]
             ),
-            (clt=T(9.2), prec=T(2.5), temp=T(23.9)), 
-            (clt=T(2.2), prec=T(2.8), temp=T(2.7))
+            (clt=T(51.4), prec=T(50.0), temp=T(-10.8)), 
+            (clt=T(9.0), prec=T(43.3), temp=T(5.1)),
+            U(6)
         )
     )
 end
@@ -539,8 +550,9 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
                 snow=[-Inf, +Inf],
                 swb=[T(150),+Inf]
             ),
-            (clt=T(10.4), prec=T(2.0), temp=T(23.5)), 
-            (clt=T(2.5), prec=T(1.6), temp=T(2.3))
+            (clt=T(42.1), prec=T(112.8), temp=T(2.6)), 
+            (clt=T(17.4), prec=T(129.2), temp=T(5.7)),
+            U(6)
         )
     )
 end
@@ -585,7 +597,8 @@ function LichenForb{T,U}() where {T<:Real,U<:Int}
                 swb= [-Inf,+Inf]
             ),
             (clt=T(43.9), prec=T(53.3), temp=T(-18.4)),
-            (clt=T(9.0), prec=T(52.1), temp=T(4.1))
+            (clt=T(9.0), prec=T(52.1), temp=T(4.1)),
+            U(6)
         )
     )
 end
@@ -775,7 +788,7 @@ function assign_biome(
     optpft::LichenForb;
     kwargs...
 )::AbstractBiome
-    return Barren()
+    return CushionForbsLichenMoss()
 end
 
 """

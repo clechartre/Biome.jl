@@ -1,43 +1,43 @@
 """
-    assign_biome(optpft::TropicalBase)
+    assign_biome(optpft::EvergreenBase)
 
-Assign biome for TropicalBase plant functional type.
+Assign biome for EvergreenBase plant functional type.
 
-Returns TropicalForest.
+Returns EvergreenForest.
 """
 function assign_biome(
-    optpft::AbstractTropicalPFT;
+    optpft::AbstractEvergreenPFT;
+    subpft::AbstractPFT,
+    PFTStates::Dict{AbstractPFT, PFTState},
     kwargs...
 )::AbstractBiome
-    return TropicalForest()
+    if subpft isa AbstractDeciduousPFT && # they have more or less the same npp 
+        PFTStates[subpft].npp > 400
+        return MixedForest()
+    else
+        return EvergreenForest()
+    end
 end
 
 """
-    assign_biome(optpft::TemperateBase)
+    assign_biome(optpft::DeciduousBase)
 
-Assign biome for TemperateBase plant functional type.
+Assign biome for DeciduousBase plant functional type.
 
-Returns TemperateForest.
+Returns DeciduousForest.
 """
 function assign_biome(
-    optpft::AbstractTemperatePFT;
+    optpft::AbstractDeciduousPFT;
+    subpft::AbstractPFT,
+    PFTStates::Dict{AbstractPFT, PFTState},
     kwargs...
 )::AbstractBiome
-    return TemperateForest()
-end
-
-"""
-    assign_biome(optpft::BorealBase)
-
-Assign biome for BorealBase plant functional type.
-
-Returns BorealForest.
-"""
-function assign_biome(
-    optpft::AbstractBorealPFT;
-    kwargs...
-)::AbstractBiome
-    return BorealForest()
+    if subpft isa AbstractEvergreenPFT && # they have more or less the same npp 
+        PFTStates[subpft].npp > 400
+        return MixedForest()
+    else
+        return DeciduousForest()
+    end
 end
 
 """
