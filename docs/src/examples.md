@@ -182,7 +182,7 @@ function my_biome_assign(pft::AbstractPFT;
     gdd5,
     tcm,
     tmin,
-    BIOME4PFTS,
+    PFTList,
     PFTStates,
     gdom)
     if get_characteristic(pft, :c4)
@@ -197,7 +197,7 @@ function my_biome_assign(pft::AbstractPFT;
                 subpft=subpft, wdom=wdom,
                 gdd0=gdd0, gdd5=gdd5,
                 tcm=tcm, tmin=tmin,
-                BIOME4PFTS=BIOME4PFTS,
+                PFTList=PFTList,
                 PFTStates=PFTStates, gdom=gdom)
     end
 end

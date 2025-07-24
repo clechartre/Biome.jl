@@ -90,7 +90,7 @@ function _execute!(
 
     if model !== BaseModel()
         if PFTList !== nothing 
-            warning("PFTList is provided but will be overwritten by the model's default PFT list.")
+            @warn "PFTList is provided but will be overwritten by the model's default PFT list."
         end
         PFTList = get_pft_list(model)
     end
