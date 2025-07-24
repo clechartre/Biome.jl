@@ -29,4 +29,4 @@ setup = ModelSetup(BaseModel;
                    co2=373.8,
                    PFTList = PFTList)
 
-run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModelSavanna.nc")
+run!(setup; coordstring="alldata", outfile="output_BaseModel.nc")

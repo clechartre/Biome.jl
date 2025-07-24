@@ -29,4 +29,4 @@ setup = ModelSetup(BIOME4Model;
                    co2=373.8,
                    PFTList = PFTList)
 
-run!(setup; coordstring="alldata", outfile="output_biome4_fallbacklist.nc")
+run!(setup; coordstring="alldata", outfile="output_biome4t.nc")

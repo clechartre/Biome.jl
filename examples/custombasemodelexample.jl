@@ -79,7 +79,7 @@ function my_biome_assign(pft::AbstractPFT;
     gdd5,
     tcm,
     tmin,
-    BIOME4PFTS,
+    PFTList,
     PFTStates,
     gdom)
     if get_characteristic(pft, :c4)
@@ -94,7 +94,7 @@ function my_biome_assign(pft::AbstractPFT;
                 subpft=subpft, wdom=wdom,
                 gdd0=gdd0, gdd5=gdd5,
                 tcm=tcm, tmin=tmin,
-                BIOME4PFTS=BIOME4PFTS,
+                PFTList=PFTList,
                 PFTStates=PFTStates, gdom=gdom)
     end
 end
@@ -120,4 +120,4 @@ setup = ModelSetup(BaseModel;
                    PFTList = PFTList,
                    biome_assignment = my_biome_assign)
 
-run!(setup; coordstring="-180/0/-90/90", outfile="output_CustomModel.nc")
+run!(setup; coordstring="alldata", outfile="output_CustomModel.nc")
