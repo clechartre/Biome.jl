@@ -10,7 +10,7 @@ abstract type AbstractTundraPFT    <: AbstractPFT end
     name::String = "Default"
     phenological_type::U = 1
     max_min_canopy_conductance::T = 0.0
-    Emax::T = 0.0
+    Emax::T = 1.0
     sw_drop::T = 0.0
     sw_appear::T = 0.0
     root_fraction_top_soil::T = 0.0
@@ -27,7 +27,7 @@ abstract type AbstractTundraPFT    <: AbstractPFT end
     respfact::T = 1.0
     allocfact::T = 0.0
     grass::Bool = false
-    constraints::NamedTuple{(:tcm, :min, :gdd, :gdd0, :twm, :snow, :swb),NTuple{7,Vector{T}}} = (
+    constraints::NamedTuple = (
         tcm   = [-Inf, +Inf], 
         min   = [-Inf, +Inf], 
         gdd   = [-Inf, +Inf],
@@ -49,7 +49,7 @@ PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
     present::Bool = false
-    dominance::T   = 0.0
+    fitness::T   = 0.0
     greendays::U   = 0
     firedays::T    = 0.0
     mwet::Vector{T} = zeros(T, 12)
@@ -303,6 +303,22 @@ function get_characteristic(pft::AbstractPFT, prop::Symbol)
         throw(ArgumentError("`$(prop)` is not a PFTCharacteristics field"))
     end
 end
+
+function dominance_environment_mv(pft::AbstractPFT, clt::Real, prec::Real, temp::Real)
+    mean_tuple = get_characteristic(pft, :mean_val)
+    sd_tuple   = get_characteristic(pft, :sd_val)
+
+    μ = [mean_tuple.clt, mean_tuple.prec, mean_tuple.temp]
+    σ = [sd_tuple.clt, sd_tuple.prec, sd_tuple.temp]
+    point = [clt, prec, temp]
+
+    d² = sum(((point .- μ) ./ σ).^2)
+    value = exp(-0.5 * d²)
+
+    return max(value, 0.01)  # Ensure a small positive minimum
+end
+
+
 
 function dominance_environment(pft::AbstractPFT, variable::Symbol, clt::Real)
     mv = get_characteristic(pft, :mean_val)[variable]

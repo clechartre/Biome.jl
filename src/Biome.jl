@@ -48,7 +48,7 @@ include("models/MechanisticModel/growth_subroutines/photosynthesis.jl")
 include("models/MechanisticModel/growth_subroutines/respiration.jl")
 
 # Main BIOME4 model (after all dependencies)
-include("models/MechanisticModel/biome4.jl")
+include("models/MechanisticModel/mechanisticmodel.jl")
 include("models/MechanisticModel/BIOME4/pfts.jl")
 using .BIOME4
 
@@ -82,7 +82,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        A, ES, A1, B3, B,
        
        # Original PFT types and functions
-        PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment,
+        PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment_mv,
         AbstractDeciduousPFT, AbstractEvergreenPFT, AbstractGrassPFT, AbstractTundraPFT,
         EvergreenPFT, DeciduousPFT, GrassPFT, TundraPFT,
 
@@ -91,7 +91,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
 
        # Functions
        get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,
-       phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int,
+       phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
        compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, 
        

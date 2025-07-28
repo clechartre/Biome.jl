@@ -88,13 +88,11 @@ function _execute!(
         biome_assignment::Function = Biome.assign_biome
         ) where {T<:Real}
 
-    if model !== BaseModel()
-        if PFTList !== nothing 
-            @warn "PFTList is provided but will be overwritten by the model's default PFT list."
-        end
+    if  PFTList === nothing
+        @warn "No PFTList provided, using default PFT classification."
         PFTList = get_pft_list(model)
     end
-    
+
 
     if PFTList !== nothing
         numofpfts = length(PFTList.pft_list)
