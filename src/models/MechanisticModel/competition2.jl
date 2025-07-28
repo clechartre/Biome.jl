@@ -215,14 +215,14 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     # Process regular PFTs
     for pft in PFTList.pft_list
         if PFTStates[pft].present
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance * (1 / get_characteristic(pft, :dominance_factor))
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
             push!(weighted_npps, weighted_npp)
             push!(pfts, pft)
         end
     end
     
     # Process DEFAULT_INSTANCE
-    weighted_npp = 1 * PFTStates[DEFAULT_INSTANCE].dominance * (1 / get_characteristic(DEFAULT_INSTANCE, :dominance_factor))
+    weighted_npp = 1 * PFTStates[DEFAULT_INSTANCE].fitness * (1 / get_characteristic(DEFAULT_INSTANCE, :dominance_factor))
     push!(weighted_npps, weighted_npp)
     push!(pfts, DEFAULT_INSTANCE)
     
@@ -250,7 +250,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     max_woody_weighted_npp = 0.0
     for pft in PFTList.pft_list
         if PFTStates[pft].present && !get_characteristic(pft, :grass)
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].fitness
             if weighted_npp > max_woody_weighted_npp
                 max_woody_weighted_npp = weighted_npp
                 wdom = pft
@@ -262,7 +262,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     max_grass_weighted_npp = 0.0
     for pft in PFTList.pft_list
         if PFTStates[pft].present && get_characteristic(pft, :grass)
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].dominance
+            weighted_npp = PFTStates[pft].npp * PFTStates[pft].fitness
             if weighted_npp > max_grass_weighted_npp
                 max_grass_weighted_npp = weighted_npp
                 gdom = pft
@@ -279,6 +279,10 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     grassnpp = PFTStates[gdom].npp
     grasslai = PFTStates[gdom].lai
     nppdif = woodnpp - grassnpp
+
+    if isempty(weighted_npps)
+        optpft = DEFAULT_INSTANCE
+    end
 
     return optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft, gdom
 end

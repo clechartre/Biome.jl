@@ -7,7 +7,7 @@ Plant functional types (PFTs) are the basis of the mechanical schemes. Instead o
 The defintion of PFTs often includes information on their climatic range and on their phenology, leaf form, or general energy acquisition strategy. For instance, the original PFTs used in BIOME4 are: Tropical Evergreen, Tropical Deciduous, Temperate Broadleaved Evergreen, Temperate Deciduous, Temperate Needleleaf Everegreen, Boreal Evergreen, Boreal Deciduous, Temperate C3 Grass, Tropical/Warm-temperate Grass (C4), Desert Woody (C3 or C4), Tundra Shrub, Cold Herbaceous, Lichen/Forb (Kaplan & Prentice., 2004). However, this list is not finite and could be extended to for example: Epiphytes, CAM Succulents, C4 Forbs, Mangroves, and so on. 
 
 
-## PFTTs in the model 
+## PFTs in the model 
 In this package, we provide you with base PFTs based on Phenology: Deciduous, Evergreen, Grass and Tundra. And with additional traits you could add onto them to compose your own PFT: Broadleaf/Needleleaf, Tropical/Temperate/Boreal. You also can manually modify these traits (see [defining your own PFTs](#defining-your-own-pfts)). 
 
 We provide you with 5 base PFTs: 3 trees (evergreen): Temperate, Tropical, Boreal; and 2 Grass-like: Grass and Tundra, and a Default and None with 0/default values. We have initialized them with generic parameters. 
@@ -158,6 +158,19 @@ end
 
 WoodyDesert() = WoodyDesert()
 
+`````
+## Modifying existing PFTs 
+
+You can also choose to load some of the existing PFT lists and to modify a single parameter at a time. This is very useful for parameter optimization and tuning.
+A helper function helps you to do so.
+Below is an example on updating the PFT named "LichenForb" from the PFT list for Emax and then for the constraint tcm (temperature of the coldest month).
+
+`````
+PFTList = BIOME4.PFTClassification()
+
+# Customize using set_characteristic! 
+set_characteristic!(PFTList, "LichenForb", :Emax, 999999.0)
+set_characteristic!(PFTList, "LichenForb", :tcm, [99999.0, Inf])
 `````
 
 
