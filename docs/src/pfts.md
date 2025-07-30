@@ -166,11 +166,11 @@ A helper function helps you to do so.
 Below is an example on updating the PFT named "LichenForb" from the PFT list for Emax and then for the constraint tcm (temperature of the coldest month).
 
 `````
-PFTList = BIOME4.PFTClassification()
+pftlist = BIOME4.PFTClassification()
 
 # Customize using set_characteristic! 
-set_characteristic!(PFTList, "LichenForb", :Emax, 999999.0)
-set_characteristic!(PFTList, "LichenForb", :tcm, [99999.0, Inf])
+set_characteristic!(pftlist, "LichenForb", :Emax, 999999.0)
+set_characteristic!(pftlist, "LichenForb", :tcm, [99999.0, Inf])
 `````
 
 

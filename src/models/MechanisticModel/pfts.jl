@@ -141,8 +141,6 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             ),
             dominance_factor = 2
         ),
-
-    # FIXME I need to make up this one
     AbstractNeedleleafDeciduousPFT => (
             name                    = "NeedleleafDeciduous",
             phenological_type       = 2,                   # deciduous

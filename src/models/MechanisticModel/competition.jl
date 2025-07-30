@@ -1,6 +1,6 @@
 
-include("./newassignbiome.jl")
-export mock_assign_biome, newassignbiome
+include("./assignbiome.jl")
+export mock_assign_biome, assign_biome
 
 using LinearAlgebra: norm
 using Statistics: mean
@@ -9,7 +9,7 @@ using Printf: @sprintf
 """
     BIOME4/BIOMEDominance Competition function.
 """
-function competition2(
+function competition(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel},
     tmin::T,
     tprec::T,
@@ -17,7 +17,7 @@ function competition2(
     gdd0::T,
     gdd5::T,
     tcm::T,
-    PFTList::AbstractPFTList,  
+    pftlist::AbstractPFTList,  
     pftstates::Dict{AbstractPFT,PFTState},
     biome_assignment::Function,
 )::Tuple{AbstractBiome, AbstractPFT, T} where {T <: Real, U <: Int}
@@ -35,12 +35,12 @@ function competition2(
     maxlai = T(0.0)
     grassnpp = T(0.0)
 
-    pftstates = initialize_presence(numofpfts, PFTList, pftstates) # FIXME
-    grass = [get_characteristic(PFTList.pft_list[pft], :grass) for pft in 1:numofpfts]
+    pftstates = initialize_presence(numofpfts, pftlist, pftstates) # FIXME
+    grass = [get_characteristic(pftlist.pft_list[pft], :grass) for pft in 1:numofpfts]
     grass = vcat(grass, false)
 
     # Choose the dominant woody PFT on the basis of NPP - for all PFTs but LichenForbs
-    for pft in PFTList.pft_list 
+    for pft in pftlist.pft_list 
         if get_characteristic(pft, :name)== "LichenForb"
             continue  # Skip iteration for LichenForbs
         end
@@ -65,10 +65,10 @@ function competition2(
     end
 
     # Find average annual soil moisture value for all PFTs
-    wetness = calculate_soil_moisture(PFTList, pftstates)
+    wetness = calculate_soil_moisture(pftlist, pftstates)
 
     # Determine the subdominant woody PFT
-    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, PFTList, pftstates)
+    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, pftlist, pftstates)
 
     # Competition
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft, gdom = determine_optimal_pft(
@@ -76,7 +76,7 @@ function competition2(
         optpft,
         subpft,
         wetness,
-        PFTList,
+        pftlist,
         pftstates;
         wdom=wdom,
         grasspft=grasspft,
@@ -91,22 +91,22 @@ function competition2(
         optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, pftstates
     )
 
-    # Call the newassignbiome function
+    # Call the assignbiome function
     if m isa BIOME4Model || m isa BIOMEDominanceModel
         biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, PFTList=PFTList, pftstates=pftstates)
+            gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates)
     else 
         biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, PFTList=PFTList, pftstates=pftstates, gdom=gdom
+            gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, gdom=gdom
         )
     end
 
     return biome, optpft, npp
 end
 
-function initialize_presence(numofpfts::U, PFTList::AbstractPFTList, pftstates::Dict{AbstractPFT,PFTState})::Dict{AbstractPFT,PFTState}where {T<: Real, U <: Int}
+function initialize_presence(numofpfts::U, pftlist::AbstractPFTList, pftstates::Dict{AbstractPFT,PFTState})::Dict{AbstractPFT,PFTState}where {U <: Int}
     # Initialize present dynamically based on optnpp
-    for pft in PFTList.pft_list
+    for pft in pftlist.pft_list
         if pftstates[pft].npp > 0.0
             pftstates[pft].present = true
         end
@@ -114,10 +114,10 @@ function initialize_presence(numofpfts::U, PFTList::AbstractPFTList, pftstates::
 
     # Find ColdHerbaceous PFT by type checking
     try
-        cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), PFTList.pft_list)
+        cold_herb_index = findfirst(pft -> isa(pft, ColdHerbaceous), pftlist.pft_list)
         if cold_herb_index !== nothing
-            # set_characteristic(PFTList.pft_list[cold_herb_index], :present, true) # Special case
-            cold_herb = PFTList.pft_list[cold_herb_index]
+            # set_characteristic(pftlist.pft_list[cold_herb_index], :present, true) # Special case
+            cold_herb = pftlist.pft_list[cold_herb_index]
             pftstates[cold_herb].present = true
         end
     catch
@@ -135,13 +135,13 @@ Returns a vector `wetness` of length `numofpfts+1` where
 for PFT `i`.
 """
 function calculate_soil_moisture(
-    PFTList::AbstractPFTList,
+    pftlist::AbstractPFTList,
     pftstates::Dict{AbstractPFT,PFTState}
 )::AbstractVector{<:Real}
-    isempty(PFTList.pft_list) && return Real[]
-    elm_t = typeof(PFTList.pft_list[1].characteristics).parameters[1]
-    wetness = zeros(elm_t, length(PFTList.pft_list))
-    for (i, pft) in enumerate(PFTList.pft_list)
+    isempty(pftlist.pft_list) && return Real[]
+    elm_t = typeof(pftlist.pft_list[1].characteristics).parameters[1]
+    wetness = zeros(elm_t, length(pftlist.pft_list))
+    for (i, pft) in enumerate(pftlist.pft_list)
         total = sum(pftstates[pft].mwet)
         wetness[i] = total / elm_t(12)
     end
@@ -149,13 +149,13 @@ function calculate_soil_moisture(
 end
 
 
-function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTList::AbstractPFTList, pftstates::Dict{AbstractPFT,PFTState})
+function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlist::AbstractPFTList, pftstates::Dict{AbstractPFT,PFTState})
     optpft = pftmaxnpp
     wdom   = optpft
     subnpp = 0.0
     subpft = NONE_INSTANCE
 
-    for pft in PFTList.pft_list
+    for pft in pftlist.pft_list
         # skip the max‐NPP one by identity
         if pft !== pftmaxnpp && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
             let npp = pftstates[pft].npp
@@ -179,7 +179,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     optpft::AbstractPFT,
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
-    PFTList::AbstractPFTList,
+    pftlist::AbstractPFTList,
     pftstates::Dict{AbstractPFT,PFTState};
     kwargs...) where {T <: Real}
     # Initialize variables
@@ -192,7 +192,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     nppdif = 0.0
 
     # Filter presence depending on whether the species can tolerate the wetness value
-    for (i, pft) in enumerate(PFTList.pft_list)
+    for (i, pft) in enumerate(pftlist.pft_list)
         if !pftstates[pft].present || pftstates[pft].npp == 0.0
             continue  # Skip if PFT is not present
         else
@@ -213,7 +213,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     pfts = AbstractPFT[]
     
     # Process regular PFTs
-    for pft in PFTList.pft_list
+    for pft in pftlist.pft_list
         if pftstates[pft].present
             weighted_npp = pftstates[pft].npp * pftstates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
             push!(weighted_npps, weighted_npp)
@@ -248,7 +248,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     
     # Find dominant woody PFT (wdom) - highest weighted NPP among non-grass PFTs
     max_woody_weighted_npp = 0.0
-    for pft in PFTList.pft_list
+    for pft in pftlist.pft_list
         if pftstates[pft].present && !get_characteristic(pft, :grass)
             weighted_npp = pftstates[pft].npp * pftstates[pft].fitness
             if weighted_npp > max_woody_weighted_npp
@@ -260,7 +260,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     
     # Find dominant grass PFT (gdom) - highest weighted NPP among grass PFTs
     max_grass_weighted_npp = 0.0
-    for pft in PFTList.pft_list
+    for pft in pftlist.pft_list
         if pftstates[pft].present && get_characteristic(pft, :grass)
             weighted_npp = pftstates[pft].npp * pftstates[pft].fitness
             if weighted_npp > max_grass_weighted_npp
@@ -296,7 +296,7 @@ function determine_optimal_pft(
     optpft::AbstractPFT,
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
-    PFTList::AbstractPFTList,
+    pftlist::AbstractPFTList,
     pftstates::Dict{AbstractPFT,PFTState};
     wdom::Union{AbstractPFT},
     grasspft::Union{AbstractPFT},
@@ -309,13 +309,13 @@ function determine_optimal_pft(
 
     # Helper function to find PFT by type
     function find_pft_by_type(pft_type::Type{<:AbstractPFT})
-        return findfirst(pft -> isa(pft, pft_type), PFTList.pft_list)
+        return findfirst(pft -> isa(pft, pft_type), pftlist.pft_list)
     end
 
     # Helper function to get PFT by type
     function get_pft_by_type(pft_type::Type{<:AbstractPFT})
         idx = find_pft_by_type(pft_type)
-        return idx !== nothing ? PFTList.pft_list[idx] : nothing
+        return idx !== nothing ? pftlist.pft_list[idx] : nothing
     end
 
     # Initialize variables
@@ -461,7 +461,7 @@ function determine_optimal_pft(
         if isa(wdom, BIOME4.BorealDeciduous)
             if pftstates[wdom].npp< T(120.0)
                 optpft = grasspft
-            elseif wetness[findfirst(pft -> pft === wdom, PFTList.pft_list)] < T(30.0) && nppdif < T(0.0)
+            elseif wetness[findfirst(pft -> pft === wdom, pftlist.pft_list)] < T(30.0) && nppdif < T(0.0)
                 optpft = grasspft
             else
                 optpft = wdom
@@ -513,7 +513,7 @@ function determine_optimal_pft(
         # Tundra shrubs conditions
         if isa(optpft, BIOME4.TundraShrubs)
             cold_herb = get_pft_by_type(BIOME4.ColdHerbaceous)
-            optpft_idx = findfirst(pft -> pft === optpft, PFTList.pft_list)
+            optpft_idx = findfirst(pft -> pft === optpft, pftlist.pft_list)
             if optpft_idx !== nothing && wetness[optpft_idx] <= 25.0 && 
                cold_herb !== nothing && pftstates[cold_herb].present
                 optpft = cold_herb

@@ -91,7 +91,7 @@ clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
-PFTList = PFTClassification([
+pftlist = PFTClassification([
         TropicalPFT(),
         TemperatePFT(),
         BorealPFT(),
@@ -107,7 +107,7 @@ setup = ModelSetup(BaseModel;
                    ksat=ksat_raster,
                    whc= whc_raster,
                    co2=373.8,
-                   PFTList = PFTList)
+                   pftlist = pftlist)
 
 run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
 ```

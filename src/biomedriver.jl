@@ -25,12 +25,12 @@ mutable struct ModelSetupObj{M<:BiomeModel}
     lat::Vector{Float64}
     co2::Float64
     rasters::Dict{Symbol,Raster}
-    PFTList::Union{AbstractPFTList,Nothing}
+    pftlist::Union{AbstractPFTList,Nothing}
     biome_assignment::Function
 end
 
 function ModelSetup(::Type{M}; co2::Float64 = 378.0,
-                    PFTList = nothing,
+                    pftlist = nothing,
                     biome_assignment::Function = assign_biome,
                     kwargs...) where {M<:BiomeModel}
 
@@ -50,12 +50,12 @@ function ModelSetup(::Type{M}; co2::Float64 = 378.0,
     lon = collect(dims(rasters[:temp], X))
     lat = collect(dims(rasters[:temp], Y))
 
-    return ModelSetupObj{M}(M(), lon, lat, co2, rasters, PFTList, biome_assignment)
+    return ModelSetupObj{M}(M(), lon, lat, co2, rasters, pftlist, biome_assignment)
 end
 
 function run!(setup::ModelSetupObj; coordstring::String="alldata", outfile::String="out.nc")
   M = setup.model
-  PFTs = setup.PFTList
+  PFTs = setup.pftlist
   temp = setup.rasters[:temp]
   prec = setup.rasters[:prec]
   sun  = get(setup.rasters, :sun,  nothing)
@@ -76,7 +76,7 @@ function _execute!(
         co2::T, 
         lon, 
         lat, 
-        PFTList,
+        pftlist,
         temp_raster::Raster, 
         prec_raster::Raster,
         clt_raster::Union{Raster,Nothing}, 
@@ -87,14 +87,14 @@ function _execute!(
         biome_assignment::Function = Biome.assign_biome
         ) where {T<:Real}
 
-    if  PFTList === nothing
-        @warn "No PFTList provided, using default PFT classification."
-        PFTList = get_pft_list(model)
+    if  pftlist === nothing
+        @warn "No pftlist provided, using default PFT classification."
+        pftlist = get_pft_list(model)
     end
 
 
-    if PFTList !== nothing
-        numofpfts = length(PFTList.pft_list)
+    if pftlist !== nothing
+        numofpfts = length(pftlist.pft_list)
     else
         numofpfts = 0
     end
@@ -204,7 +204,7 @@ function _execute!(
             output_dataset,
             strx,
             model,
-            PFTList,
+            pftlist,
             biome_assignment
         )
     end
@@ -307,7 +307,7 @@ function process_chunk(
     temp_chunk, lat_chunk, co2, 
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
     lon_chunk, output_stack::RasterStack,
-    output_dataset, strx, model::BiomeModel, PFTList::AbstractPFTList,
+    output_dataset, strx, model::BiomeModel, pftlist::AbstractPFTList,
     biome_assignment::Function
     )
     for y in 1:cnty
@@ -328,7 +328,7 @@ function process_chunk(
             process_cell(
                 x, y, strx, temp_chunk, lat_chunk, co2,
                 prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, output_stack, model, PFTList, biome_assignment
+                dz, lon_chunk, output_stack, model, pftlist, biome_assignment
             )
         end
 
@@ -348,7 +348,7 @@ function process_cell(
     x, y, strx,
     temp_chunk, lat_chunk, co2::T,
     prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, output_stack::RasterStack, model::BiomeModel, PFTList::AbstractPFTList,
+    lon_chunk, output_stack::RasterStack, model::BiomeModel, pftlist::AbstractPFTList,
     biome_assignment::Function
     ) where {T<:Real}
     # Check if already processed
@@ -382,9 +382,9 @@ function process_cell(
     input[49] = lon_chunk[x]
 
     # Run the model 
-    output = run(model, input; PFTList = PFTList, biome_assignment = biome_assignment)
+    output = run(model, input; pftlist = pftlist, biome_assignment = biome_assignment)
 
-    numofpfts = length(PFTList.pft_list)
+    numofpfts = length(pftlist.pft_list)
 
     # Write results using model-specific function
     process_cell_output(model, x, y, output, output_stack; numofpfts = numofpfts)

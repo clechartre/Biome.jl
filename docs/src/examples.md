@@ -26,7 +26,7 @@ run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
 
 ### BIOME4
 
-For the classic BIOME4 model, you don't need to provide a PFTList, the orchestrator will automatically fetch the biome classifications and PFTs. 
+For the classic BIOME4 model, you don't need to provide a pftlist, the orchestrator will automatically fetch the biome classifications and PFTs. 
 If you do define PFTs, they will be overwritten by the classic BIOME4 scheme and we suggest you use [BaseModel]() to work with custom PFTs. 
 
 `````
@@ -77,7 +77,7 @@ ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
 # BasePTS
-PFTList = PFTClassification([
+pftlist = PFTClassification([
         EvergreenPFT(),
         DeciduousPFT(),
         TundraPFT(),
@@ -91,7 +91,7 @@ setup = ModelSetup(BaseModel;
                    ksat=ksat_raster,
                    whc= whc_raster,
                    co2=373.8,
-                   PFTList = PFTList)
+                   pftlist = pftlist)
 
 run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
 `````
@@ -182,7 +182,7 @@ function my_biome_assign(pft::AbstractPFT;
     gdd5,
     tcm,
     tmin,
-    PFTList,
+    pftlist,
     PFTStates,
     gdom)
     if get_characteristic(pft, :c4)
@@ -197,13 +197,13 @@ function my_biome_assign(pft::AbstractPFT;
                 subpft=subpft, wdom=wdom,
                 gdd0=gdd0, gdd5=gdd5,
                 tcm=tcm, tmin=tmin,
-                PFTList=PFTList,
+                pftlist=pftlist,
                 PFTStates=PFTStates, gdom=gdom)
     end
 end
 
 
-PFTList = PFTClassification([
+pftlist = PFTClassification([
         DeciduousPFT(),
         TundraPFT(),
         GrassPFT(),
@@ -219,7 +219,7 @@ setup = ModelSetup(BaseModel;
                    ksat=ksat_raster,
                    whc= whc_raster,
                    co2=373.8,
-                   PFTList = PFTList,
+                   pftlist = pftlist,
                    biome_assignment = my_biome_assign)
 
 run!(setup; coordstring="-180/0/-90/90", outfile="output_CustomModel.nc")

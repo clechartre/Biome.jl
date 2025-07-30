@@ -33,7 +33,7 @@ include("models/MechanisticModel/phenology.jl")
 include("models/MechanisticModel/ppeett.jl")
 include("models/MechanisticModel/snow.jl")
 include("models/MechanisticModel/soiltemp.jl")
-include("models/MechanisticModel/competition2.jl")
+include("models/MechanisticModel/competition.jl")
 include("models/MechanisticModel/table.jl")
 
 # Growth subroutines
@@ -99,7 +99,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
 
 
        # Functions
-       get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,
+       get_biome_characteristic, climdata, competition, constraints, daily_interp, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
        compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, 
