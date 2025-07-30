@@ -70,7 +70,7 @@ function growth(
     tsoil::AbstractArray{T},
     mnpp::Vector{T},
     c4mnpp::Vector{T},
-    PFTStates::PFTState
+    pftstates::PFTState
 )::Tuple{T,AbstractArray{T},AbstractArray{T}, PFTState} where {T<:Real}
     # Initialize variables
     c4_override = nothing
@@ -176,12 +176,12 @@ function growth(
             wst, doptgc, mgmin, dphen, dtemp, sapwood, emax
         )
 
-        PFTStates.greendays = greendays
+        pftstates.greendays = greendays
         meanwrround = Vector{T}(undef, 12)
         for m in 1:12
             meanwrround[m] = T(safe_round_to_int(100 * meanwr[m][2]))
         end
-        PFTStates.mwet = meanwrround
+        pftstates.mwet = meanwrround
 
         # Initialize annual variables
         alresp = T(0.0)
@@ -344,7 +344,7 @@ function growth(
         end
     
         if npp <= T(0.0)
-            return T(npp), mnpp, c4mnpp, PFTStates
+            return T(npp), mnpp, c4mnpp, pftstates
         end
     
         if gpp > 0.0 
@@ -375,9 +375,9 @@ function growth(
             annnep += cflux[m]
         end
     
-        PFTStates.firedays = fire(wet, pft, maxlai, npp)
+        pftstates.firedays = fire(wet, pft, maxlai, npp)
     
-        return npp, mnpp, c4mnpp, PFTStates
+        return npp, mnpp, c4mnpp, pftstates
     end
 end 
 

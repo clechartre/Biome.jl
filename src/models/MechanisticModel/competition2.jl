@@ -18,7 +18,7 @@ function competition2(
     gdd5::T,
     tcm::T,
     PFTList::AbstractPFTList,  
-    PFTStates::Dict{AbstractPFT,PFTState},
+    pftstates::Dict{AbstractPFT,PFTState},
     biome_assignment::Function,
 )::Tuple{AbstractBiome, AbstractPFT, T} where {T <: Real, U <: Int}
 
@@ -35,7 +35,7 @@ function competition2(
     maxlai = T(0.0)
     grassnpp = T(0.0)
 
-    PFTStates = initialize_presence(numofpfts, PFTList, PFTStates) # FIXME
+    pftstates = initialize_presence(numofpfts, PFTList, pftstates) # FIXME
     grass = [get_characteristic(PFTList.pft_list[pft], :grass) for pft in 1:numofpfts]
     grass = vcat(grass, false)
 
@@ -45,30 +45,30 @@ function competition2(
             continue  # Skip iteration for LichenForbs
         end
         if get_characteristic(pft, :grass)
-            if PFTStates[pft].npp > grassnpp
-                grassnpp = PFTStates[pft].npp
+            if pftstates[pft].npp > grassnpp
+                grassnpp = pftstates[pft].npp
                 grasspft = pft
             end
         else
-            if PFTStates[pft].npp > maxnpp
-                maxnpp = PFTStates[pft].npp
+            if pftstates[pft].npp > maxnpp
+                maxnpp = pftstates[pft].npp
                 pftmaxnpp = pft
             end
-            if PFTStates[pft].lai > maxlai
-                maxlai = PFTStates[pft].lai
+            if pftstates[pft].lai > maxlai
+                maxlai = pftstates[pft].lai
                 pftmaxlai = pft
-            elseif PFTStates[pft].lai == maxlai
-                maxlai = PFTStates[pft].lai
+            elseif pftstates[pft].lai == maxlai
+                maxlai = pftstates[pft].lai
                 pftmaxlai = pftmaxnpp
             end
         end
     end
 
     # Find average annual soil moisture value for all PFTs
-    wetness = calculate_soil_moisture(PFTList, PFTStates)
+    wetness = calculate_soil_moisture(PFTList, pftstates)
 
     # Determine the subdominant woody PFT
-    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, PFTList, PFTStates)
+    optpft, wdom, subpft, subnpp = determine_subdominant_pft(pftmaxnpp, PFTList, pftstates)
 
     # Competition
     optpft, woodnpp, woodylai, greendays, grasslai, nppdif, wdom, subpft, gdom = determine_optimal_pft(
@@ -77,7 +77,7 @@ function competition2(
         subpft,
         wetness,
         PFTList,
-        PFTStates;
+        pftstates;
         wdom=wdom,
         grasspft=grasspft,
         tmin=tmin,
@@ -88,27 +88,27 @@ function competition2(
 
     # Format values for output
     dom, npp, lai, grasslai, optpft = calculate_vegetation_dominance(
-        optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, PFTStates
+        optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, pftstates
     )
 
     # Call the newassignbiome function
     if m isa BIOME4Model || m isa BIOMEDominanceModel
         biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, PFTList=PFTList, PFTStates=PFTStates)
+            gdd5=gdd5, tcm=tcm, tmin=tmin, PFTList=PFTList, pftstates=pftstates)
     else 
         biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, PFTList=PFTList, PFTStates=PFTStates, gdom=gdom
+            gdd5=gdd5, tcm=tcm, tmin=tmin, PFTList=PFTList, pftstates=pftstates, gdom=gdom
         )
     end
 
     return biome, optpft, npp
 end
 
-function initialize_presence(numofpfts::U, PFTList::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState})::Dict{AbstractPFT,PFTState}where {T<: Real, U <: Int}
+function initialize_presence(numofpfts::U, PFTList::AbstractPFTList, pftstates::Dict{AbstractPFT,PFTState})::Dict{AbstractPFT,PFTState}where {T<: Real, U <: Int}
     # Initialize present dynamically based on optnpp
     for pft in PFTList.pft_list
-        if PFTStates[pft].npp > 0.0
-            PFTStates[pft].present = true
+        if pftstates[pft].npp > 0.0
+            pftstates[pft].present = true
         end
     end
 
@@ -118,13 +118,13 @@ function initialize_presence(numofpfts::U, PFTList::AbstractPFTList, PFTStates::
         if cold_herb_index !== nothing
             # set_characteristic(PFTList.pft_list[cold_herb_index], :present, true) # Special case
             cold_herb = PFTList.pft_list[cold_herb_index]
-            PFTStates[cold_herb].present = true
+            pftstates[cold_herb].present = true
         end
     catch
         # Skip if ColdHerbaceous type doesn't exist
     end
 
-    return PFTStates
+    return pftstates
 end
 
 
@@ -136,20 +136,20 @@ for PFT `i`.
 """
 function calculate_soil_moisture(
     PFTList::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState}
+    pftstates::Dict{AbstractPFT,PFTState}
 )::AbstractVector{<:Real}
     isempty(PFTList.pft_list) && return Real[]
     elm_t = typeof(PFTList.pft_list[1].characteristics).parameters[1]
     wetness = zeros(elm_t, length(PFTList.pft_list))
     for (i, pft) in enumerate(PFTList.pft_list)
-        total = sum(PFTStates[pft].mwet)
+        total = sum(pftstates[pft].mwet)
         wetness[i] = total / elm_t(12)
     end
     return wetness
 end
 
 
-function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTList::AbstractPFTList, PFTStates::Dict{AbstractPFT,PFTState})
+function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTList::AbstractPFTList, pftstates::Dict{AbstractPFT,PFTState})
     optpft = pftmaxnpp
     wdom   = optpft
     subnpp = 0.0
@@ -158,7 +158,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     for pft in PFTList.pft_list
         # skip the max‐NPP one by identity
         if pft !== pftmaxnpp && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
-            let npp = PFTStates[pft].npp
+            let npp = pftstates[pft].npp
                 if npp > subnpp
                     subnpp = npp
                     subpft  = pft
@@ -180,7 +180,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
     PFTList::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState};
+    pftstates::Dict{AbstractPFT,PFTState};
     kwargs...) where {T <: Real}
     # Initialize variables
     wdom = optpft
@@ -193,7 +193,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
 
     # Filter presence depending on whether the species can tolerate the wetness value
     for (i, pft) in enumerate(PFTList.pft_list)
-        if !PFTStates[pft].present || PFTStates[pft].npp == 0.0
+        if !pftstates[pft].present || pftstates[pft].npp == 0.0
             continue  # Skip if PFT is not present
         else
             valid = true
@@ -204,7 +204,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
                 valid = false
             end
             # write into the runtime-state
-            PFTStates[pft].present = valid
+            pftstates[pft].present = valid
         end
     end
 
@@ -214,15 +214,15 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     
     # Process regular PFTs
     for pft in PFTList.pft_list
-        if PFTStates[pft].present
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
+        if pftstates[pft].present
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
             push!(weighted_npps, weighted_npp)
             push!(pfts, pft)
         end
     end
     
     # Process DEFAULT_INSTANCE
-    weighted_npp = 1 * PFTStates[DEFAULT_INSTANCE].fitness * (1 / get_characteristic(DEFAULT_INSTANCE, :dominance_factor))
+    weighted_npp = 1 * pftstates[DEFAULT_INSTANCE].fitness * (1 / get_characteristic(DEFAULT_INSTANCE, :dominance_factor))
     push!(weighted_npps, weighted_npp)
     push!(pfts, DEFAULT_INSTANCE)
     
@@ -249,8 +249,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     # Find dominant woody PFT (wdom) - highest weighted NPP among non-grass PFTs
     max_woody_weighted_npp = 0.0
     for pft in PFTList.pft_list
-        if PFTStates[pft].present && !get_characteristic(pft, :grass)
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].fitness
+        if pftstates[pft].present && !get_characteristic(pft, :grass)
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness
             if weighted_npp > max_woody_weighted_npp
                 max_woody_weighted_npp = weighted_npp
                 wdom = pft
@@ -261,8 +261,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     # Find dominant grass PFT (gdom) - highest weighted NPP among grass PFTs
     max_grass_weighted_npp = 0.0
     for pft in PFTList.pft_list
-        if PFTStates[pft].present && get_characteristic(pft, :grass)
-            weighted_npp = PFTStates[pft].npp * PFTStates[pft].fitness
+        if pftstates[pft].present && get_characteristic(pft, :grass)
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness
             if weighted_npp > max_grass_weighted_npp
                 max_grass_weighted_npp = weighted_npp
                 gdom = pft
@@ -271,13 +271,13 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, PFTLis
     end
     
     # Get woody PFT values
-    woodnpp = PFTStates[wdom].npp
-    woodylai = PFTStates[wdom].lai
-    greendays = PFTStates[wdom].greendays
+    woodnpp = pftstates[wdom].npp
+    woodylai = pftstates[wdom].lai
+    greendays = pftstates[wdom].greendays
 
     # Get grass LAI
-    grassnpp = PFTStates[gdom].npp
-    grasslai = PFTStates[gdom].lai
+    grassnpp = pftstates[gdom].npp
+    grasslai = pftstates[gdom].lai
     nppdif = woodnpp - grassnpp
 
     if isempty(weighted_npps)
@@ -297,7 +297,7 @@ function determine_optimal_pft(
     subpft::AbstractPFT,
     wetness::AbstractArray{T},
     PFTList::AbstractPFTList,
-    PFTStates::Dict{AbstractPFT,PFTState};
+    pftstates::Dict{AbstractPFT,PFTState};
     wdom::Union{AbstractPFT},
     grasspft::Union{AbstractPFT},
     tmin::T,
@@ -319,19 +319,19 @@ function determine_optimal_pft(
     end
 
     # Initialize variables
-    woodylai = isa(wdom, None) ? T(0) : PFTStates[wdom].lai
-    woodnpp  = isa(wdom, None) ? T(0) : PFTStates[wdom].npp
-    grasslai = isa(grasspft, None) ? T(0) : PFTStates[grasspft].lai
-    greendays = isa(wdom, None) ? 0 : PFTStates[wdom].greendays
-    nppdif    = woodnpp - (isa(grasspft, None) ? T(0) : PFTStates[grasspft].npp)
+    woodylai = isa(wdom, None) ? T(0) : pftstates[wdom].lai
+    woodnpp  = isa(wdom, None) ? T(0) : pftstates[wdom].npp
+    grasslai = isa(grasspft, None) ? T(0) : pftstates[grasspft].lai
+    greendays = isa(wdom, None) ? 0 : pftstates[wdom].greendays
+    nppdif    = woodnpp - (isa(grasspft, None) ? T(0) : pftstates[grasspft].npp)
     
     while true
         # Update variables dynamically if wdom changes
         if !isa(wdom, None)
-            woodylai = PFTStates[wdom].lai
-            woodnpp = PFTStates[wdom].npp
-            firedays = PFTStates[wdom].firedays
-            greendays = PFTStates[wdom].greendays
+            woodylai = pftstates[wdom].lai
+            woodnpp = pftstates[wdom].npp
+            firedays = pftstates[wdom].firedays
+            greendays = pftstates[wdom].greendays
         else
             woodylai = T(0.0)
             woodnpp = T(0.0)
@@ -340,20 +340,20 @@ function determine_optimal_pft(
         end
         
         if !isa(grasspft, None)
-            grasslai = PFTStates[grasspft].lai
-            nppdif = woodnpp - PFTStates[grasspft].npp
+            grasslai = pftstates[grasspft].lai
+            nppdif = woodnpp - pftstates[grasspft].npp
         else
             grasslai = T(0.0)
             nppdif = woodnpp
         end
 
         if !isa(subpft, None)
-            subfiredays = PFTStates[subpft].firedays
+            subfiredays = pftstates[subpft].firedays
         else
             subfiredays = 0
         end
 
-        nppdif = woodnpp - (isa(grasspft, None) ? T(0) : PFTStates[grasspft].npp)
+        nppdif = woodnpp - (isa(grasspft, None) ? T(0) : pftstates[grasspft].npp)
 
         # Temperate broadleaved evergreen or cool conifer with warm conditions
         if (isa(wdom, BIOME4.TemperateBroadleavedEvergreen) || isa(wdom, BIOME4.CoolConifer)) && tmin > T(0.0)
@@ -365,7 +365,7 @@ function determine_optimal_pft(
 
         # Tropical evergreen
         if isa(wdom, BIOME4.TropicalEvergreen)
-            if  PFTStates[wdom].npp < T(2000.0)
+            if  pftstates[wdom].npp < T(2000.0)
                 wdom = get_pft_by_type(BIOME4.TropicalDroughtDeciduous)
                 subpft = get_pft_by_type(BIOME4.TropicalEvergreen)
                 continue
@@ -387,7 +387,7 @@ function determine_optimal_pft(
 
         # Temperate broadleaved evergreen
         if isa(wdom, BIOME4.TemperateBroadleavedEvergreen)
-            if  PFTStates[wdom].npp < T(140.0)
+            if  pftstates[wdom].npp < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.0)
                 optpft = grasspft
@@ -428,11 +428,11 @@ function determine_optimal_pft(
         # Cool conifer
         if isa(wdom, BIOME4.CoolConifer)
             temperate_evergreen = get_pft_by_type(BIOME4.TemperateBroadleavedEvergreen)
-            if temperate_evergreen !== nothing && PFTStates[temperate_evergreen].present
+            if temperate_evergreen !== nothing && pftstates[temperate_evergreen].present
                 wdom = temperate_evergreen
                 subpft = get_pft_by_type(BIOME4.CoolConifer)
                 continue
-            elseif  PFTStates[wdom].npp < T(140.0)
+            elseif  pftstates[wdom].npp < T(140.0)
                 optpft = grasspft
             elseif woodylai < T(1.2)
                 optpft = DEFAULT_INSTANCE # Mixed woody/grass
@@ -443,7 +443,7 @@ function determine_optimal_pft(
 
         # Boreal evergreen
         if isa(wdom, BIOME4.BorealEvergreen)
-            if PFTStates[wdom].npp < T(140.0)
+            if pftstates[wdom].npp < T(140.0)
                 optpft = grasspft
             elseif firedays > 90
                 if !flop && subpft !== None
@@ -459,7 +459,7 @@ function determine_optimal_pft(
 
         # Boreal deciduous
         if isa(wdom, BIOME4.BorealDeciduous)
-            if PFTStates[wdom].npp< T(120.0)
+            if pftstates[wdom].npp< T(120.0)
                 optpft = grasspft
             elseif wetness[findfirst(pft -> pft === wdom, PFTList.pft_list)] < T(30.0) && nppdif < T(0.0)
                 optpft = grasspft
@@ -474,7 +474,7 @@ function determine_optimal_pft(
                 optpft = grasspft
             else
                 lichen_forb = get_pft_by_type(BIOME4.LichenForb)
-                if lichen_forb !== nothing &&  PFTStates[lichen_forb].npp != 0.0
+                if lichen_forb !== nothing &&  pftstates[lichen_forb].npp != 0.0
                     optpft = lichen_forb
                 else
                     optpft = NONE_INSTANCE
@@ -485,14 +485,14 @@ function determine_optimal_pft(
         # Fallback to woody desert
         if isa(wdom, None)
             woody_desert = get_pft_by_type(BIOME4.WoodyDesert)
-            if woody_desert !== nothing && PFTStates[woody_desert].present
+            if woody_desert !== nothing && pftstates[woody_desert].present
                 optpft = woody_desert
             end
         end
 
         # Woody desert specific conditions
         if isa(optpft, BIOME4.WoodyDesert)
-            if !isa(grasspft, BIOME4.C4TropicalGrass) && PFTStates[grasspft].npp > PFTStates[optpft].npp
+            if !isa(grasspft, BIOME4.C4TropicalGrass) && pftstates[grasspft].npp > pftstates[optpft].npp
                 optpft = grasspft
             else
                 optpft = get_pft_by_type(BIOME4.WoodyDesert)
@@ -503,7 +503,7 @@ function determine_optimal_pft(
         if optpft === grasspft
             woody_desert = get_pft_by_type(BIOME4.WoodyDesert)
 
-            if PFTStates[grasspft].lai < 1.8 && woody_desert !== nothing && PFTStates[woody_desert].present
+            if pftstates[grasspft].lai < 1.8 && woody_desert !== nothing && pftstates[woody_desert].present
                 optpft = woody_desert
             else
                 optpft = grasspft
@@ -515,7 +515,7 @@ function determine_optimal_pft(
             cold_herb = get_pft_by_type(BIOME4.ColdHerbaceous)
             optpft_idx = findfirst(pft -> pft === optpft, PFTList.pft_list)
             if optpft_idx !== nothing && wetness[optpft_idx] <= 25.0 && 
-               cold_herb !== nothing && PFTStates[cold_herb].present
+               cold_herb !== nothing && pftstates[cold_herb].present
                 optpft = cold_herb
             end
         end
@@ -535,7 +535,7 @@ function calculate_vegetation_dominance(
     woodnpp::T,
     woodylai::T,
     grasslai::T,
-    PFTStates::Dict{AbstractPFT,PFTState}
+    pftstates::Dict{AbstractPFT,PFTState}
 ) where {T <: Real} # ::Tuple{AbstractPFT, T, T, T, U} 
 
     dom = optpft
@@ -559,24 +559,24 @@ function calculate_vegetation_dominance(
         npp = (woodnpp + (2.0 * grassnpp)) / 3.0
 
         if !isa(dom, Default)
-            npp = PFTStates[dom].npp
-            lai = PFTStates[dom].npp
+            npp = pftstates[dom].npp
+            lai = pftstates[dom].npp
         else
             npp = T(0.0)
             lai = T(0.0)
         end
         
         if !isa(grasspft, Default)
-            grasslai = PFTStates[grasspft].lai
+            grasslai = pftstates[grasspft].lai
         else
             grasslai = T(0.0)
         end
     end
 
 
-    npp = PFTStates[optpft].npp
-    lai = PFTStates[optpft].lai
-    grasslai = PFTStates[grasspft].lai
+    npp = pftstates[optpft].npp
+    lai = pftstates[optpft].lai
+    grasslai = pftstates[grasspft].lai
 
     return dom, npp, lai, grasslai, optpft
 end

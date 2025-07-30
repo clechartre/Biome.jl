@@ -84,17 +84,17 @@ function run(
 
     # Create the Dict that holds the PFT dynamic states
     PFTStateobj() = PFTState(PFTCharacteristics())
-    PFTStates = Dict{AbstractPFT,PFTState}()
+    pftstates = Dict{AbstractPFT,PFTState}()
 
     for pft in PFTList.pft_list
-        PFTStates[pft] = PFTState(pft)
+        pftstates[pft] = PFTState(pft)
     end
     
     # Add None and Default abstract PFT types
     # zero-arg constructor uses default characteristic types
-    PFTStates[NONE_INSTANCE] = PFTStateobj()
-    PFTStates[DEFAULT_INSTANCE] = PFTStateobj()
-    PFTStates[DEFAULT_INSTANCE].dominance = dominance_environment(DEFAULT_INSTANCE, :clt, mclou) + dominance_environment(DEFAULT_INSTANCE, :temp, mtemp) + dominance_environment(DEFAULT_INSTANCE, :prec, mprec)
+    pftstates[NONE_INSTANCE] = PFTStateobj()
+    pftstates[DEFAULT_INSTANCE] = PFTStateobj()
+    pftstates[DEFAULT_INSTANCE].fitness = dominance_environment_mv(DEFAULT_INSTANCE, mclou, mprec, mtemp)
     
     # Initialize arrays for calculations
     dphen = ones(T, 365, 2)
@@ -131,34 +131,34 @@ function run(
     dphen .= T(1.0)
 
     # Apply environmental constraints to determine PFT presence
-    tmin, PFTStates = constraints(
-        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, PFTList, PFTStates
+    tmin, pftstates = constraints(
+        cold, warm, tminin, gdd5, rad0, gdd0, maxdepth, PFTList, pftstates
     )
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(PFTList.pft_list)
-        PFTStates[pft].dominance = dominance_environment(pft, :clt, mclou) + dominance_environment(pft, :temp, mtemp) + dominance_environment(pft, :prec, mprec)
-        if PFTStates[pft].present == true
+        pftstates[pft].fitness = dominance_environment_mv(pft, mclou, mprec, mtemp)
+        if pftstates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
                 dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl)
             end
 
             # Optimize NPP and LAI for this PFT
-            PFTList.pft_list[iv], optlai, optnpp, PFTStates[pft] = findnpp(
+            PFTList.pft_list[iv], optlai, optnpp, pftstates[pft] = findnpp(
                 pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
-                k, dphen, co2, p, tsoil, PFTStates[pft]
+                k, dphen, co2, p, tsoil, pftstates[pft]
             )
 
             # Store results in PFT characteristics
-            PFTStates[pft].npp = optnpp            # assign the optimized NPP
-            PFTStates[pft].lai = optlai            # assign the optimized LAI
+            pftstates[pft].npp = optnpp            # assign the optimized NPP
+            pftstates[pft].lai = optlai            # assign the optimized LAI
         end
     end
 
 # Determine winning biome through PFT competition
     biome, optpft, npp = competition2(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, PFTList, PFTStates, biome_assignment
+        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, PFTList, pftstates, biome_assignment
     )
 
     # Convert optimal PFT to index
@@ -175,8 +175,8 @@ function run(
     # Collect NPP values for all PFTs
     nppindex = zeros(T, numofpfts + 1)
     for (i, pft) in enumerate(PFTList.pft_list)
-        if PFTStates[pft].present == true
-            nppindex[i] = PFTStates[pft].npp
+        if pftstates[pft].present == true
+            nppindex[i] = pftstates[pft].npp
         else
             nppindex[i] = T(0.0)
         end

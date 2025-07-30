@@ -83,11 +83,20 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        
        # Original PFT types and functions
         PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment_mv,
-        AbstractDeciduousPFT, AbstractEvergreenPFT, AbstractGrassPFT, AbstractTundraPFT,
-        EvergreenPFT, DeciduousPFT, GrassPFT, TundraPFT,
+        AbstractEvergreenPFT, AbstractNeedleleafEvergreenPFT,  AbstractBroadleafEvergreenPFT,
+        AbstractDeciduousPFT, AbstractNeedleleafDeciduousPFT, AbstractBroadleafDeciduousPFT,
+        AbstractC4GrassPFT, AbstractC3GrassPFT, AbstractGrassPFT, 
 
-        # Original biome types
-        EvergreenForest, DeciduousForest, MixedForest, Grassland, Desert, Tundra,
+        # BasePFTs
+        NeedleleafEvergreenPFT,  BroadleafEvergreenPFT,
+        DeciduousPFT, NeedleleafDeciduousPFT, BroadleafDeciduousPFT,
+        C4GrassPFT, C3GrassPFT, 
+
+        # Biomes
+        NeedleleafEvergreenForest, BroadleafEvergreenForest,
+        MixedForest, NeedleleafDeciduousForest, BroadleafDeciduousForest,
+        C3Grassland, C4Grassland, Desert,
+
 
        # Functions
        get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,

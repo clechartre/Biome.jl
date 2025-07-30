@@ -1,26 +1,36 @@
-struct EvergreenForest <: AbstractBiome
+struct NeedleleafEvergreenForest <: AbstractBiome
     value::Int
-    EvergreenForest() = new(1)
+    NeedleleafEvergreenForest() = new(1)
 end
 
-struct DeciduousForest <: AbstractBiome
+struct BroadleafEvergreenForest <: AbstractBiome
     value::Int
-    DeciduousForest() = new(2)
+    BroadleafEvergreenForest() = new(2)
+end
+
+struct NeedleleafDeciduousForest <: AbstractBiome
+    value::Int
+    NeedleleafDeciduousForest() = new(3)
+end
+
+struct BroadleafDeciduousForest <: AbstractBiome
+    value::Int
+    BroadleafDeciduousForest() = new(4)
 end
 
 struct MixedForest <: AbstractBiome
     value::Int
-    MixedForest() = new(3)
+    MixedForest() = new(5)
 end
 
-struct Grassland <: AbstractBiome
+struct C3Grassland <: AbstractBiome
     value::Int
-    Grassland() = new(4)
+    C3Grassland() = new(6)
 end
 
-struct Tundra <: AbstractBiome
+struct C4Grassland <: AbstractBiome
     value::Int
-    Tundra() = new(5)
+    C4Grassland() = new(7)
 end
 
 struct Desert <: AbstractBiome

@@ -1,5 +1,5 @@
 """
-    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, PFTList, PFTstates)
+    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, PFTList, pftstates)
 
 Calculate constraints for biome classification based on temperature, GDD, and 
 other parameters. Sets each PFT’s `present` flag in `states`.
@@ -13,7 +13,7 @@ other parameters. Sets each PFT’s `present` flag in `states`.
 - `gdd0`: Growing degree days above 0°C
 - `maxdepth`: Maximum snow depth (mm)
 - `PFTList`: List of plant functional types to evaluate
-- `PFTstates`: Dict mapping each `AbstractPFT` to its `PFTState`
+- `pftstates`: Dict mapping each `AbstractPFT` to its `PFTState`
 
 # Returns
 - `tmin`: Adjusted minimum temperature (°C)
@@ -28,7 +28,7 @@ function constraints(
     gdd0::T,
     maxdepth::T,
     PFTList::AbstractPFTList,
-    PFTstates::Dict{AbstractPFT,PFTState}
+    pftstates::Dict{AbstractPFT,PFTState}
 )::Tuple{T,Dict{AbstractPFT,PFTState}} where {T<:Real}
 
     # adjust minimum temp for frost delay
@@ -53,8 +53,8 @@ function constraints(
         end
 
         # write into the runtime-state
-        PFTstates[pft].present = valid
+        pftstates[pft].present = valid
     end
 
-    return tmin, PFTstates
+    return tmin, pftstates
 end

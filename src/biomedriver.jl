@@ -20,36 +20,35 @@ using DimensionalData
 export ModelSetup, run!
 
 mutable struct ModelSetupObj{M<:BiomeModel}
-  model::M
-  lon::Vector{Float64}
-  lat::Vector{Float64}
-  co2::Float64
-  rasters::Dict{Symbol,Raster}
-  PFTList::Union{AbstractPFTList,Nothing}
-  biome_assignment::Function
+    model::M
+    lon::Vector{Float64}
+    lat::Vector{Float64}
+    co2::Float64
+    rasters::Dict{Symbol,Raster}
+    PFTList::Union{AbstractPFTList,Nothing}
+    biome_assignment::Function
 end
 
-function ModelSetup(::Type{M};
-    temp::Raster,
-    prec::Raster,
-    sun::Union{Raster,Nothing}=nothing,
-    ksat::Union{Raster,Nothing}=nothing,
-    whc::Union{Raster,Nothing}=nothing,
-    co2::Float64 = 378.0,
-    PFTList = nothing,
-    biome_assignment::Function = assign_biome
-    ) where {M<:BiomeModel}
+function ModelSetup(::Type{M}; co2::Float64 = 378.0,
+                    PFTList = nothing,
+                    biome_assignment::Function = assign_biome,
+                    kwargs...) where {M<:BiomeModel}
 
-    lon = collect(dims(temp, X))
-    lat = collect(dims(temp, Y))
-
-    # collect only the rasters the user actually passed
+    # Separate out raster arguments from others
     rasters = Dict{Symbol,Raster}()
-    rasters[:temp] = temp
-    rasters[:prec] = prec
-    if sun   !== nothing; rasters[:sun]  = sun   end
-    if ksat  !== nothing; rasters[:ksat] = ksat  end
-    if whc   !== nothing; rasters[:whc]  = whc   end
+    for (key, val) in kwargs
+        if val isa Raster
+            rasters[key] = val
+        end
+    end
+
+    # Ensure required keys exist
+    @assert :temp in keys(rasters) "A `temp` raster must be provided."
+    @assert :prec in keys(rasters) "A `prec` raster must be provided."
+
+    # Extract longitude and latitude from the temp raster
+    lon = collect(dims(rasters[:temp], X))
+    lat = collect(dims(rasters[:temp], Y))
 
     return ModelSetupObj{M}(M(), lon, lat, co2, rasters, PFTList, biome_assignment)
 end
@@ -368,6 +367,7 @@ function process_cell(
     p = P0 * (1.0 - (G) / (CP * T0))^(CP * M / R0)
 
     input = zeros(T, 50)
+    # input - (lat-lat, co2^cpde)
 
     input[1] = lat_chunk[y]
     input[2] = co2
