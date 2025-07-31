@@ -69,15 +69,14 @@ function run(
         T = Float64
     end
 
+    # Initialize environmental variables from the input
     temp, clt, prec,
         mclou, mprec, mtemp, tprec, dtemp, dprecin, dclou, 
         tcm, cold, gdd5, gdd0, warm, tminin, tmin, k, tsoil, dphen,
         dpet, dayl, sun, rad0, ddayl, dprec, dmelt, maxdepth = initialize_environmental_variables(vars_in)
 
+    # Unpack the PFT list and initialize PFT states
     pftstates, numofpfts = initialize_pftstates(pftlist, mclou, mprec, mtemp)
-
-    optnpp = zeros(T, numofpfts + 1)  # +1 for 0-indexing compatibility
-    optlai = zeros(T, numofpfts + 1)  # +1 for 0-indexing compatibility
 
     # Apply environmental constraints to determine PFT presence
     pftstates = constraints(
@@ -105,40 +104,21 @@ function run(
         end
     end
 
-# Determine winning biome through PFT competition
+    # Determine winning biome through PFT competition
     biome, optpft, npp = competition(
         m, tmin, tprec, numofpfts, gdd0, gdd5, cold, pftlist, pftstates, biome_assignment
     )
 
-    # Convert optimal PFT to index
-    optindex = if optpft === nothing
-        0
-    else
-        idx = findfirst(pft -> pft == optpft, pftlist.pft_list)
-        idx === nothing ? 0 : idx
-    end
-
-    # Convert biome to integer index
-    biomeindex = get_biome_characteristic(biome, :value)
-
-    # Collect NPP values for all PFTs
-    nppindex = zeros(T, numofpfts + 1)
-    for (i, pft) in enumerate(pftlist.pft_list)
-        if pftstates[pft].present == true
-            nppindex[i] = pftstates[pft].npp
-        else
-            nppindex[i] = T(0.0)
-        end
-    end
-
     # Prepare output vector
-    output = Vector{Any}(undef, 50)
-    fill!(output, T(0.0))
-    output[1] = biomeindex
-    output[2] = optindex
-    output[3:3+numofpfts] = nppindex[1:numofpfts+1]  # Ensure we don't exceed bounds
-    output[48] = lon
-    output[49] = lat
+    output = create_output_vector(
+        biome,
+        optpft,
+        pftstates,
+        pftlist,
+        numofpfts,
+        lat,
+        lon
+    )
 
     return output
 end
@@ -284,4 +264,35 @@ function initialize_pftstates(pftlist::AbstractPFTList, mclou::T, mprec::T, mtem
     pftstates[DEFAULT_INSTANCE].fitness = dominance_environment_mv(DEFAULT_INSTANCE, mclou, mprec, mtemp)
     
     return pftstates, numofpfts
+end
+
+function create_output_vector(
+    biome::AbstractBiome,
+    optpft::AbstractPFT,
+    pftstates::Dict{AbstractPFT,PFTState},
+    pftlist::AbstractPFTList,
+    numofpfts::U,
+    lat::T,
+    lon::T
+) where {T<:Real, U<:Int}
+    # Convert optimal PFT to index
+    optindex = optpft === nothing ? 0 : something(findfirst(pft -> pft == optpft, pftlist.pft_list), 0)
+
+    # Convert biome to integer index
+    biomeindex = get_biome_characteristic(biome, :value)
+
+    # Collect NPP values for all PFTs
+    nppindex = Vector{T}(undef, numofpfts + 1)
+    for (i, pft) in enumerate(pftlist.pft_list)
+        nppindex[i] = pftstates[pft].present ? pftstates[pft].npp : T(0.0)
+    end
+    nppindex[end] = T(0.0)  # Last one as zero if not used (padding)
+
+    return (
+        biome = biomeindex,
+        optpft = optindex,
+        npp = nppindex,
+        lat = lat,
+        lon = lon
+    )
 end

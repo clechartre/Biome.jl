@@ -405,10 +405,10 @@ process_cell_output(model, x, y, output, output_stack)
 
 Write model output to the RasterStack based on model type.
 """
-function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:biome][x, y] = output[1]
-    output_stack[:wdom][x, y] = output[2]
-    output_stack[:npp][x, y, :] = output[3:3+numofpfts]
+function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output::NamedTuple, output_stack::RasterStack; numofpfts)
+    output_stack[:biome][x, y] = output.biome
+    output_stack[:optpft][x, y] = output.optpft
+    output_stack[:npp][x, y, :] = output.npp
 end
 
 function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack; numofpfts)
@@ -454,7 +454,7 @@ Define the output variables and their properties for different biome models.
 function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
     return Dict(
         "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
-        "wdom" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant woody vegetation")),
+        "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
         "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "gC/m^2/month", "description" => "Net primary productivity")),
     )
 end
