@@ -90,29 +90,29 @@ using Test
         pft_states[boreal_evergreen].present = true
         
         # Test cold conditions
-        result_cold = assign_biome(temperate_dec; gdd5=1200.0, tcm=-20.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_cold = assign_biome(temperate_dec; gdd5=1200.0, tcm=-20.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_cold, ColdMixedForest)
         
         # Test warmer conditions
-        result_warm = assign_biome(temperate_dec; gdd5=1200.0, tcm=-10.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_warm = assign_biome(temperate_dec; gdd5=1200.0, tcm=-10.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_warm, CoolMixedForest)
         
         # Test with temperate broadleaved evergreen present and high GDD5
         temperate_be = first(pft for pft in biome_pfts.pft_list if get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen")
         pft_states[temperate_be].present = true
         pft_states[boreal_evergreen].present = false
-        result_tbe = assign_biome(temperate_dec; gdd5=3500.0, tcm=5.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_tbe = assign_biome(temperate_dec; gdd5=3500.0, tcm=5.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_tbe, WarmMixedForest)
         
         # Test fallback to temperate deciduous forest
         pft_states[temperate_be].present = false
         pft_states[boreal_evergreen].present = false
-        result_fallback = assign_biome(temperate_dec; gdd5=2000.0, tcm=0.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_fallback = assign_biome(temperate_dec; gdd5=2000.0, tcm=0.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_fallback, TemperateDeciduousForest)
         
         # Test with low NPP
         pft_states[temperate_dec].npp = 70.0
-        result_low_npp = assign_biome(temperate_dec; gdd5=2000.0, tcm=0.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_low_npp = assign_biome(temperate_dec; gdd5=2000.0, tcm=0.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_low_npp, Desert)
     end
     
@@ -132,29 +132,29 @@ using Test
         temperate_be = first(pft for pft in biome_pfts.pft_list if get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen")
         pft_states[temperate_be].present = true
         
-        result_tbe = assign_biome(cool_conifer; subpft=Default(), BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_tbe = assign_biome(cool_conifer; subpft=Default(), PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_tbe, WarmMixedForest)
         
         # Test with temperate deciduous subdominant
         pft_states[temperate_be].present = false
         temperate_dec = TemperateDeciduous()
         pft_states[temperate_dec] = PFTState{Float64, Int}()
-        result_temp_dec = assign_biome(cool_conifer; subpft=temperate_dec, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_temp_dec = assign_biome(cool_conifer; subpft=temperate_dec, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_temp_dec, TemperateConiferForest)
         
         # Test with boreal deciduous subdominant
         boreal_dec = BorealDeciduous()
         pft_states[boreal_dec] = PFTState{Float64, Int}()
-        result_boreal_dec = assign_biome(cool_conifer; subpft=boreal_dec, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_boreal_dec = assign_biome(cool_conifer; subpft=boreal_dec, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_boreal_dec, ColdMixedForest)
         
         # Test fallback
-        result_fallback = assign_biome(cool_conifer; subpft=Default(), BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_fallback = assign_biome(cool_conifer; subpft=Default(), PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_fallback, TemperateConiferForest)
         
         # Test with low NPP
         pft_states[cool_conifer].npp = 60.0
-        result_low_npp = assign_biome(cool_conifer; subpft=Default(), BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_low_npp = assign_biome(cool_conifer; subpft=Default(), PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_low_npp, Desert)
     end
     
@@ -173,22 +173,22 @@ using Test
         temperate_dec = first(pft for pft in biome_pfts.pft_list if get_characteristic(pft, :name) == "TemperateDeciduous")
         pft_states[temperate_dec].present = true
         
-        result_warm = assign_biome(boreal_evergreen; gdd5=1200.0, tcm=-10.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_warm = assign_biome(boreal_evergreen; gdd5=1200.0, tcm=-10.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_warm, CoolMixedForest)
         
         # Test warm conditions without temperate deciduous
         pft_states[temperate_dec].present = false
-        result_warm_no_td = assign_biome(boreal_evergreen; gdd5=1200.0, tcm=-10.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_warm_no_td = assign_biome(boreal_evergreen; gdd5=1200.0, tcm=-10.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_warm_no_td, CoolConiferForest)
         
         # Test cold conditions with temperate deciduous present
         pft_states[temperate_dec].present = true
-        result_cold = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_cold = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_cold, ColdMixedForest)
         
         # Test cold conditions without temperate deciduous
         pft_states[temperate_dec].present = false
-        result_cold_no_td = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_cold_no_td = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_cold_no_td, EvergreenTaigaMontaneForest)
     end
     
@@ -412,17 +412,17 @@ using Test
         
         # Exactly at threshold (NPP <= 100.0 means Desert)
         pft_states[temperate_dec].npp = 100.0
-        result_at_threshold = assign_biome(temperate_dec; gdd5=1800.0, tcm=0.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_at_threshold = assign_biome(temperate_dec; gdd5=1800.0, tcm=0.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_at_threshold, Desert)
         
         # Just above threshold
         pft_states[temperate_dec].npp = 100.1
-        result_above_threshold = assign_biome(temperate_dec; gdd5=1800.0, tcm=0.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_above_threshold = assign_biome(temperate_dec; gdd5=1800.0, tcm=0.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_above_threshold, TemperateDeciduousForest)
         
         # Just below threshold
         pft_states[temperate_dec].npp = 99.9
-        result_below_threshold = assign_biome(temperate_dec; gdd5=1800.0, tcm=0.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_below_threshold = assign_biome(temperate_dec; gdd5=1800.0, tcm=0.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_below_threshold, Desert)
         
         # Test GDD thresholds for boreal evergreen
@@ -430,15 +430,15 @@ using Test
         pft_states[boreal_evergreen] = PFTState{Float64, Int}()
         
         # At GDD5 threshold (900.0) and TCM threshold (-19.0)
-        result_gdd_threshold = assign_biome(boreal_evergreen; gdd5=900.0, tcm=-19.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_gdd_threshold = assign_biome(boreal_evergreen; gdd5=900.0, tcm=-19.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_gdd_threshold, EvergreenTaigaMontaneForest) # At threshold boundary
         
         # Above GDD5 threshold
-        result_gdd_above = assign_biome(boreal_evergreen; gdd5=901.0, tcm=-18.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_gdd_above = assign_biome(boreal_evergreen; gdd5=901.0, tcm=-18.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_gdd_above, CoolConiferForest) # Above threshold
         
         # Below GDD5 threshold
-        result_gdd_below = assign_biome(boreal_evergreen; gdd5=899.0, tcm=-20.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_gdd_below = assign_biome(boreal_evergreen; gdd5=899.0, tcm=-20.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_gdd_below, EvergreenTaigaMontaneForest) # Below threshold
     end
     
@@ -490,7 +490,7 @@ using Test
         pft_states[boreal_evergreen].present = false
         
         # With high GDD5 and moderate TCM, should prefer warm mixed forest
-        result_complex1 = assign_biome(temperate_dec; gdd5=3500.0, tcm=5.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_complex1 = assign_biome(temperate_dec; gdd5=3500.0, tcm=5.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_complex1, WarmMixedForest)
         
         # Test scenario: Cool conifer with multiple interactions
@@ -500,7 +500,7 @@ using Test
         temperate_dec_sub = TemperateDeciduous()
         pft_states[temperate_dec_sub] = PFTState{Float64, Int}()
         
-        result_complex2 = assign_biome(cool_conifer; subpft=temperate_dec_sub, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_complex2 = assign_biome(cool_conifer; subpft=temperate_dec_sub, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_complex2, TemperateConiferForest)
         
         # Test scenario: Woody desert with varying LAI conditions
@@ -612,22 +612,22 @@ using Test
         
         # Scenario 1: Warm boreal with temperate deciduous present
         pft_states[temperate_deciduous].present = true
-        result_boreal_1 = assign_biome(boreal_evergreen; gdd5=1000.0, tcm=-15.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_boreal_1 = assign_biome(boreal_evergreen; gdd5=1000.0, tcm=-15.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_boreal_1, CoolMixedForest)
         
         # Scenario 2: Warm boreal without temperate deciduous
         pft_states[temperate_deciduous].present = false
-        result_boreal_2 = assign_biome(boreal_evergreen; gdd5=1000.0, tcm=-15.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_boreal_2 = assign_biome(boreal_evergreen; gdd5=1000.0, tcm=-15.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_boreal_2, CoolConiferForest)
         
         # Scenario 3: Cold boreal with temperate deciduous present
         pft_states[temperate_deciduous].present = true
-        result_boreal_3 = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_boreal_3 = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_boreal_3, ColdMixedForest)
         
         # Scenario 4: Cold boreal without temperate deciduous
         pft_states[temperate_deciduous].present = false
-        result_boreal_4 = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, BIOME4PFTS=biome_pfts, PFTStates=pft_states)
+        result_boreal_4 = assign_biome(boreal_evergreen; gdd5=600.0, tcm=-25.0, PFTList=biome_pfts, PFTStates=pft_states)
         @test isa(result_boreal_4, EvergreenTaigaMontaneForest)
     end
     

@@ -64,7 +64,7 @@ function findnpp(
     co2::AbstractFloat,
     p::AbstractFloat,
     tsoil::AbstractArray{T,1},
-    PFTstates::PFTState{T,Int};
+    pftstates::PFTState{T,Int};
 )::Tuple{AbstractPFT,T,T, PFTState} where {T<:Real}
     # Initialize variables
     optnpp = T(0.0)
@@ -77,7 +77,7 @@ function findnpp(
     range_val = T(8.0)
     alai = zeros(T, 2)
 
-    if PFTstates.present == false
+    if pftstates.present == false
         return pft, T(0.0), T(0.0)
     end
 
@@ -88,7 +88,7 @@ function findnpp(
         alai[2] = lowbound + T(0.75) * range_val
 
         # Test first LAI value
-        npp, mnpp, c4mnpp, PFTstates = growth(
+        npp, mnpp, c4mnpp, pftstates = growth(
             alai[1],
             annp,
             sun,
@@ -106,7 +106,7 @@ function findnpp(
             tsoil,
             mnpp,
             c4mnpp,
-            PFTstates
+            pftstates
         )
 
         if npp >= optnpp
@@ -115,7 +115,7 @@ function findnpp(
         end
 
         # Test second LAI value
-        npp, mnpp, c4mnpp, PFTstates = growth(
+        npp, mnpp, c4mnpp, pftstates = growth(
             alai[2],
             annp,
             sun,
@@ -133,7 +133,7 @@ function findnpp(
             tsoil,
             mnpp,
             c4mnpp,
-            PFTstates
+            pftstates
         )
 
         if npp >= optnpp
@@ -149,5 +149,5 @@ function findnpp(
         end
     end
     
-    return pft, optlai, optnpp, PFTstates
+    return pft, optlai, optnpp, pftstates
 end

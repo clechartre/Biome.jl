@@ -16,7 +16,7 @@ Biome.assign_biome
 Biome.c4photo
 Biome.calcphi
 Biome.constraints
-Biome.competition2
+Biome.competition
 Biome.daily_interp
 Biome.findnpp
 Biome.fire

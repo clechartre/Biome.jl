@@ -27,7 +27,8 @@ function ppeett(
     lat::T,
     dtemp::AbstractArray{T},
     dclou::AbstractArray{T},
-    temp::AbstractArray{T}
+    temp::AbstractArray{T},
+    env::NamedTuple
 )::Tuple{AbstractArray{T},AbstractArray{T},AbstractArray{T},T,AbstractArray{T}} where {T<:Real}
     midday = Int[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
     daysinmonth = Int[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -132,5 +133,11 @@ function ppeett(
         end
     end
 
-    return dpet, dayl, sun, rad0, ddayl
+    return (
+        get(env, :dpet, dpet),
+        get(env, :dayl, dayl),
+        get(env, :sun, sun),
+        get(env, :rad0, rad0),
+        get(env, :ddayl, ddayl)
+    )
 end

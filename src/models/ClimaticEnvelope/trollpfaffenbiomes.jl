@@ -26,7 +26,7 @@ Quickly classify the climate according to the Troll‑Paffen scheme using 12 mon
 - Zones range from polar ice‑deserts through tropical rain‑forest, with `38` = Not Classified.
 """
 
-function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+function run(m::TrollPfaffenModel, input_variables::NamedTuple, args...; kwargs...) where {T <: Real, U <: Int}
 
     # Define Troll-Paffen climate zones with numerical values and descriptions
     TROLL = Dict(
@@ -71,28 +71,26 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs
     )
 
     # Extract temperature and precipitation data
-    temp = vars_in[5:16]    # Monthly temperatures
-    precip = vars_in[17:28] # Monthly precipitation
+    @unpack_namedtuple_climate input_variables
 
     # Calculate statistics
     temp_max = maximum(temp)
     temp_min = minimum(temp)
     temp_mean = mean(temp)
     temp_range = temp_max - temp_min
-    precip_sum = sum(precip)
+    prec_sum = sum(prec)
 
     # Calculate Growing Degree Days
     nVegDays = get_growing_degree_days(temp, 5.0)
 
     # Calculate Humid Months
-    nHumid = get_humid_months(temp, precip)
+    nHumid = get_humid_months(temp, prec)
 
     # Determine if in northern hemisphere
     bNorth = sum(temp[4:9]) > sum(temp[10:12]) + sum(temp[1:2])
 
     # Determine classification
     zone =
-        # Polar and Subpolar Zones
         if temp_max < 0
             TROLL[:TP_I_1]
         elseif temp_max < 6
@@ -102,7 +100,6 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs
         elseif temp_max < 12 && temp_min >= -8 && temp_range < 13
             TROLL[:TP_I_4]
 
-        # Cold Temperate Boreal Zone
         elseif temp_max < 15 && temp_min >= -3 && temp_min < 2 && is_between(nVegDays, 120, 180)
             TROLL[:TP_II_1]
         elseif temp_max < 20 && temp_range < 40 && is_between(nVegDays, 100, 150)
@@ -110,7 +107,6 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs
         elseif temp_max < 20 && temp_range >= 40
             TROLL[:TP_II_3]
 
-        # Cool Temperate Zones
         elseif temp_min >= -3 && temp_min < 2 && nVegDays >= 200
             TROLL[:TP_III_3]
         elseif temp_max < 15 && is_between(temp_min, 2, 10) && temp_range < 10
@@ -124,11 +120,10 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs
         elseif temp_max >= 20 && is_between(temp_min, -30, -10) && temp_range > 40
             TROLL[:TP_III_6]
 
-        # Steppe Climates
         elseif temp_min < 0
             if nHumid >= 6
                 TROLL[:TP_III_9]
-            elseif precip[3] + precip[4] + precip[5] < precip[6] + precip[7] + precip[8]  # PWinter < PSummer
+            elseif prec[3] + prec[4] + prec[5] < prec[6] + prec[7] + prec[8]
                 TROLL[:TP_III_10]
             else
                 TROLL[:TP_III_9a]
@@ -136,24 +131,15 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs
         elseif temp_min < 6
             TROLL[:TP_III_12a]
 
-        # Tropical and Subtropical Zones
         elseif temp_min > 0 && temp_mean > 18.3
             if nHumid > 9.5
                 TROLL[:TP_V_1]
             elseif nHumid > 7
-                if !bNorth
-                    TROLL[:TP_V_2a]
-                else
-                    TROLL[:TP_V_2]
-                end
+                !bNorth ? TROLL[:TP_V_2a] : TROLL[:TP_V_2]
             elseif nHumid > 4.5
                 TROLL[:TP_V_3]
             elseif nHumid > 2
-                if !bNorth
-                    TROLL[:TP_V_4a]
-                else
-                    TROLL[:TP_V_4]
-                end
+                !bNorth ? TROLL[:TP_V_4a] : TROLL[:TP_V_4]
             else
                 TROLL[:TP_V_5]
             end
@@ -161,11 +147,7 @@ function run(m::TrollPfaffenModel, vars_in::Vector{Union{T, U}}, args...; kwargs
             TROLL[:NA]
         end
 
-    output = Vector{Any}(undef, 50)
-    fill!(output, T(0.0))
-    output[1] = zone  # Store the zone classification
-
-    return output
+    return (troll_zone = zone,)
 end
 
 # Utility functions
@@ -177,10 +159,10 @@ function get_growing_degree_days(temp::Vector{Float64}, base_temp::Float64)
     return sum(max(t - base_temp, 0.0) for t in temp)
 end
 
-function get_humid_months(temp::Vector{Float64}, precip::Vector{Float64})
+function get_humid_months(temp::Vector{Float64}, prec::Vector{Float64})
     temp_daily = daily_interp(temp)
-    precip_daily = daily_interp(precip)
-    humid_days = sum(precip_daily[i] > 2 * temp_daily[i] for i in 1:365)
+    prec_daily = daily_interp(prec)
+    humid_days = sum(prec_daily[i] > 2 * temp_daily[i] for i in 1:365)
     return humid_days * 12.0 / 365.0
 end
 

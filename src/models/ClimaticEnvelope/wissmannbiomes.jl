@@ -24,7 +24,7 @@ Classify climate by the Wissmann scheme using 12 months of temperature and preci
 - Determines hemisphere to compare winter vs summer precipitation.
 - Applies tiered thresholds for Polar, Boreal, Temperate, and Tropical groups.
 """
-function run(m::WissmannModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+function run(m::WissmannModel, input_variables::NamedTuple, args...; kwargs...) where {T <: Real, U <: Int}
     # Define Wissmann climate zones
     WI = Dict(
         :IA  => 1, #("I A", "Rainforest, equatorial"),
@@ -51,129 +51,88 @@ function run(m::WissmannModel, vars_in::Vector{Union{T, U}}, args...; kwargs...)
         :VI  => 22, #("VI", "Polar frost")
     )
 
-    # Initialize output object
-    output = [0]
-
     # Extract temperature and precipitation data
-    temp = vars_in[5:16]    # Monthly temperatures
-    precip = vars_in[17:28] # Monthly precipitation
+    @unpack_namedtuple_climate input_variables
 
     # Temperature and precipitation statistics
     temp_min = minimum(temp)
     temp_max = maximum(temp)
     temp_mean = mean(temp)
-    precip_sum = sum(precip)
-    precip_min = minimum(precip)
+    prec_sum = sum(prec)
+    prec_min = minimum(prec)
 
-    winter_precip = sum(precip[10:12]) + sum(precip[1:2])
-    summer_precip = sum(precip[3:9])
+    winter_prec = sum(prec[10:12]) + sum(prec[1:2])
+    summer_prec = sum(prec[3:9])
 
     is_northern_hemisphere = sum(temp[3:9]) > sum(temp[10:12]) + sum(temp[1:2])
 
     if !is_northern_hemisphere
-        winter_precip, summer_precip = summer_precip, winter_precip
+        winter_prec, summer_prec = summer_prec, winter_prec
     end
 
-    t_threshold = 10 * (winter_precip > summer_precip ? temp_mean : temp_mean + 14.0)
+    t_threshold = 10 * (winter_prec > summer_prec ? temp_mean : temp_mean + 14.0)
 
     # VI - Polar frost
     if temp_max < 0
-        output[1] = WI[:VI]
-        return output
+        return (climate_zone = WI[:VI],)
     # V - Polar tundra
     elseif temp_max < 10
-        output[1] = WI[:V]
-        return output
+        return (climate_zone = WI[:V],)
     end
 
     # IV - Boreal climates
     if temp_mean < 4
-        if precip_sum > 2.5 * t_threshold
-            output[1] = WI[:IV_F]
-            return output
-
-        elseif precip_sum > 2.0 * t_threshold
-            output[1] = WI[:IV_T]
-            return output
-
-        elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:IV_S]
-            return output
-
+        if prec_sum > 2.5 * t_threshold
+            return (climate_zone = WI[:IV_F],)
+        elseif prec_sum > 2.0 * t_threshold
+            return (climate_zone = WI[:IV_T],)
+        elseif prec_sum > 1.0 * t_threshold
+            return (climate_zone = WI[:IV_S],)
         else
-            output[1] = WI[:IV_D]
-            return output
-
+            return (climate_zone = WI[:IV_D],)
         end
     end
 
     # III - Cool temperate
     if temp_min < 2
-        if precip_sum > 2.5 * t_threshold
-            output[1] = WI[:III_F]
-            return output
-
-        elseif precip_sum > 2.0 * t_threshold
-            output[1] = winter_precip < summer_precip ? WI[:III_Tw] : WI[:III_Ts]
-            return output
-
-        elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:III_S]
-            return output
-
+        if prec_sum > 2.5 * t_threshold
+            return (climate_zone = WI[:III_F],)
+        elseif prec_sum > 2.0 * t_threshold
+            return (climate_zone = winter_prec < summer_prec ? WI[:III_Tw] : WI[:III_Ts],)
+        elseif prec_sum > 1.0 * t_threshold
+            return (climate_zone = WI[:III_S],)
         else
-            output[1] = WI[:III_D]
-            return output
-
+            return (climate_zone = WI[:III_D],)
         end
     end
 
     # II - Warm temperate
     if temp_min < 13
-        if precip_sum > 2.5 * t_threshold
-            output[1] = temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb]
-            return output
-
-        elseif precip_sum > 2.0 * t_threshold
-            output[1] = winter_precip < summer_precip ? WI[:II_Tw] : WI[:II_Ts]
-            return output
-
-        elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:IS]
-            return output
-
+        if prec_sum > 2.5 * t_threshold
+            return (climate_zone = temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb],)
+        elseif prec_sum > 2.0 * t_threshold
+            return (climate_zone = winter_prec < summer_prec ? WI[:II_Tw] : WI[:II_Ts],)
+        elseif prec_sum > 1.0 * t_threshold
+            return (climate_zone = WI[:IS],)
         else
-            output[1] = WI[:ID]
-            return output
-
+            return (climate_zone = WI[:ID],)
         end
     end
 
     # I - Tropical
     if temp_min >= 13
-        if precip_min >= 60
-            output[1] = WI[:IA]
-            return output
-
-        elseif precip_sum > 2.5 * t_threshold
-            output[1] = WI[:IF]
-            return output
-
-        elseif precip_sum > 2.0 * t_threshold
-            output[1] = WI[:IT]
-            return output
-
-        elseif precip_sum > 1.0 * t_threshold
-            output[1] = WI[:IS]
-            return output
-
+        if prec_min >= 60
+            return (climate_zone = WI[:IA],)
+        elseif prec_sum > 2.5 * t_threshold
+            return (climate_zone = WI[:IF],)
+        elseif prec_sum > 2.0 * t_threshold
+            return (climate_zone = WI[:IT],)
+        elseif prec_sum > 1.0 * t_threshold
+            return (climate_zone = WI[:IS],)
         else
-            output[1] = WI[:ID]
-            return output
-
+            return (climate_zone = WI[:ID],)
         end
     end
 
-    return output # Default case, should not happen
-
+    return (climate_zone = -1,)  # fallback if classification fails
 end

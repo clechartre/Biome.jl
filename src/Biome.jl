@@ -33,7 +33,7 @@ include("models/MechanisticModel/phenology.jl")
 include("models/MechanisticModel/ppeett.jl")
 include("models/MechanisticModel/snow.jl")
 include("models/MechanisticModel/soiltemp.jl")
-include("models/MechanisticModel/competition2.jl")
+include("models/MechanisticModel/competition.jl")
 include("models/MechanisticModel/table.jl")
 
 # Growth subroutines
@@ -48,7 +48,7 @@ include("models/MechanisticModel/growth_subroutines/photosynthesis.jl")
 include("models/MechanisticModel/growth_subroutines/respiration.jl")
 
 # Main BIOME4 model (after all dependencies)
-include("models/MechanisticModel/biome4.jl")
+include("models/MechanisticModel/mechanisticmodel.jl")
 include("models/MechanisticModel/BIOME4/pfts.jl")
 using .BIOME4
 
@@ -57,6 +57,10 @@ include("models/ClimaticEnvelope/koppenbiomes.jl")
 include("models/ClimaticEnvelope/thornthwaitebiomes.jl")
 include("models/ClimaticEnvelope/trollpfaffenbiomes.jl")
 include("models/ClimaticEnvelope/wissmannbiomes.jl")
+
+include("biomedriver.jl")
+using .BiomeDriver
+
 
 # Export all necessary types and functions
 export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4PFT,
@@ -78,17 +82,26 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        A, ES, A1, B3, B,
        
        # Original PFT types and functions
-        PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment,
-        EvergreenPFT, DeciduousPFT, GrassPFT, TundraPFT,
+        PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment_mv,
+        AbstractEvergreenPFT, AbstractNeedleleafEvergreenPFT,  AbstractBroadleafEvergreenPFT,
+        AbstractDeciduousPFT, AbstractNeedleleafDeciduousPFT, AbstractBroadleafDeciduousPFT,
+        AbstractC4GrassPFT, AbstractC3GrassPFT, AbstractGrassPFT, 
 
-        # Original biome types
-        EvergreenForest, DeciduousForest, MixedForest, Grassland, Desert, Tundra,
+        # BasePFTs
+        NeedleleafEvergreenPFT,  BroadleafEvergreenPFT,
+        DeciduousPFT, NeedleleafDeciduousPFT, BroadleafDeciduousPFT,
+        C4GrassPFT, C3GrassPFT, 
+
+        # Biomes
+        NeedleleafEvergreenForest, BroadleafEvergreenForest,
+        MixedForest, NeedleleafDeciduousForest, BroadleafDeciduousForest,
+        C3Grassland, C4Grassland, Desert,
 
        # Functions
-       get_biome_characteristic, climdata, competition2, constraints, daily_interp, findnpp,
-       phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int,
+       get_biome_characteristic, climdata, competition, constraints, daily_interp, findnpp,
+       phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
-       compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, 
+       compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, unpack_namedtuple_climate,
        
        # BIOME4 assign_biome function
        assign_biome,
@@ -97,6 +110,9 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        run,
        
        # Constants instances
-       NONE_INSTANCE, DEFAULT_INSTANCE
+       NONE_INSTANCE, DEFAULT_INSTANCE,
+
+       # Driver functions
+       ModelSetup, run!
 
 end # Module

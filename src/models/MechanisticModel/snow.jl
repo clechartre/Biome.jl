@@ -24,7 +24,8 @@ A tuple containing:
 """
 function snow(
     dtemp::AbstractArray{T}, 
-    dprecin::AbstractArray{T}
+    dprecin::AbstractArray{T},
+    env::NamedTuple
 )::Tuple{AbstractArray{T},AbstractArray{T},T} where {T<:Real}
     tsnow = T(-1.0)
     km = T(0.7)
@@ -66,4 +67,10 @@ function snow(
     end
 
     return dprec, dmelt, maxdepth
+
+    return (
+        get(env, :dprec, dprec),
+        get(env, :dmelt, dmelt),
+        get(env, :maxdepth, maxdepth)
+    )
 end

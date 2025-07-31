@@ -1,5 +1,5 @@
 """
-    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, BIOME4PFTS, PFTstates)
+    constraints(tcm, twm, tminin, gdd5, rad0, gdd0, maxdepth, pftlist, pftstates)
 
 Calculate constraints for biome classification based on temperature, GDD, and 
 other parameters. Sets each PFT’s `present` flag in `states`.
@@ -12,32 +12,29 @@ other parameters. Sets each PFT’s `present` flag in `states`.
 - `rad0`: Annual radiation (MJ/m²/year)   # (not used here, but kept for interface consistency)
 - `gdd0`: Growing degree days above 0°C
 - `maxdepth`: Maximum snow depth (mm)
-- `BIOME4PFTS`: List of plant functional types to evaluate
-- `PFTstates`: Dict mapping each `AbstractPFT` to its `PFTState`
+- `pftlist`: List of plant functional types to evaluate
+- `pftstates`: Dict mapping each `AbstractPFT` to its `PFTState`
 
 # Returns
 - `tmin`: Adjusted minimum temperature (°C)
-- `BIOME4PFTS`: (unchanged) PFT list
+- `pftlist`: (unchanged) PFT list
 """
 function constraints(
     tcm::T,
     twm::T,
-    tminin::T,
+    tmin::T,
     gdd5::T,
     rad0::T,
     gdd0::T,
     maxdepth::T,
-    BIOME4PFTS::AbstractPFTList,
-    PFTstates::Dict{AbstractPFT,PFTState}
-)::Tuple{T,Dict{AbstractPFT,PFTState}} where {T<:Real}
-
-    # adjust minimum temp for frost delay
-    tmin = tminin <= tcm ? tminin : tcm - T(5.0)
+    pftlist::AbstractPFTList,
+    pftstates::Dict{AbstractPFT,PFTState}
+)::Dict{AbstractPFT,PFTState} where {T<:Real}
 
     clindex = (tcm, tmin, gdd5, gdd0, twm, maxdepth)
     constraint_keys = (:tcm, :min, :gdd, :gdd0, :twm, :snow)
 
-    for pft in BIOME4PFTS.pft_list
+    for pft in pftlist.pft_list
         valid = true
         cons = get_characteristic(pft, :constraints)
 
@@ -53,8 +50,8 @@ function constraints(
         end
 
         # write into the runtime-state
-        PFTstates[pft].present = valid
+        pftstates[pft].present = valid
     end
 
-    return tmin, PFTstates
+    return pftstates
 end

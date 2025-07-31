@@ -27,8 +27,10 @@ A tuple containing:
 function climdata(
     temp::AbstractArray{T},
     prec::AbstractArray{T},
-    dtemp::AbstractArray{T}
+    dtemp::AbstractArray{T},
+    env::NamedTuple
 )::Tuple{T,T,T,T} where {T<:Real}
+
     # Initialize temperature extremes
     tcm = T(100.0)  # coldest month temperature
     twm = T(-100.0) # warmest month temperature
@@ -63,5 +65,10 @@ function climdata(
         gdd0 += above_0
     end
 
-    return tcm, gdd5, gdd0, twm
+    return (
+        get(env, :tcm, tcm),
+        get(env, :gdd5, gdd5),
+        get(env, :gdd0, gdd0),
+        get(env, :twm, twm)
+    )
 end

@@ -10,7 +10,7 @@ using Biome
         include("test_BIOME/MechanisticModel/test_soiltemp.jl")
         include("test_BIOME/MechanisticModel/test_ppeett.jl")
         include("test_BIOME/MechanisticModel/test_table.jl")
-        include("test_BIOME/MechanisticModel/test_newassignbiome.jl")
+        include("test_BIOME/MechanisticModel/test_assignbiome.jl")
         include("test_BIOME/MechanisticModel/test_growth.jl")
         
         @testset "Growth Subroutines Tests" begin
