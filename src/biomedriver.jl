@@ -287,7 +287,7 @@ function process_chunk(
         end
 
         for x in 1:current_chunk_size
-            if first(values(env_chunks))[x, y, 1] == -9999.0
+            if any(chunk -> all(v -> v == -9999.0, chunk[x, y, :]), values(env_chunks))
                 continue
             end
 
@@ -345,8 +345,6 @@ function process_cell(
     input = zeros(T, 50)
     # input - (lat-lat, co2^cpde)
 
-    # FIXME we make a named tuple with all the variables in env chunks 
-    # But with the keys because we don't know what is in there 
     input_variables = merge(
         (; lat = lat_chunk[y], co2 = co2, p = p, dz = dz, lon = lon_chunk[x]),
         (; (k => env_chunks[k][x, y, :] for k in keys(env_chunks))...)
