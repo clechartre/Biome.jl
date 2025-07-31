@@ -1,7 +1,7 @@
 """
-    biome4
+    mechanisticmodel
 
-Main BIOME4 orchestrator module.
+Main Mechanistic model orchestrator module.
 
 This module coordinates the execution of the BIOME4 vegetation model, 
 integrating climate data processing, plant functional type evaluation,
@@ -21,41 +21,15 @@ const DEFAULT_INSTANCE = Default()
 export NONE_INSTANCE, DEFAULT_INSTANCE
 
 """
-    run(m::BIOME4Model, vars_in::Vector{Union{T,U}}) where {T<:Real,U<:Int}
+    run(m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, vars_in::NamedTuple; 
+    pftlist, biome_assignment) where {T<:Real,U<:Int}
 
-Execute the complete BIOME4 model simulation for a single grid cell.
+Execute the complete mechanistic model simulation for a single grid cell.
 
-This function orchestrates the entire BIOME4 modeling workflow including:
+This function orchestrates the entire modeling workflow including:
 climate data processing, snow dynamics, soil temperature calculation,
 potential evapotranspiration, phenology, plant functional type constraints,
 NPP optimization, and biome classification.
-
-# Arguments
-- `m::BIOME4Model`: Model configuration object
-- `vars_in::Vector{Union{T,U}}`: Input vector containing climate and site data
-  - Elements 1: latitude (degrees)
-  - Elements 2: CO2 concentration (ppm)
-  - Elements 3: atmospheric pressure (kPa)
-  - Elements 4: minimum temperature (°C)
-  - Elements 5-16: monthly temperature (°C, 12 months)
-  - Elements 17-28: monthly precipitation (mm, 12 months)
-  - Elements 29-40: monthly cloud cover (%, 12 months)
-  - Elements 41-44: soil parameters (4 values)
-  - Elements 49: longitude (degrees)
-
-# Returns
-- `Vector{Any}`: Output vector containing:
-  - Element 1: biome classification index
-  - Element 2: optimal PFT index
-  - Elements 3-16: NPP values for each PFT (gC/m²/year)
-  - Element 48: longitude
-  - Element 49: latitude
-
-# Notes
-- Uses 365-day year assumption
-- Handles both C3 and C4 photosynthesis pathways
-- Includes iterative optimization for LAI and NPP
-- Accounts for environmental constraints on PFT presence
 """
 function run(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, 
@@ -123,7 +97,14 @@ function run(
     return output
 end
 
+"""
+    _unpack_with_defaults(nt::NamedTuple)
 
+Helper function to unpack climate and soil variables from a NamedTuple, 
+filling missing or invalid values with safe defaults.
+
+Used internally by the `@unpack_namedtuple` macro.
+"""
 function _unpack_with_defaults(nt::NamedTuple)
     if haskey(nt, :temp)
         T = nonmissingtype(eltype(nt.temp))
@@ -180,12 +161,26 @@ function _unpack_with_defaults(nt::NamedTuple)
     end
 end
 
+"""
+    @unpack_namedtuple(namedtuple)
+
+Macro that unpacks environmental variables from a `NamedTuple`, 
+handling missing fields with defaults via `_unpack_with_defaults`.
+"""
 macro unpack_namedtuple(arg)
     quote
         _unpack_with_defaults($arg)
     end |> esc
 end
 
+
+"""
+    initialize_environmental_variables(input_variables::NamedTuple)
+
+Process raw climate and soil inputs into derived environmental variables 
+needed for the simulation, including daily interpolations, 
+climate indices, radiation, PET, and snow variables.
+"""
 function initialize_environmental_variables(input_variables::NamedTuple)
 
     if haskey(input_variables, :temp)
@@ -245,7 +240,14 @@ function initialize_environmental_variables(input_variables::NamedTuple)
     )
 end
 
+"""
+    initialize_pftstates(pftlist::AbstractPFTList, mclou::Real, mprec::Real, mtemp::Real)
 
+Create and initialize the state for each Plant Functional Type (PFT), 
+including default and placeholder types.
+
+Returns a dictionary of PFT states and the number of PFTs.
+"""
 function initialize_pftstates(pftlist::AbstractPFTList, mclou::T, mprec::T, mtemp::T)::Tuple{ Dict{AbstractPFT, PFTState} , Int} where {T<:Real}
     numofpfts = length(pftlist.pft_list)
 
@@ -266,6 +268,14 @@ function initialize_pftstates(pftlist::AbstractPFTList, mclou::T, mprec::T, mtem
     return pftstates, numofpfts
 end
 
+"""
+    create_output_vector(biome, optpft, pftstates, pftlist, numofpfts, lat, lon)
+
+Construct the model output as a `NamedTuple` for a single grid cell.
+
+Includes biome index, optimal PFT index, per-PFT NPP values, 
+and geographic coordinates.
+"""
 function create_output_vector(
     biome::AbstractBiome,
     optpft::AbstractPFT,
