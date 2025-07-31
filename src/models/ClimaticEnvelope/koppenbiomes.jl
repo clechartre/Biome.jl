@@ -22,7 +22,7 @@ The function classifies climate into the following categories:
 - **Temperate (C)**: Cfa (9), Cfb (10), Cfc (11), Csa (12), Csb (13), Csc (14), Cwa (15), Cwb (16)
 """
 # Define the Köppen-Geiger classification function
-function run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+function run(m::KoppenModel, input_variables::NamedTuple, args...; kwargs...)
     # Define Köppen-Geiger classes
     KG = Dict(
         :Af => 1,  # Equatorial, fully humid
@@ -59,22 +59,19 @@ function run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) w
     )
 
     # Extract variables from vars_in
-    lon = vars_in[49]
-    lat = vars_in[1]
-    temp = vars_in[5:16]   # Monthly temperatures
-    precip = vars_in[17:28] # Monthly precipitation
+    @unpack_namedtuple_climate input_variables
 
     # Initialize intermediate variables
     temp_min = minimum(temp)
     temp_max = maximum(temp)
     temp_mean = mean(temp)
 
-    precip_sum = sum(precip)
-    precip_min = minimum(precip)
+    precip_sum = sum(prec)
+    precip_min = minimum(prec)
 
     # Calculate seasonal precipitation sums
-    winter_precip = sum(precip[10:12]) + sum(precip[1:2])
-    summer_precip = sum(precip[3:9])
+    winter_precip = sum(prec[10:12]) + sum(prec[1:2])
+    summer_precip = sum(prec[3:9])
 
     # Determine hemisphere
     is_northern_hemisphere = sum(temp[3:9]) > sum(temp[10:12]) + sum(temp[1:2])
@@ -86,11 +83,7 @@ function run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) w
     biome = classify_kg(temp, temp_min, temp_max, temp_mean, precip_sum, precip_min, winter_precip, summer_precip, KG)
 
     # Write results to the output
-    output = Vector{Any}(undef, 50)
-    fill!(output, T(0.0))
-    output[1] = biome
-    output[48] = lon
-    output[49] = lat
+    output = (koppen_class = biome, lon = lon, lat = lat)
 
     return output
 end

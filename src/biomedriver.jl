@@ -410,20 +410,20 @@ function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, Base
 end
 
 function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:climate_zone][x, y] = output[1]
+    output_stack[:climate_zone][x, y] = output.climate_zone
 end
 
 function process_cell_output(model::KoppenModel, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:koppen_class][x, y] = output[1]
+    output_stack[:koppen_class][x, y] = output.koppen_class
 end
 
 function process_cell_output(model::ThornthwaiteModel, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:temperature_zone][x, y] = output[1]
-    output_stack[:moisture_zone][x, y] = output[2]
+    output_stack[:temperature_zone][x, y] = output.temperature_zone
+    output_stack[:moisture_zone][x, y] = output.moisture_zone
 end
 
 function process_cell_output(model::TrollPfaffenModel, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:troll_zone][x, y] = output[1]
+    output_stack[:troll_zone][x, y] = output.troll_zone
 end
 
 """

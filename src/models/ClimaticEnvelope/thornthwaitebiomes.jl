@@ -32,7 +32,7 @@ Compute Thornthwaite climate classification zones from monthly temperature and p
     5. Arid  
   - All other entries remain zero.
 """
-function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+function run(m::ThornthwaiteModel, input_variables::NamedTuple, args...; kwargs...)
     # Define Thornthwaite climate zones with numerical values
     THORN = Dict(
         :Wet        => 1,
@@ -52,11 +52,10 @@ function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs
     )
 
     # Extract temperature and precipitation data
-    temp = vars_in[5:16]    # Monthly temperatures
-    precip = vars_in[17:28] # Monthly precipitation
+    @unpack_namedtuple_climate input_variables
 
     # Validate input
-    if length(temp) != 12 || length(precip) != 12
+    if length(temp) != 12 || length(prec) != 12
         error("Temperature and precipitation arrays must have 12 values each (monthly data).")
     end
 
@@ -67,7 +66,7 @@ function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs
     # Calculate PE and TE
     for i in 1:12
         t = temp[i]
-        p = precip[i]
+        p = prec[i]
 
         # Avoid division by zero or negative temperatures
         if t > 0
@@ -107,10 +106,8 @@ function run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs
         end
 
     # Store results in output
-    output = Vector{Any}(undef, 50)
-    fill!(output, T(0.0))
-    output[1] = temperature_zone
-    output[2] = moisture_zone
+    output = (temperature_zone = temperature_zone, moisture_zone = moisture_zone)
+
     return output
 
 end

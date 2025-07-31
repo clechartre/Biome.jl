@@ -68,3 +68,20 @@ function set_characteristic!(
 
     return pft
 end
+
+function _unpack_climate(x::NamedTuple)
+    kk = keys(x)
+    vv = values(x)
+    i = 1
+    for k in kk
+        @eval $k = $vv[$i]
+        i +=1
+    end
+end
+
+
+macro unpack_namedtuple_climate(arg)
+ quote
+    _unpack_climate($arg)
+end |> esc
+end

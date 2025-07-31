@@ -97,12 +97,11 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
         MixedForest, NeedleleafDeciduousForest, BroadleafDeciduousForest,
         C3Grassland, C4Grassland, Desert,
 
-
        # Functions
        get_biome_characteristic, climdata, competition, constraints, daily_interp, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
-       compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, 
+       compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, unpack_namedtuple_climate,
        
        # BIOME4 assign_biome function
        assign_biome,
