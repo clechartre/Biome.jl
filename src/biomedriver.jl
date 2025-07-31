@@ -24,7 +24,7 @@ mutable struct ModelSetupObj{M<:BiomeModel}
     lon::Vector{Float64}
     lat::Vector{Float64}
     co2::Float64
-    rasters::Dict{Symbol,Raster}
+    rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
     biome_assignment::Function
 end
@@ -35,16 +35,19 @@ function ModelSetup(::Type{M}; co2::Float64 = 378.0,
                     kwargs...) where {M<:BiomeModel}
 
     # Separate out raster arguments from others
-    rasters = Dict{Symbol,Raster}()
+    raster_dict = Dict{Symbol,Raster}()
     for (key, val) in kwargs
         if val isa Raster
-            rasters[key] = val
+            raster_dict[key] = val
         end
     end
 
     # Ensure required keys exist
-    @assert :temp in keys(rasters) "A `temp` raster must be provided."
-    @assert :prec in keys(rasters) "A `prec` raster must be provided."
+    @assert :temp in keys(raster_dict) "A `temp` raster must be provided."
+    @assert :prec in keys(raster_dict) "A `prec` raster must be provided."
+
+    # Convert Dict to NamedTuple
+    rasters = NamedTuple((Symbol(key),value) for (key,value) in raster_dict)
 
     # Extract longitude and latitude from the temp raster
     lon = collect(dims(rasters[:temp], X))
@@ -54,34 +57,25 @@ function ModelSetup(::Type{M}; co2::Float64 = 378.0,
 end
 
 function run!(setup::ModelSetupObj; coordstring::String="alldata", outfile::String="out.nc")
-  M = setup.model
-  PFTs = setup.pftlist
-  temp = setup.rasters[:temp]
-  prec = setup.rasters[:prec]
-  sun  = get(setup.rasters, :sun,  nothing)
-  ksat = get(setup.rasters, :ksat, nothing)
-  whc  = get(setup.rasters, :whc,  nothing)
-  BiomeDriver._execute!(
-    M, setup.co2, setup.lon, setup.lat, PFTs,
-    temp, prec, sun, ksat, whc;
+    M = setup.model
+    pftlist = setup.pftlist
+    env_raster = setup.rasters
+    BiomeDriver._execute!(
+    M, setup.co2, setup.lon, setup.lat, pftlist, env_raster;
     coordstring=coordstring,
     outfile=outfile,
     biome_assignment=setup.biome_assignment
   )
 end
 
-# internal: almost exactly your old `main()`
+
 function _execute!(
         model::BiomeModel,
         co2::T, 
         lon, 
         lat, 
         pftlist,
-        temp_raster::Raster, 
-        prec_raster::Raster,
-        clt_raster::Union{Raster,Nothing}, 
-        ksat_raster::Union{Raster,Nothing},
-        whc_raster::Union{Raster,Nothing};
+        env_raster::NamedTuple;
         coordstring::String, 
         outfile::String,
         biome_assignment::Function = Biome.assign_biome
@@ -91,7 +85,6 @@ function _execute!(
         @warn "No pftlist provided, using default PFT classification."
         pftlist = get_pft_list(model)
     end
-
 
     if pftlist !== nothing
         numofpfts = length(pftlist.pft_list)
@@ -141,63 +134,36 @@ function _execute!(
     chunk_size = 1000 # We're only processing 1000 rows at a time
 
     # Read latitude (only once since it's the same for all x chunks)
-    lat_chunk = collect(dims(temp_raster, Y))[stry:endy]
+    lat_chunk = collect(dims(env_raster[1], Y))[stry:endy]
 
     for x_chunk_start in strx:chunk_size:endx
         x_chunk_end = min(x_chunk_start + chunk_size - 1, endx)
         current_chunk_size = x_chunk_end - x_chunk_start + 1
+        lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
         println("Processing x indices from $x_chunk_start to $x_chunk_end")
 
-        # Read longitude for this chunk
-        lon_chunk = lon_full[x_chunk_start:x_chunk_end]
+        # Prepare environmental chunks
+        env_chunks = Dict{Symbol,Array}()
 
-        # Read temperature data
-        temp_chunk = temp_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        temp_chunk = Array(temp_chunk) |> uniform_fill_value
-
-        # Read precipitation data
-        prec_chunk = prec_raster[x_chunk_start:x_chunk_end, stry:endy, :]
-        prec_chunk = Array(prec_chunk) |> uniform_fill_value
-
-        # Optional Data 
-        # Read cloud cover data
-        if clt_raster !== nothing
-            cldp_chunk = Array(clt_raster[x_chunk_start:x_chunk_end, stry:endy, :]) |> uniform_fill_value
-        else
-            cldp_chunk = fill(0.0, current_chunk_size, cnty, size(temp_chunk,3))
-        end
-        
-        # Read soil data
-        if ksat_raster !== nothing
-            ksat_chunk = Array(ksat_raster[x_chunk_start:x_chunk_end, stry:endy, :]) |> uniform_fill_value
-        else
-            ksat_chunk = fill(0.0, current_chunk_size, cnty, size(temp_chunk,3))
-        end
-        
-        if whc_raster !== nothing
-            whc_chunk = Array(whc_raster[x_chunk_start:x_chunk_end, stry:endy, :]) |> uniform_fill_value
-        else
-            whc_chunk = fill(0.0, current_chunk_size, cnty, size(temp_chunk,3))
+        for (entry, raster) in enumerate(env_raster)
+            var = keys(env_raster)[entry]
+            chunk = raster[x_chunk_start:x_chunk_end, stry:endy, :]
+            env_chunks[var] = uniform_fill_value(Array(chunk))
         end
 
-        println("max temp: ", maximum(temp_chunk), ", min temp: ", minimum(temp_chunk))
-        println("max prec: ", maximum(prec_chunk), ", min prec: ", minimum(prec_chunk))
-        println("max cldp: ", maximum(cldp_chunk), ", min cldp: ", minimum(cldp_chunk))
-        println("max ksat: ", maximum(ksat_chunk), ", min ksat: ", minimum(ksat_chunk))
-        println("max whc: ", maximum(whc_chunk), ", min whc: ", minimum(whc_chunk))
+        # Debug: print min/max of each var
+        for (var, chunk) in env_chunks
+            println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
+        end
 
         # Process the data in this chunk
         process_chunk(
             current_chunk_size,
             cnty,
-            temp_chunk,
             lat_chunk,
             co2,
-            prec_chunk,
-            cldp_chunk,
-            ksat_chunk,
-            whc_chunk,
+            env_chunks,
             dz, 
             lon_chunk,
             output_stack,
@@ -304,8 +270,8 @@ Process a spatial chunk of data by iterating through grid cells using RasterStac
 """
 function process_chunk(
     current_chunk_size, cnty,
-    temp_chunk, lat_chunk, co2, 
-    prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
+    lat_chunk, co2, 
+    env_chunks, dz, 
     lon_chunk, output_stack::RasterStack,
     output_dataset, strx, model::BiomeModel, pftlist::AbstractPFTList,
     biome_assignment::Function
@@ -321,14 +287,22 @@ function process_chunk(
         end
 
         for x in 1:current_chunk_size
-            if temp_chunk[x, y, 1] == -9999.0 || any(whc_chunk[x, y, :] .== -9999.0)
+            if first(values(env_chunks))[x, y, 1] == -9999.0
                 continue
             end
 
             process_cell(
-                x, y, strx, temp_chunk, lat_chunk, co2,
-                prec_chunk, cldp_chunk, ksat_chunk, whc_chunk,
-                dz, lon_chunk, output_stack, model, pftlist, biome_assignment
+                x, 
+                y, 
+                strx, 
+                lat_chunk, 
+                co2,
+                env_chunks,
+                dz, lon_chunk,
+                output_stack, 
+                model, 
+                pftlist, 
+                biome_assignment
             )
         end
 
@@ -345,10 +319,17 @@ end
 Process a single grid cell for biome classification using RasterStack.
 """
 function process_cell(
-    x, y, strx,
-    temp_chunk, lat_chunk, co2::T,
-    prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, 
-    lon_chunk, output_stack::RasterStack, model::BiomeModel, pftlist::AbstractPFTList,
+    x, 
+    y, 
+    strx,
+    lat_chunk,
+    co2::T,
+    env_chunks, 
+    dz, 
+    lon_chunk, 
+    output_stack::RasterStack, 
+    model::BiomeModel, 
+    pftlist::AbstractPFTList,
     biome_assignment::Function
     ) where {T<:Real}
     # Check if already processed
@@ -358,31 +339,21 @@ function process_cell(
         return
     end
 
-    # Skip if missing data
-    if temp_chunk[x, y, 1] == -9999.0 || any(whc_chunk[x, y, :] .== -9999.0)
-        return
-    end    
-
     # Calculate atmospheric pressure from elevation
     p = P0 * (1.0 - (G) / (CP * T0))^(CP * M / R0)
 
     input = zeros(T, 50)
     # input - (lat-lat, co2^cpde)
 
-    input[1] = lat_chunk[y]
-    input[2] = co2
-    input[3] = p
-    input[5:16] .= temp_chunk[x, y, :]
-    input[17:28] .= prec_chunk[x, y, :]
-    input[29:40] .= cldp_chunk[x, y, :]
-    input[41] = sum(ksat_chunk[x, y, 1:3] .* dz[1:3]) / sum(dz[1:3])
-    input[42] = sum(ksat_chunk[x, y, 4:6] .* dz[4:6]) / sum(dz[4:6])
-    input[43] = sum(whc_chunk[x, y, 1:3] .* dz[1:3])
-    input[44] = sum(whc_chunk[x, y, 4:6] .* dz[4:6])
-    input[49] = lon_chunk[x]
+    # FIXME we make a named tuple with all the variables in env chunks 
+    # But with the keys because we don't know what is in there 
+    input_variables = merge(
+        (; lat = lat_chunk[y], co2 = co2, p = p, dz = dz, lon = lon_chunk[x]),
+        (; (k => env_chunks[k][x, y, :] for k in keys(env_chunks))...)
+    )
 
     # Run the model 
-    output = run(model, input; pftlist = pftlist, biome_assignment = biome_assignment)
+    output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
 
     numofpfts = length(pftlist.pft_list)
 

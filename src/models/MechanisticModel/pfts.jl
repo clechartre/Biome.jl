@@ -52,7 +52,7 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
     dominance_factor::U = 5
 end
 
-PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
+# PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
     present::Bool = false

@@ -22,17 +22,14 @@ other parameters. Sets each PFT’s `present` flag in `states`.
 function constraints(
     tcm::T,
     twm::T,
-    tminin::T,
+    tmin::T,
     gdd5::T,
     rad0::T,
     gdd0::T,
     maxdepth::T,
     pftlist::AbstractPFTList,
     pftstates::Dict{AbstractPFT,PFTState}
-)::Tuple{T,Dict{AbstractPFT,PFTState}} where {T<:Real}
-
-    # adjust minimum temp for frost delay
-    tmin = tminin <= tcm ? tminin : tcm - T(5.0)
+)::Dict{AbstractPFT,PFTState} where {T<:Real}
 
     clindex = (tcm, tmin, gdd5, gdd0, twm, maxdepth)
     constraint_keys = (:tcm, :min, :gdd, :gdd0, :twm, :snow)
@@ -56,5 +53,5 @@ function constraints(
         pftstates[pft].present = valid
     end
 
-    return tmin, pftstates
+    return pftstates
 end
