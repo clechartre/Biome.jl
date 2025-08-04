@@ -20,36 +20,53 @@ other parameters. Sets each PFT’s `present` flag in `states`.
 - `pftlist`: (unchanged) PFT list
 """
 function constraints(
-    tcm::T,
-    twm::T,
-    tmin::T,
-    gdd5::T,
-    rad0::T,
-    gdd0::T,
-    maxdepth::T,
     pftlist::AbstractPFTList,
-    pftstates::Dict{AbstractPFT,PFTState}
-)::Dict{AbstractPFT,PFTState} where {T<:Real}
-
-    clindex = (tcm, tmin, gdd5, gdd0, twm, maxdepth)
-    constraint_keys = (:tcm, :min, :gdd, :gdd0, :twm, :snow)
-
+    pftstates::Dict{AbstractPFT,PFTState},
+    env_variables::NamedTuple
+)::Dict{AbstractPFT,PFTState}
     for pft in pftlist.pft_list
         valid = true
         cons = get_characteristic(pft, :constraints)
 
-        # check each constraint dimension
-        for (i, key) in enumerate(constraint_keys)
-            lower, upper = cons[key][1], cons[key][2]
-            val = clindex[i]
-            if !( (lower == -Inf || val ≥ lower) &&
-                  (upper == Inf  || val  < upper) )
+        # Check each constraint dynamically
+        for (key, (lower, upper)) in pairs(cons)
+            # Skip soil water balance, we deal with it later
+            if key == :swb
+                continue
+            end
+            if haskey(env_variables, key)
+                val = getfield(env_variables, key)
+                
+                # Handle both scalar and vector values
+                constraint_met = if isa(val, AbstractVector)
+                    # For vectors, check if all values meet the constraint
+                    # Skip missing values
+                    non_missing_vals = filter(!ismissing, val)
+                    if isempty(non_missing_vals)
+                        false  # All values are missing
+                    else
+                        all(v -> (lower == -Inf || v ≥ lower) && (upper == Inf || v < upper), non_missing_vals)
+                    end
+                else
+                    # For scalar values (original logic)
+                    if ismissing(val)
+                        false
+                    else
+                        (lower == -Inf || val ≥ lower) && (upper == Inf || val < upper)
+                    end
+                end
+                
+                if !constraint_met
+                    valid = false
+                    break
+                end
+            else
+                @warn "Environmental variable `$(key)` not found in input but is required by constraints for PFT $(pft)"
                 valid = false
                 break
             end
         end
 
-        # write into the runtime-state
         pftstates[pft].present = valid
     end
 

@@ -19,7 +19,7 @@ using DimensionalData
 
 export ModelSetup, run!
 
-mutable struct ModelSetupObj{M<:BiomeModel}
+mutable struct ModelSetup{M<:BiomeModel}
     model::M
     lon::Vector{Float64}
     lat::Vector{Float64}
@@ -29,11 +29,11 @@ mutable struct ModelSetupObj{M<:BiomeModel}
     biome_assignment::Function
 end
 
-function ModelSetup(::Type{M}; co2::Float64 = 378.0,
+function ModelSetup(Model::BiomeModel;
+                    co2::Float64 = 378.0,
                     pftlist = nothing,
                     biome_assignment::Function = assign_biome,
-                    kwargs...) where {M<:BiomeModel}
-
+                    kwargs...)
     # Separate out raster arguments from others
     raster_dict = Dict{Symbol,Raster}()
     for (key, val) in kwargs
@@ -53,10 +53,10 @@ function ModelSetup(::Type{M}; co2::Float64 = 378.0,
     lon = collect(dims(rasters[:temp], X))
     lat = collect(dims(rasters[:temp], Y))
 
-    return ModelSetupObj{M}(M(), lon, lat, co2, rasters, pftlist, biome_assignment)
+    return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment)
 end
 
-function run!(setup::ModelSetupObj; coordstring::String="alldata", outfile::String="out.nc")
+function run!(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
@@ -595,7 +595,7 @@ Replace missing and fill values with a uniform fill value.
 """
 function uniform_fill_value(data::Array{T,N}; fill_value=-9999.0) where {T,N}
     fill_value = convert(T, fill_value)
-    data .= coalesce.(data, fill_value)
+    data .= Array{T}(coalesce.(data, fill_value))
     return data
 end
 

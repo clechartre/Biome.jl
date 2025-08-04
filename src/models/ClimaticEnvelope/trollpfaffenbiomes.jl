@@ -26,7 +26,7 @@ Quickly classify the climate according to the Troll‑Paffen scheme using 12 mon
 - Zones range from polar ice‑deserts through tropical rain‑forest, with `38` = Not Classified.
 """
 
-function run(m::TrollPfaffenModel, input_variables::NamedTuple, args...; kwargs...) where {T <: Real, U <: Int}
+function run(m::TrollPfaffenModel, input_variables::NamedTuple, args...; kwargs...)
 
     # Define Troll-Paffen climate zones with numerical values and descriptions
     TROLL = Dict(

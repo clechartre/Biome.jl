@@ -24,7 +24,7 @@ Classify climate by the Wissmann scheme using 12 months of temperature and preci
 - Determines hemisphere to compare winter vs summer precipitation.
 - Applies tiered thresholds for Polar, Boreal, Temperate, and Tropical groups.
 """
-function run(m::WissmannModel, input_variables::NamedTuple, args...; kwargs...) where {T <: Real, U <: Int}
+function run(m::WissmannModel, input_variables::NamedTuple, args...; kwargs...)
     # Define Wissmann climate zones
     WI = Dict(
         :IA  => 1, #("I A", "Rainforest, equatorial"),

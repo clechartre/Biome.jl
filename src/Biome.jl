@@ -85,7 +85,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
         PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment_mv,
         AbstractEvergreenPFT, AbstractNeedleleafEvergreenPFT,  AbstractBroadleafEvergreenPFT,
         AbstractDeciduousPFT, AbstractNeedleleafDeciduousPFT, AbstractBroadleafDeciduousPFT,
-        AbstractC4GrassPFT, AbstractC3GrassPFT, AbstractGrassPFT, 
+        AbstractC4GrassPFT, AbstractC3GrassPFT, AbstractGrassPFT,
 
         # BasePFTs
         NeedleleafEvergreenPFT,  BroadleafEvergreenPFT,
@@ -98,7 +98,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
         C3Grassland, C4Grassland, Desert,
 
        # Functions
-       get_biome_characteristic, climdata, competition, constraints, daily_interp, findnpp,
+       get_biome_characteristic, add_constraint!, climdata, competition, constraints, daily_interp, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
        compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, unpack_namedtuple_climate,

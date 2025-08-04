@@ -36,11 +36,11 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
     grass::Bool = false
     constraints::NamedTuple = (
         tcm   = [-Inf, +Inf], 
-        min   = [-Inf, +Inf], 
-        gdd   = [-Inf, +Inf],
+        tmin   = [-Inf, +Inf], 
+        gdd5   = [-Inf, +Inf],
         gdd0  = [-Inf, +Inf], 
         twm   = [-Inf, +Inf], 
-        snow  = [-Inf, +Inf],
+        maxdepth  = [-Inf, +Inf],
         swb   = [-Inf, +Inf]
     )
     mean_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (
@@ -86,11 +86,11 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             allocfact               = 1.2,
             constraints = (
                 tcm   = [-32.5, +Inf],
-                min   = [-Inf, +Inf],
-                gdd   = [-Inf, +Inf],
+                tmin   = [-Inf, +Inf],
+                gdd5   = [-Inf, +Inf],
                 gdd0  = [-Inf, +Inf],
                 twm   = [-Inf, +Inf],
-                snow  = [-Inf, +Inf],
+                maxdepth  = [-Inf, +Inf],
                 swb   = [400.0, +Inf]
             ),
             mean_val = (
@@ -122,11 +122,11 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             allocfact               = 1.1,
             constraints = (
                 tcm   = [-Inf, +Inf],
-                min   = [-8.0, +Inf],
-                gdd   = [1200, +Inf],
+                tmin   = [-8.0, +Inf],
+                gdd5   = [1200, +Inf],
                 gdd0  = [-Inf, +Inf],
                 twm   = [10.0, +Inf],
-                snow  = [-Inf, +Inf],
+                maxdepth  = [-Inf, +Inf],
                 swb   = [400.0, +Inf]
             ),
             mean_val = (
@@ -164,11 +164,11 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             grass                   = false,
             constraints = (
                 tcm  = [-25.0, +Inf],
-                min  = [-Inf, -10.0],
-                gdd  = [900.0, +Inf],
+                tmin  = [-Inf, -10.0],
+                gdd5  = [900.0, +Inf],
                 gdd0 = [-Inf, +Inf],
                 twm  = [-Inf, +Inf],
-                snow = [-Inf, +Inf],
+                maxdepth = [-Inf, +Inf],
                 swb  = [400.0, +Inf]
             ),
             mean_val = (
@@ -201,11 +201,11 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
         allocfact               = 1.2,
         constraints = (
             tcm   = [-Inf, +Inf],
-            min   = [-Inf, +Inf],
-            gdd   = [-Inf, +Inf],
+            tmin   = [-Inf, +Inf],
+            gdd5   = [-Inf, +Inf],
             gdd0  = [-Inf,+Inf],
             twm   = [-Inf,+Inf],
-            snow  = [-Inf,+Inf],
+            maxdepth  = [-Inf,+Inf],
             swb   = [400.0,+Inf]
         ),
         mean_val = (
@@ -240,11 +240,11 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
         grass                      = true,
         constraints = (
             tcm  = [-Inf, Inf],
-            min  = [-Inf, Inf],
-            gdd  = [-Inf, Inf],
+            tmin  = [-Inf, Inf],
+            gdd5  = [-Inf, Inf],
             gdd0 = [-Inf, Inf],
             twm  = [-Inf, Inf],
-            snow = [-Inf, Inf],
+            maxdepth = [-Inf, Inf],
             swb  = [100.0, Inf]
         ),
         mean_val = (clt=16.6, prec=12.2, temp=21.3), 
@@ -272,11 +272,11 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
         grass                      = true,
         constraints = (
             tcm  = [-Inf, Inf],
-            min  = [-3.0, Inf],
-            gdd  = [-Inf, Inf],
+            tmin  = [-3.0, Inf],
+            gdd5  = [-Inf, Inf],
             gdd0 = [-Inf, Inf],
             twm  = [10.0, Inf],
-            snow = [-Inf, Inf],
+            maxdepth = [-Inf, Inf],
             swb  = [100.0, Inf]
         ),
         mean_val = (clt=9.4, prec=1.7, temp=23.2), 

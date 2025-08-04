@@ -37,11 +37,11 @@ function WoodyDesert{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, +Inf],
-                min=[T(-45.0), +Inf],
-                gdd=[T(500), +Inf],
+                tmin=[T(-45.0), +Inf],
+                gdd5=[T(500), +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[-Inf,T(500)]
             ),
             (clt=T(9.2), prec=T(2.5), temp=T(23.9)),
@@ -83,11 +83,11 @@ function TropicalEvergreen{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, +Inf],
-                min=[T(0.0), +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[T(0.0), +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(700),+Inf]
             ),
             (clt=T(50.2), prec=T(169.6), temp=T(24.7)),
@@ -129,11 +129,11 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, +Inf],
-                min=[T(0.0), +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[T(0.0), +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(500),+Inf]
             ),
             (clt=T(44.0), prec=T(163.3), temp=T(23.7)),
@@ -175,11 +175,11 @@ function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, +Inf],
-                min=[T(-8.0), T(5.0)],
-                gdd=[T(1200), +Inf],
+                tmin=[T(-8.0), T(5.0)],
+                gdd5=[T(1200), +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(400),+Inf]
             ),
             (clt=T(33.4), prec=T(106.3), temp=T(18.7)),
@@ -221,11 +221,11 @@ function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[T(-15.0), +Inf],
-                min=[-Inf, T(-8.0)],
-                gdd=[T(1200), +Inf],
+                tmin=[-Inf, T(-8.0)],
+                gdd5=[T(1200), +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(300),+Inf]
             ),
             (clt=T(40.9), prec=T(70.2), temp=T(8.4)),
@@ -267,11 +267,11 @@ function CoolConifer{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[T(-2.0), +Inf],
-                min=[-Inf, T(10.0)],
-                gdd=[T(900), +Inf],
+                tmin=[-Inf, T(10.0)],
+                gdd5=[T(900), +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(400),+Inf]
             ),
             (clt=T(28.1), prec=T(54.5), temp=T(13.9)),
@@ -313,11 +313,11 @@ function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[T(-32.5), T(-2.0)],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[-Inf, +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, T(21.0)],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[-Inf,+Inf]
             ),
             (clt=T(48.1), prec=T(58.7), temp=T(-2.7)),
@@ -359,11 +359,11 @@ function BorealDeciduous{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, T(5.0)],
-                min=[-Inf, T(-10.0)],
-                gdd=[-Inf, +Inf],
+                tmin=[-Inf, T(-10.0)],
+                gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, T(21.0)],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[-Inf,+Inf]
             ),
             (clt=T(34.6), prec=T(39.29), temp=T(-0.5)),
@@ -405,11 +405,11 @@ function C3C4TemperateGrass{T,U}() where {T<:Real,U<:Int}
             true,
             (
                 tcm=[-Inf, +Inf],
-                min=[-Inf, T(0.0)],
-                gdd=[T(550), +Inf],
+                tmin=[-Inf, T(0.0)],
+                gdd5=[T(550), +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[-Inf,+Inf]
             ),
             (clt=T(16.6), prec=T(12.2), temp=T(21.3)), 
@@ -451,11 +451,11 @@ function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
             true,
             (
                 tcm=[-Inf, +Inf],
-                min=[T(-3.0), +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[T(-3.0), +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(200),+Inf]
             ),
             (clt=T(9.4), prec=T(1.7), temp=T(23.2)),
@@ -497,11 +497,11 @@ function TundraShrubs{T,U}() where {T<:Real,U<:Int}
             true,
             (
                 tcm=[-Inf, +Inf],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[-Inf, +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[T(50.0), +Inf],
                 twm=[-Inf, T(15.0)],
-                snow=[T(15.0), +Inf],
+                maxdepth=[T(15.0), +Inf],
                 swb=[T(150),+Inf]
             ),
             (clt=T(51.4), prec=T(50.0), temp=T(-10.8)), 
@@ -543,11 +543,11 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
             true,
             (
                 tcm=[-Inf, +Inf],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[-Inf, +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[T(50.0), +Inf],
                 twm=[-Inf, T(15.0)],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb=[T(150),+Inf]
             ),
             (clt=T(42.1), prec=T(112.8), temp=T(2.6)), 
@@ -589,11 +589,11 @@ function LichenForb{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, +Inf],
-                min=[-Inf, +Inf],
-                gdd=[-Inf, +Inf],
+                tmin=[-Inf, +Inf],
+                gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, T(15.0)],
-                snow=[-Inf, +Inf],
+                maxdepth=[-Inf, +Inf],
                 swb= [-Inf,+Inf]
             ),
             (clt=T(43.9), prec=T(53.3), temp=T(-18.4)),

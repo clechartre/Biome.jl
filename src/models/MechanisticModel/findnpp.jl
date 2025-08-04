@@ -52,20 +52,20 @@ A tuple containing:
 function findnpp(
     pft::AbstractPFT,
     annp::T,
-    dtemp::AbstractArray{T,1},
-    sun::AbstractArray{T,1},
-    temp::AbstractArray{T,1},
-    dprec::AbstractArray{T,1},
-    dmelt::AbstractArray{T,1},
-    dpet::AbstractArray{T,1},
-    dayl::AbstractArray{T,1},
-    k::AbstractArray,
+    dtemp::AbstractVector{T},
+    sun::AbstractVector{T},
+    temp::AbstractVector{T},
+    dprec::AbstractVector{T},
+    dmelt::AbstractVector{T},
+    dpet::AbstractVector{T},
+    dayl::AbstractVector{T},
+    k::AbstractArray{T},
     dphen::AbstractArray{T},
-    co2::AbstractFloat,
-    p::AbstractFloat,
-    tsoil::AbstractArray{T,1},
+    co2::T,
+    p::T,
+    tsoil::AbstractVector{T},
     pftstates::PFTState{T,Int};
-)::Tuple{AbstractPFT,T,T, PFTState} where {T<:Real}
+)::Tuple{AbstractPFT,T,T,PFTState{T,Int}} where {T<:Real}
     # Initialize variables
     optnpp = T(0.0)
     optlai = T(0.0)
