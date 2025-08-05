@@ -90,7 +90,6 @@ end
 macro unpack_namedtuple_climate(arg)
     quote
         _unpack_climate($arg)
-        println("Unpacked climate variables: ", keys($arg))
     end |> esc
 end
 
