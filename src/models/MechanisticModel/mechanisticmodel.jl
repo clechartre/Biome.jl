@@ -13,6 +13,7 @@ using DimensionalData
 using LinearAlgebra
 using Printf
 using Statistics
+using Parameters
 
 
 # Create global singleton instances at module level
@@ -44,18 +45,17 @@ function run(
     end
 
     # Initialize environmental variables from the input
-    temp, clt, prec,
-        mclou, mprec, mtemp, tprec, dtemp, dprecin, dclou, 
-        tcm, cold, gdd5, gdd0, warm, tminin, tmin, k, tsoil, dphen,
-        dpet, dayl, sun, rad0, ddayl, dprec, dmelt, maxdepth = initialize_environmental_variables(vars_in)
+    env_variables = initialize_environmental_variables(vars_in)
+    @unpack temp, clt, prec, mclou, mprec, mtemp, tprec, dtemp, 
+             dprecin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
+             tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dprec, 
+             dmelt, maxdepth, co2, lat, lon, p = env_variables
 
     # Unpack the PFT list and initialize PFT states
     pftstates, numofpfts = initialize_pftstates(pftlist, mclou, mprec, mtemp)
 
     # Apply environmental constraints to determine PFT presence
-    pftstates = constraints(
-        cold, warm, tmin, gdd5, rad0, gdd0, maxdepth, pftlist, pftstates
-    )
+    pftstates = constraints(pftlist, pftstates, env_variables)
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(pftlist.pft_list)
@@ -63,7 +63,7 @@ function run(
         if pftstates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
-                dphen = phenology(dphen, dtemp, temp, cold, tmin, pft, ddayl)
+                dphen = phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
             end
 
             # Optimize NPP and LAI for this PFT
@@ -80,7 +80,7 @@ function run(
 
     # Determine winning biome through PFT competition
     biome, optpft, npp = competition(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, cold, pftlist, pftstates, biome_assignment
+        m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment
     )
 
     # Prepare output vector
@@ -98,22 +98,20 @@ function run(
 end
 
 """
-    _unpack_with_defaults(nt::NamedTuple)
+    unpack_namedtuple_with_defaults(nt::NamedTuple)
 
-Helper function to unpack climate and soil variables from a NamedTuple, 
-filling missing or invalid values with safe defaults.
-
-Used internally by the `@unpack_namedtuple` macro.
+Clean and complete a NamedTuple of input variables, replacing missing or invalid values,
+and filling in defaults for essential variables if they are missing.
 """
-function _unpack_with_defaults(nt::NamedTuple)
+function unpack_namedtuple_with_defaults(nt::NamedTuple)
     if haskey(nt, :temp)
         T = nonmissingtype(eltype(nt.temp))
     else 
         T = Float64
     end
 
-    # Default values
-    # FIXME provide some average values for these
+    missval = T(-9999.0)
+
     defaults = Dict(
         :whc  => fill(T(-9999.0), 6),
         :ksat => fill(T(-9999.0), 6),
@@ -123,75 +121,65 @@ function _unpack_with_defaults(nt::NamedTuple)
         :co2  => T(378.0),
         :lat  => T(0.0),
         :lon  => T(0.0),
-        :p   => T(101.3),
-        :dz  => fill(T(0.0), 6)
+        :p    => T(101.3),
+        :dz   => fill(T(0.0), 6)
     )
 
-    required_keys = [:whc, :ksat, :temp, :prec, :clt, :co2, 
-                     :lat, :lon, :p, :dz]
+    cleaned = Dict{Symbol, Any}()
 
-    # Assign all keys directly from NamedTuple
     for (k, v) in pairs(nt)
-        clean_value = (v isa AbstractArray && eltype(v) <: Union{Missing, Real}) ? coalesce.(v, -9999.0) : v
-        @eval $(k) = $clean_value
-    end
-
-    missval = T(-9999.0)
-
-    # Check required keys and assign defaults if needed
-    for k in required_keys
-        val_present = haskey(nt, k)
-        val = val_present ? nt[k] : nothing
-
-        use_default = false
-        if !val_present
-            use_default = true
-            @warn "Missing key '$k' in NamedTuple. Using default: $(defaults[k])"
-        elseif ismissing(val) || val == missval
-            use_default = true
-            @warn "Key '$k' is missing. Using default: $(defaults[k])"
-        elseif val isa AbstractArray && any(ismissing, val)
-            use_default = true
-            @warn "Key '$k' contains missing values. Using default: $(defaults[k])"
-        end
-
-        if use_default
-            @eval $(Symbol(k)) = defaults[$(QuoteNode(k))]
+        cleaned[k] = if v isa AbstractArray
+            Array{T}(coalesce.(v, missval))
+        elseif ismissing(v)
+            missval
+        else
+            T(v)
         end
     end
+
+    for (k, default) in defaults
+        if !haskey(cleaned, k)
+            @warn "Missing key '$k'. Using default: $default"
+            cleaned[k] = default
+        elseif cleaned[k] isa AbstractArray && any(ismissing, cleaned[k])
+            @warn "Key '$k' contains missing values. Using default: $default"
+            cleaned[k] = default
+        elseif cleaned[k] === missval
+            @warn "Key '$k' has missing scalar. Using default: $default"
+            cleaned[k] = default
+        end
+    end
+
+    return (; cleaned...)
 end
-
-"""
-    @unpack_namedtuple(namedtuple)
-
-Macro that unpacks environmental variables from a `NamedTuple`, 
-handling missing fields with defaults via `_unpack_with_defaults`.
-"""
-macro unpack_namedtuple(arg)
-    quote
-        _unpack_with_defaults($arg)
-    end |> esc
-end
-
 
 """
     initialize_environmental_variables(input_variables::NamedTuple)
 
-Process raw climate and soil inputs into derived environmental variables 
-needed for the simulation, including daily interpolations, 
-climate indices, radiation, PET, and snow variables.
+Prepare all environmental variables (monthly, derived, soil, radiation, snow, etc.)
+from the input NamedTuple, cleaning missing values and adding climate indices.
 """
 function initialize_environmental_variables(input_variables::NamedTuple)
+    cleaned = unpack_namedtuple_with_defaults(input_variables)
+
+    temp = cleaned.temp
+    prec = cleaned.prec
+    clt  = cleaned.clt
+    co2  = cleaned.co2
+    lat  = cleaned.lat
+    lon  = cleaned.lon
+    p    = cleaned.p
+    dz   = cleaned.dz
+    whc  = cleaned.whc
+    ksat = cleaned.ksat
 
     if haskey(input_variables, :temp)
         T = nonmissingtype(eltype(input_variables.temp))
-    else 
+    else
         T = Float64
     end
 
-    # Unpack the input variables
-    @unpack_namedtuple input_variables # would need to catch the variable names and return all of it
-
+    # Derived climate means and interpolations
     mtemp = mean(temp)
     dtemp = daily_interp(temp)
     tsoil = soiltemp(temp)
@@ -206,39 +194,33 @@ function initialize_environmental_variables(input_variables::NamedTuple)
     missval = T(-9999.0)
     tcm = isempty(temp) ? missval : minimum(temp)
 
-    # Adjust minimum temperature for frost delay
+    # Frost delay adjustment
     tminin = tcm != missval ? T(0.006)*tcm^2 + T(1.316)*tcm - T(21.9) : missval
-    tmin = tminin <= tcm ? tminin : tcm - T(5.0) # tmin will get passed on to constraints, not tminin
+    tmin = tminin <= tcm ? tminin : tcm - T(5.0)
 
-    # Soil data
-    k = zeros(T, 12) # hydraulic conductivity
+    # Soil calculations
+    k = zeros(T, 12)
     k[1] = sum(ksat[1:3] .* dz[1:3]) / sum(dz[1:3])
     k[2] = sum(ksat[4:6] .* dz[4:6]) / sum(dz[4:6])
     k[5] = sum(whc[1:3] .* dz[1:3])
     k[6] = sum(whc[4:6] .* dz[4:6])
 
-    # Initialize arrays for calculations
-    # Initialize evergreen phenology (all days active)
-    # By default, all days are favorable for growth - all activate growth days
-    # This will be modified for other phenological types with the phenology function
+    # Evergreen phenology by default
     dphen = ones(T, 365, 2)
     dphen .= T(1.0)
 
-    # Calculate climate indices
-    cold, gdd5, gdd0, warm = climdata(temp, prec, dtemp, input_variables)
+    # Derived indices
+    tcm, gdd5, gdd0, twm = climdata(temp, prec, dtemp, cleaned)
+    dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, temp, cleaned)
+    dprec, dmelt, maxdepth = snow(dtemp, dprecin, cleaned)
 
-    # Calculate potential evapotranspiration and solar radiation
-    dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, temp, input_variables)
-
-    # Run snow accumulation and melting model
-    dprec, dmelt, maxdepth = snow(dtemp, dprecin, input_variables)
-    
-    return (temp, clt, prec,
-        mclou, mprec, mtemp, tprec, dtemp, dprecin, dclou, 
-        tcm, cold, gdd5, gdd0, warm, tminin, tmin, k, tsoil, dphen,
-        dpet, dayl, sun, rad0, ddayl, dprec, dmelt, maxdepth
-    )
+    # Return merged NamedTuple: all cleaned input + derived fields
+    return merge(cleaned, (; mclou, mprec, mtemp, tprec, dtemp, 
+                            dprecin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
+                            tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dprec, 
+                            dmelt, maxdepth))
 end
+
 
 """
     initialize_pftstates(pftlist::AbstractPFTList, mclou::Real, mprec::Real, mtemp::Real)
@@ -306,3 +288,4 @@ function create_output_vector(
         lon = lon
     )
 end
+

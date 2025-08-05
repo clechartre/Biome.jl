@@ -16,81 +16,48 @@ When running the BIOME4 model, the default PFTs as defined by Kaplan and Prentic
 
 ## PFT traits in the model
 
-The model is based on a series traits used to compute the growth of each PFT through photosynthesis, water acquisition, heterotropic respiration, ... 
+The model is based on a series traits used to compute the growth of each PFT through three main processes (Hallgren & Pitman, 2001): 
+* photosynthesis
+* evaopotranspiration
+* root distribution
 
-1. **`phenological_type`**  
-   - `1.0` – Evergreen  
-   - `2.0` – Deciduous  
-   - `3.0` – Grass  
+### Ecophysiological traits
 
-2. **`max_min_canopy_conductance`** (mm s⁻¹)  
-   - `gmin` – Plant water loss not directly associated with photosynthesis  
-   - Linearly related to the maximum daily photosynthesis rate (Schultz et al., 1994; Körner, 1994)
+| Parameter                  | Category             | Description                                                                                 | Min         | Max         | Source                               |
+|---------------------------|----------------------|---------------------------------------------------------------------------------------------|-------------|-------------|--------------------------------------|
+| `kk`                      | Photosynthesis       | Light extinction coefficient                                                               | 0.3         | 0.7         | Larcher (1995)                       |
+| `c4`                      | Photosynthesis       | C4 photosynthesis flag (true = C4, false = C3)                                              | Bool        | Bool        | -                                    |
+| `optratioa` (C3)          | Photosynthesis       | Optimal Ci/Ca ratio for C3                                                                  | 0.5         | 0.6         | Haxeltine et al. (1996)              |
+| `optratioa` (C4)          | Photosynthesis       | Optimal Ci/Ca ratio for C4                                                                  | 0.31        | 0.4         | Wong et al. (1979), Collatz et al. (1992) |
+| `sw_drop`                 | Photosynthesis       | Soil water content at which stomata start to close                                         | -           | -           | Not specified                        |
+| `sw_appear`               | Photosynthesis       | Soil water content at which stomata start to open                                          | -           | -           | Not specified                        |
+| `max_min_canopy_conductance` | Evapotranspiration | Min/max canopy conductance (mm s⁻¹), related to photosynthesis                             | 2.5         | 20          | Monteith (1995)                      |
+| `Emax`                    | Evapotranspiration   | Maximum daily transpiration under well-watered conditions (mm s⁻¹)                         | 2.4         | 6.4         | Whitehead et al. (1993); Stewart & Gay (1989) |
+| `sapwood_respiration`     | Respiration          | Sapwood respiration type (1 = woody, 2 = grass)                                             | 1           | 2           | -                                    |
+| `respfact`                | Respiration          | Sapwood maintenance respiration (g C kg⁻¹ month⁻¹)                                          | 1.3         | 2.0         | -                                    |
+| `phenological_type`       | General              | Phenology type: 1 = Evergreen; 2 = Deciduous; 3 = Grass                                    | 1           | 3           | -                                    |
+| `root_fraction_top_soil`  | General              | Fraction of roots in topsoil layer                                                         | -           | -           | Haxeltine et al. (1996)              |
+| `leaf_longevity`          | General              | Leaf longevity (years)                                                                     | 0.5         | 7           | Hallgren & Pitman (2001)            |
+| `GDD5_full_leaf_out`      | General              | Growing degree days above 5 °C for full leaf-out                                           | 50          | 200         | Haxeltine & Prentice (1996)         |
+| `GDD0_full_leaf_out`      | General              | Growing degree days above 0 °C for full leaf-out                                           | -           | -           | -                                    |
+| `threshold`               | General              | LAI:sapwood-area threshold                                                                 | 0.01        | 0.2         | Hallgren & Pitman (2001)            |
+| `t0`                      | General              | Reference temperature for growth initiation (°C)                                           | -           | -           | -                                    |
+| `tcurve`                  | General              | Temperature response curve                                                                 | -           | -           | -                                    |
+| `allocfact`               | General              | Allocation factor for leaf vs litter mass                                                  | -           | -           | Raich & Nadelhoffer (1989)          |
+| `grass`                   | General              | Grass flag (true = grass functional type)                                                  | Bool        | Bool        | -                                    |
+| `dominance_factor`        | General              | Capacity to dominate in harsh conditions                                                   | 1           | 10          | Prentice et al. (1992)               |
 
-3. **`Emax`** – Maximum transpiration rate (mm s⁻¹)  
-   - Maximum daily transpiration possible under well‑watered conditions  
-   - Assigned a value of 5 mm d⁻¹ based on model performance differences among vegetation classes (guesstimated)
+### Climatic Constraints
 
-4. **`sw_drop`** – Soil water content at which stomata start to close
-
-5. **`sw_appear`** – Soil water content at which stomata start to open
-
-6. **`root_fraction_top_soil`** – Fraction of roots in the topsoil layer  
-   - Rooting depths from Haxeltine et al., 1996
-
-7. **`leaf_longevity`** – Leaf longevity (years)
-
-8. **`GDD5_full_leaf_out`** – Growing degree days for full leaf‐out above 5 °C
-
-9. **`GDD0_full_leaf_out`** – Growing degree days for full leaf‐out above 0 °C  
-   - GDD = ∑(mean daily temperature – minimum temperature for growth)  
-   - Max. growing‐season LAI:  
-     - 200 for summergreen woody PFTs as per the BIOME3 model (Haxeltine & Prentice., 1996). 
-     - 50 for summergreen grasses  
-     - “Rationale for raingreens” calculated in BIOME3 paper
-
-10. **`sapwood_respiration`** – Sapwood respiration rate  
-    - This value takes 1 or 2. 1 for woody types and 2 for grassy types. 
-
-11. **`optratioa`** – Optimal leaf‐area : sapwood‐area ratio
-
-12. **`kk`** – Light extinction coefficient
-
-13. **`c4`** – C4 photosynthesis flag
-
-14. **`threshold`** – LAI : sapwood‐area ratio threshold
-
-15. **`t0`** – Reference temperature for growth initiation (°C)
-
-16. **`tcurve`** – Temperature response curve
-
-17. **`respfact`** – Respiration factor  
-   - Estimated from sapwood respiration rates and reference temperatures
-
-18. **`allocfact`** – Allocation factor for leaf vs. litter mass  
-   - Raich & Nadelhoffer, 1989; modified by Sprugel et al., 1996; Ryan, 1991; Runyon et al., 1994
-
-19. **`grass`** – Grass functional flag
-
-20. **`dominance factor`** - the capacity of the PFT to dominate, even in stressful conditions. Values are extracted from the work of Prentice et al., 1992. 
-
-## Ecophysiological Constraints
-
-The model selects viable PFTs for each grid cell based on constraints below (Prentice et al., 1992; Woodward, 1997).
-
-1. **`tcm`** – Minimum and maximum temperature for carbon assimilation (°C)
-
-2. **`min`** – Minimum temperature for growth (°C)
-
-3. **`gdd`** – Growing degree days for growth initiation
-
-4. **`gdd0`** – Growing degree days for growth initiation at 0 °C
-
-5. **`twm`** – Minimum temperature for water limitation (°C)
-
-6. **`snow`** – Snow depth for growth initiation (cm)
-
-7. **`swb`** - Soil water balance. 
+| Parameter     | Description                                              | Min      | Max      | Source                            |
+|---------------|----------------------------------------------------------|----------|----------|-----------------------------------|
+| `tcm`         | Min/max temperature of coldest month (°C)               | -65      | +15      | Hallgren & Pitman (2001), Table 2 |
+| `min`         | Minimum temperature for growth (°C)                     | -45      | +5       | Haxeltine et al. (1996)           |
+| `gdd`         | GDD for growth initiation (base unspecified)            | 300      | 1800     | Hallgren & Pitman (2001)          |
+| `gdd0`        | GDD for growth initiation above 0 °C                    | 500      | 2000     | Hallgren & Pitman (2001)          |
+| `twm`         | Temperature for water limitation growth cutoff (°C)     | 0        | 15       | Hallgren & Pitman (2001)          |
+| `snow`        | Snow depth required for growth (cm)                     | 0        | 100      | Hallgren & Pitman (2001)          |
+| `swb`         | Soil water balance (mm)                                 | 0     | 2000      | Added in this iteration of the model        |
 
 
 ## Defining your own PFTs
@@ -176,8 +143,11 @@ set_characteristic!(pftlist, "LichenForb", :tcm, [99999.0, Inf])
 
 ## References
 
+* Hallgren, Willow & Pitman, AJ. (2001). The uncertainty in simulations by a Global Biome Model (BIOMES) to alternative parameter values. Global Change Biology. 6. 483 - 495. 10.1046/j.1365-2486.2000.00325.x. 
+
 * Haxeltine, A., & Prentice, I. C. (1996). BIOME3: An equilibrium terrestrial biosphere model based on ecophysiological constraints, resource availability, and competition among plant functional types. Global Biogeochemical Cycles, 10(4), 693–709. https://doi.org/10.1029/96GB02344
 
 * Kaplan, J., & Prentice, I. (2001). Geophysical Applications of Vegetation Modeling.
 
 * Prentice, I. C., Cramer, W., Harrison, S. P., Leemans, R., Monserud, R. A., & Solomon, A. M. (1992). Special Paper: A Global Biome Model Based on Plant Physiology and Dominance, Soil Properties and Climate. Journal of Biogeography, 19(2), 117–134. https://doi.org/10.2307/2845499
+

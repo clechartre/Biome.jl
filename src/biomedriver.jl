@@ -19,7 +19,7 @@ using DimensionalData
 
 export ModelSetup, run!
 
-mutable struct ModelSetupObj{M<:BiomeModel}
+mutable struct ModelSetup{M<:BiomeModel}
     model::M
     lon::Vector{Float64}
     lat::Vector{Float64}
@@ -29,11 +29,11 @@ mutable struct ModelSetupObj{M<:BiomeModel}
     biome_assignment::Function
 end
 
-function ModelSetup(::Type{M}; co2::Float64 = 378.0,
+function ModelSetup(Model::BiomeModel;
+                    co2::Float64 = 378.0,
                     pftlist = nothing,
                     biome_assignment::Function = assign_biome,
-                    kwargs...) where {M<:BiomeModel}
-
+                    kwargs...)
     # Separate out raster arguments from others
     raster_dict = Dict{Symbol,Raster}()
     for (key, val) in kwargs
@@ -53,10 +53,10 @@ function ModelSetup(::Type{M}; co2::Float64 = 378.0,
     lon = collect(dims(rasters[:temp], X))
     lat = collect(dims(rasters[:temp], Y))
 
-    return ModelSetupObj{M}(M(), lon, lat, co2, rasters, pftlist, biome_assignment)
+    return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment)
 end
 
-function run!(setup::ModelSetupObj; coordstring::String="alldata", outfile::String="out.nc")
+function run!(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
@@ -157,22 +157,42 @@ function _execute!(
             println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
         end
 
-        # Process the data in this chunk
-        process_chunk(
-            current_chunk_size,
-            cnty,
-            lat_chunk,
-            co2,
-            env_chunks,
-            dz, 
-            lon_chunk,
-            output_stack,
-            output_dataset,
-            strx,
-            model,
-            pftlist,
-            biome_assignment
-        )
+        for y in 1:cnty
+            println("Serially processing y index $y")
+    
+            # Check if the row is already processed using the primary variable
+            primary_var = get_primary_variable(model)
+            if any(output_stack[primary_var][:, y] .!= -9999.0)
+                println("Row $y already processed, skipping.")
+                continue
+            end
+    
+            for x in 1:current_chunk_size
+                if any(chunk -> all(v -> v == -9999.0, chunk[x, y, :]), values(env_chunks))
+                    continue
+                end
+    
+                process_cell(
+                    x, 
+                    y, 
+                    strx, 
+                    lat_chunk, 
+                    co2,
+                    env_chunks,
+                    dz, lon_chunk,
+                    output_stack, 
+                    model, 
+                    pftlist, 
+                    biome_assignment
+                )
+            end
+    
+            # Sync to NetCDF every 10 rows
+            if y % 10 == 0
+                sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+            end
+        end
+
     end
 
     # Final sync before closing
@@ -260,58 +280,6 @@ function load_existing_rasterstack(dataset, model::BiomeModel, lon, lat, numofpf
     return RasterStack(Tuple(rasters))
 end
 
-"""
-    process_chunk(current_chunk_size, cnty, temp_chunk,
-lat_chunk, co2, prec_chunk, cldp_chunk, ksat_chunk,
- whc_chunk, dz, lon_chunk, output_stack, output_dataset, strx,
- model, PFTS)
-
-Process a spatial chunk of data by iterating through grid cells using RasterStack.
-"""
-function process_chunk(
-    current_chunk_size, cnty,
-    lat_chunk, co2, 
-    env_chunks, dz, 
-    lon_chunk, output_stack::RasterStack,
-    output_dataset, strx, model::BiomeModel, pftlist::AbstractPFTList,
-    biome_assignment::Function
-    )
-    for y in 1:cnty
-        println("Serially processing y index $y")
-
-        # Check if the row is already processed using the primary variable
-        primary_var = get_primary_variable(model)
-        if any(output_stack[primary_var][:, y] .!= -9999.0)
-            println("Row $y already processed, skipping.")
-            continue
-        end
-
-        for x in 1:current_chunk_size
-            if any(chunk -> all(v -> v == -9999.0, chunk[x, y, :]), values(env_chunks))
-                continue
-            end
-
-            process_cell(
-                x, 
-                y, 
-                strx, 
-                lat_chunk, 
-                co2,
-                env_chunks,
-                dz, lon_chunk,
-                output_stack, 
-                model, 
-                pftlist, 
-                biome_assignment
-            )
-        end
-
-        # Sync to NetCDF every 10 rows
-        if y % 10 == 0
-            sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-        end
-    end
-end
 
 """
     process_cell(x, y, strx, temp_chunk, lat_chunk, co2, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, output_stack, model, PFTS)
@@ -595,7 +563,7 @@ Replace missing and fill values with a uniform fill value.
 """
 function uniform_fill_value(data::Array{T,N}; fill_value=-9999.0) where {T,N}
     fill_value = convert(T, fill_value)
-    data .= coalesce.(data, fill_value)
+    data .= Array{T}(coalesce.(data, fill_value))
     return data
 end
 

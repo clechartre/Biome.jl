@@ -1,3 +1,5 @@
+using Parameters
+
 function safe_exp(x::T)::T where {T <: Real}
     try
         return exp(x)
@@ -69,6 +71,12 @@ function set_characteristic!(
     return pft
 end
 
+function add_constraint!(pft::AbstractPFT, key::Symbol, range::Tuple{Float64, Float64})
+    c = pft.characteristics
+    c.constraints = merge(c.constraints, (; key => collect(range)))
+end
+
+
 function _unpack_climate(x::NamedTuple)
     kk = keys(x)
     vv = values(x)
@@ -79,9 +87,9 @@ function _unpack_climate(x::NamedTuple)
     end
 end
 
-
 macro unpack_namedtuple_climate(arg)
- quote
-    _unpack_climate($arg)
-end |> esc
+    quote
+        _unpack_climate($arg)
+    end |> esc
 end
+
