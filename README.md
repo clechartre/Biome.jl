@@ -17,6 +17,104 @@ This GitHub repository contains the translation to Julia of the original FORTRAN
 
 The original code works with a main routine and subroutines. You can see the infrastructure in the following graph. In this Julia version, we kept the overall structure where higher level modules call functions from sub-modules.
 
+```mermaid
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#2B6465'
+    primaryTextColor: '#FFFFFF'
+    primaryBorderColor: '#1B3C3D'
+    secondaryColor: '#F3E3AB'
+    tertiaryColor: '#B7D7D8'
+    edgeLabelBackground: '#FFFFFF'
+    background: '#F0F4F4'
+    textColor: '#1B3C3D'
+    fontFamily: ''
+    fontSize: 16px
+    noteBkgColor: '#F9F9F9'
+    noteTextColor: '#2B2B2B'
+  layout: fixed
+---
+flowchart LR
+ subgraph INPUTS["Input Climate & Soil Data"]
+    direction TB
+        A1(["Temperature"])
+        A2(["Precipitation"])
+        A3(["Cloud Cover"])
+        A4(["Soil WHC"])
+        A5(["Soil Conductivity"])
+  end
+ subgraph SCHEMES["Algorithms & Schemes"]
+    direction LR
+        C["Climatic Classification"]
+        D["Mechanistic Simulation"]
+  end
+    C --> C1(["Köppen-Geiger"]) & C2(["Wissmann"]) & C3(["Thornthwaite"]) & C4(["Troll-Pfaffen"])
+    C1 --> ClimateMap["Climate-Based Biome Map"]
+    C2 --> ClimateMap
+    C3 --> ClimateMap
+    C4 --> ClimateMap
+    D --> E1(["BIOME4"]) & E2["User-Defined Model"]
+    E1 --> F1(["BIOME4 PFTs"])
+    E2 --> F2(["Baseline PFTs"])
+    F1 --> G1["Competition Logic (BIOME4)"] & G["Environmental Sieving"]
+    F2 --> G2["Competition Logic (User)"] & G
+    G1 --> H1(["Biome Classification (BIOME4)"])
+    G2 --> H2(["Biome Classification (Custom)"])
+    G --> H1 & H2
+    H1 --> OUT["Final Biome Map"]
+    H2 --> OUT
+    ClimateMap --> OUT
+    OUT --> n1["Dominant PFT"] & n2["PFT Productivity"]
+    A1 --> B(["Model Selection"])
+    A2 --> B
+    A3 --> B
+    A4 --> B
+    A5 --> B
+    B --> C & D
+    COMMENTSPACER1[" "] ~~~ OUT & COMMENT1["User-defined classification logic"]
+    COMMENTSPACER2[" "] ~~~ OUT & COMMENT2["Fully customizable model rules"]
+    COMMENT1 --> H2
+    COMMENT2 --> F2
+     A1:::inputbox
+     A2:::inputbox
+     A3:::inputbox
+     A4:::inputbox
+     A5:::inputbox
+     C:::schemebox
+     D:::schemebox
+     C1:::schemebox
+     C2:::schemebox
+     C3:::schemebox
+     C4:::schemebox
+     ClimateMap:::schemebox
+     E1:::schemebox
+     E2:::schemebox
+     F1:::schemebox
+     F2:::schemebox
+     G1:::schemebox
+     G:::schemebox
+     G2:::schemebox
+     H1:::schemebox
+     H2:::schemebox
+     OUT:::outputbox
+     n1:::finalsmall
+     n2:::finalsmall
+     B:::schemebox
+     COMMENTSPACER1:::invisible
+     COMMENT1:::comment
+     COMMENTSPACER2:::invisible
+     COMMENT2:::comment
+    classDef inputbox fill:#DDEEFF,stroke:#2B4F65,color:#1B3C3D
+    classDef schemebox fill:#FFFBEA,stroke:#E6A800,color:#1B3C3D,stroke-width:2px
+    classDef outputbox fill:#eaffea,stroke:#13a30a,stroke-width:5px,color:#15330a,font-weight:bold
+    classDef finalsmall fill:#D68D7F,stroke:#1B3C3D,stroke-width:2px,color:#1B3C3D
+    classDef comment fill:#F9F9F9,color:#2B2B2B,stroke:#B0B0B0,stroke-dasharray: 5 3
+    classDef invisible fill:#F0F4F4,stroke:#F0F4F4
+
+```
+
 Below an example of output generated with the model using the Kaplan BIOME4 logic.
 
 <p align="middle">
