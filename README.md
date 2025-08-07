@@ -28,8 +28,9 @@ config:
     secondaryColor: '#F3E3AB'
     tertiaryColor: '#B7D7D8'
     edgeLabelBackground: '#FFFFFF'
-    background: '#F0F4F4'
-    textColor: '#1B3C3D'
+    background: '#2B2B2B'  # Dark grey background
+    edgeColor: '#FFFFFF'   # White arrows
+    textColor: '#FFFFFF'   # Optional: white text for visibility
     fontFamily: ''
     fontSize: 16px
     noteBkgColor: '#F9F9F9'
