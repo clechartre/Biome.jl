@@ -28,19 +28,19 @@ config:
     rankSpacing: 30
     layoutDirection: TB
   themeVariables:
-    background: '#1E1E1E'
-    edgeColor: '#C0D6D6'
+    background: '#2B2B2B'
+    edgeColor: '#FFFFFF'
     primaryColor: '#2B6465'
     primaryTextColor: '#FFFFFF'
     primaryBorderColor: '#1B3C3D'
-    secondaryColor: '#4B8F8F'
-    tertiaryColor: '#D9CAB3'
-    edgeLabelBackground: '#2B6465'
-    textColor: '#E8F1F1'
+    secondaryColor: '#F3E3AB'
+    tertiaryColor: '#B7D7D8'
+    edgeLabelBackground: '#FFFFFF'
+    textColor: '#FFFFFF'
     fontFamily: ''
     fontSize: 16px
-    noteBkgColor: '#F6F1EB'
-    noteTextColor: '#1E1E1E'
+    noteBkgColor: '#F9F9F9'
+    noteTextColor: '#2B2B2B'
   layout: dagre
 ---
 flowchart LR
@@ -66,7 +66,7 @@ flowchart LR
     E1 --> F1(["BIOME4 PFTs"])
     E2 --> F2(["Baseline PFTs"])
     F1 --> G1["Competition Logic (BIOME4)"] & G["Environmental Sieving"]
-    F2 --> G2["Competition Logic (Dominance-based)"] & G
+    F2 --> G2["Competition Logic (User)"] & G
     G1 --> H1(["Biome Classification (BIOME4)"])
     G2 --> H2(["Biome Classification (Custom)"])
     G --> H1 & H2
@@ -114,11 +114,12 @@ flowchart LR
     n2:::finalsmall
     B:::schemebox
 
-    classDef inputbox fill:#4B8F8F,stroke:#2B6465,color:#FFFFFF,stroke-width:2px
-    classDef schemebox fill:#D9CAB3,stroke:#B89B72,color:#2B2B2B,stroke-width:2px
-    classDef outputbox fill:#B0E6D2,stroke:#44BBA4,stroke-width:5px,color:#10332C,font-weight:bold
-    classDef finalsmall fill:#E6B8A2,stroke:#874D36,stroke-width:2px,color:#3B1F17
-    classDef custombox fill:#A2C6C6,stroke:#2B6465,color:#1E1E1E,stroke-width:2px
+    classDef inputbox fill:#DDEEFF,stroke:#2B4F65,color:#1B3C3D
+    classDef schemebox fill:#FFFBEA,stroke:#E6A800,color:#1B3C3D,stroke-width:2px
+    classDef outputbox fill:#eaffea,stroke:#13a30a,stroke-width:5px,color:#15330a,font-weight:bold
+    classDef finalsmall fill:#D68D7F,stroke:#1B3C3D,stroke-width:2px,color:#1B3C3D
+    classDef custombox fill:#B3E5FC,stroke:#0288D1,color:#1B3C3D,stroke-width:2px
+
 
 ```
 
