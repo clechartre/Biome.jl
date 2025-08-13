@@ -119,16 +119,16 @@ function _execute!(
     lon = lon_full[strx:endx]
     lat = lat_full[stry:endy]
 
-    if isfile(outfile)
-        println("File $outfile already exists. Resuming from last processed row.")
-        output_dataset = NCDataset(outfile, "a")
-        output_stack = load_existing_rasterstack(output_dataset, model, lon, lat, numofpfts)
-    else
-        output_dataset = NCDataset(outfile, "c")
-        println("Creating new output file: $outfile")
-        create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
-        output_stack = create_output_rasterstack(model, lon, lat, cntx, cnty, numofpfts)
-    end
+    # if isfile(outfile)
+    #     println("File $outfile already exists. Resuming from last processed row.")
+    #     output_dataset = NCDataset(outfile, "a")
+    #     output_stack = load_existing_rasterstack(output_dataset, model, lon, lat, numofpfts)
+    # else
+    #     output_dataset = NCDataset(outfile, "c")
+    #     println("Creating new output file: $outfile")
+    #     create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
+    output_stack = create_output_rasterstack(model, lon, lat, cntx, cnty, numofpfts)
+    # end
 
     # Set up chunking variables
     chunk_size = 1000 # We're only processing 1000 rows at a time
@@ -168,11 +168,11 @@ function _execute!(
             end
     
             for x in 1:current_chunk_size
-                if any(chunk -> all(v -> v == -9999.0, chunk[x, y, :]), values(env_chunks))
-                    continue
-                end
+                # if any(chunk -> all(v -> v == -9999.0, chunk[x, y, :]), values(env_chunks))
+                #     continue
+                # end
     
-                process_cell(
+                output = process_cell(
                     x, 
                     y, 
                     strx, 
@@ -185,19 +185,22 @@ function _execute!(
                     pftlist, 
                     biome_assignment
                 )
+                return output
             end
-    
-            # Sync to NetCDF every 10 rows
-            if y % 10 == 0
-                sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-            end
+
+
+            # # # Sync to NetCDF every 10 rows
+            # if y % 10 == 0
+            #     sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+            # end
         end
 
     end
 
+
     # Final sync before closing
-    sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-    close(output_dataset)
+    # sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+    # close(output_dataset)
 end
 
 """
@@ -320,11 +323,14 @@ function process_cell(
 
     # Run the model 
     output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
+    println("output at process_cell: ", output)
 
     numofpfts = length(pftlist.pft_list)
 
     # Write results using model-specific function
     process_cell_output(model, x, y, output, output_stack; numofpfts = numofpfts)
+
+    return output
 end
 
 """
@@ -373,8 +379,8 @@ Write model output to the RasterStack based on model type.
 """
 function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output::NamedTuple, output_stack::RasterStack; numofpfts)
     output_stack[:biome][x, y] = output.biome
-    output_stack[:optpft][x, y] = output.optpft
-    output_stack[:npp][x, y, :] = output.npp
+    # output_stack[:optpft][x, y] = output.optpft
+    # output_stack[:npp][x, y, :] = output.npp
 end
 
 function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack; numofpfts)
@@ -419,10 +425,10 @@ Define the output variables and their properties for different biome models.
 """
 function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
     return Dict(
-        "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
-        "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
-        "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "gC/m^2/month", "description" => "Net primary productivity")),
-    )
+        "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")))#,
+    #     "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
+    #     "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "gC/m^2/month", "description" => "Net primary productivity")),
+    # )
 end
 
 function get_output_schema(model::WissmannModel)

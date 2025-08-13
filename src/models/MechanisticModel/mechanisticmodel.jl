@@ -57,42 +57,46 @@ function run(
     # Apply environmental constraints to determine PFT presence
     pftstates = constraints(pftlist, pftstates, env_variables)
 
-    # Calculate optimal LAI and NPP for each viable PFT
-    for (iv, pft) in enumerate(pftlist.pft_list)
-        pftstates[pft].fitness = dominance_environment_mv(pft, mclou, mprec, mtemp)
-        if pftstates[pft].present == true
-            # Calculate phenology for deciduous PFTs
-            if get_characteristic(pft, :phenological_type) >= 2
-                dphen = phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
-            end
+    # # Calculate optimal LAI and NPP for each viable PFT
+    # for (iv, pft) in enumerate(pftlist.pft_list)
+    #     pftstates[pft].fitness = dominance_environment_mv(pft, mclou, mprec, mtemp)
+    #     if pftstates[pft].present == true
+    #         # Calculate phenology for deciduous PFTs
+    #         if get_characteristic(pft, :phenological_type) >= 2
+    #             dphen = phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
+    #         end
 
-            # Optimize NPP and LAI for this PFT
-            pftlist.pft_list[iv], optlai, optnpp, pftstates[pft] = findnpp(
-                pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
-                k, dphen, co2, p, tsoil, pftstates[pft]
-            )
+    #         # Optimize NPP and LAI for this PFT
+    #         pftlist.pft_list[iv], optlai, optnpp, pftstates[pft] = findnpp(
+    #             pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
+    #             k, dphen, co2, p, tsoil, pftstates[pft]
+    #         )
 
-            # Store results in PFT characteristics
-            pftstates[pft].npp = optnpp            # assign the optimized NPP
-            pftstates[pft].lai = optlai            # assign the optimized LAI
-        end
-    end
+    #         # Store results in PFT characteristics
+    #         pftstates[pft].npp = optnpp            # assign the optimized NPP
+    #         pftstates[pft].lai = optlai            # assign the optimized LAI
+    #     end
+    # end
 
-    # Determine winning biome through PFT competition
-    biome, optpft, npp = competition(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment
-    )
+    # # Determine winning biome through PFT competition
+    # biome, optpft, npp = competition(
+    #     m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment
+    # )
 
-    # Prepare output vector
-    output = create_output_vector(
-        biome,
-        optpft,
-        pftstates,
-        pftlist,
-        numofpfts,
-        lat,
-        lon
-    )
+    pft_key = first(p for p in keys(pftstates) if get_characteristic(p, :name) == "BorealEvergreen")
+    output = (biome = Int(pftstates[pft_key].present),)
+
+
+    # # Prepare output vector
+    # output = create_output_vector(
+    #     biome,
+    #     optpft,
+    #     pftstates,
+    #     pftlist,
+    #     numofpfts,
+    #     lat,
+    #     lon
+    # )
 
     return output
 end
