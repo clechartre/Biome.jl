@@ -9,14 +9,13 @@ using UUIDs
 
 # Turing and Distributions
 using Turing, Distributions
-using MCMCChains, Plots
+using MCMCChains, Plots, StatsPlots
 using Random
-using StatsPlots
 Random.seed!(0)
 
 # -------------------- Load Ground Truth 
-groundtruthpath = "/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/evergreen_1km_WGS84.tif"
-groundtruth = Raster(groundtruthpath, name="evergreen")
+groundtruthpath = "/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/deciduous.tif"
+groundtruth = Raster(groundtruthpath, name="deciduous")
 groundtruth = ifelse.(groundtruth .== 0, 0, ifelse.(groundtruth .== -9999, -9999, 1))
 groundtruthflat = vec(groundtruth)
 valid_idx = findall(x -> x != -9999, groundtruthflat)
@@ -34,13 +33,14 @@ end
 
 function load_inputs()::BiomeInputs
     return BiomeInputs(
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/CHELSA_tas_1981-2010.nc", name="tas"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/CHELSA_pr_1981-2010.nc", name="pr"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/CHELSA_clt_1981-2010.nc", name="clt"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/soils_1km_cropped.nc", name="Ksat"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/soils_1km_cropped.nc", name="whc"),
+        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/CHELSA_tas_1981-2010.nc", name="tas"),
+        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/CHELSA_pr_1981-2010.nc", name="pr"),
+        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/CHELSA_clt_1981-2010.nc", name="clt"),
+        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/soils_1km_cropped.nc", name="Ksat"),
+        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/soils_1km_cropped.nc", name="whc"),
     )
 end
+
 
 inputs = load_inputs()
 
@@ -70,8 +70,8 @@ whc_vec  = [extract_pixel_timeseries(inputs.whc,  i, j) for (i, j) in valid_pair
 # -------------------- Run Model for a Single Pixel
 function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4)
     PFTList = BIOME4.PFTClassification()
-    set_characteristic!(PFTList, "BorealEvergreen", :gdd5, [param1, param2])
-    set_characteristic!(PFTList, "BorealEvergreen", :gdd0, [param3, param4])
+    set_characteristic!(PFTList, "BorealDeciduous", :gdd5, [param1, param2])
+    set_characteristic!(PFTList, "BorealDeciduous", :gdd0, [param3, param4])
 
     lon = [0.0]; lat = [0.0]
 
@@ -119,7 +119,7 @@ model = param_estimation(y, temp_vec, prec_vec, clt_vec, ksat_vec, whc_vec, n)
 
 # -------------------- Sampling
 setprogress!(false)
-# chain = sample(model, SMC(), 200)  # Use SMC since gradients don't work well here
+# chain = sample(model, SMC(), 50)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
 chain = sample(model, SMC(), MCMCThreads(), 400, 4)
@@ -127,22 +127,21 @@ chain = sample(model, SMC(), MCMCThreads(), 400, 4)
 # -------------------- Plotting
 p = plot(chain)
 try
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_400.png")
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_400.svg")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_plot_deciduous_400.png")
 catch e
-    @warn "Saving SVG failed. Falling back to PNG only: $e"
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_400.png")
+    @warn "Failed to save plot" exception=(e, catch_backtrace())
 end
 
+
 c = corner(chain)
-savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_corner_evergreen_400.svg")
+savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_corner_deciduous_400.png")
 
 # d = describe(chain)
 # open("chain_description.txt", "w") do file
 #     write(file, d)
 # end
 d = summary(chain)
-open("/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_description_400.txt", "w") do file
+open("/cluster/home/clechartre/Biome.jl/utils/optimization/chain_description_deciduous_400.txt", "w") do file
     write(file, d)
 end
 
