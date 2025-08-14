@@ -55,7 +55,7 @@ end
 # PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
-    present::Bool = false
+    present::T = 0.0
     fitness::T   = 0.0
     greendays::U   = 0
     firedays::T    = 0.0

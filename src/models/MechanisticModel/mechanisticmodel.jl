@@ -84,7 +84,7 @@ function run(
     # )
 
     pft_key = first(p for p in keys(pftstates) if get_characteristic(p, :name) == "BorealEvergreen")
-    output = (biome = Int(pftstates[pft_key].present),)
+    output = (biome = pftstates[pft_key].present,)
 
 
     # # Prepare output vector

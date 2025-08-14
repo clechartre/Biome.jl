@@ -119,28 +119,30 @@ model = param_estimation(y, temp_vec, prec_vec, clt_vec, ksat_vec, whc_vec, n)
 
 # -------------------- Sampling
 setprogress!(false)
-chain = sample(model, SMC(), 200)  # Use SMC since gradients don't work well here
+# chain = sample(model, SMC(), 200)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
+chain = sample(model, SMC(), MCMCThreads(), 40, 4)
 
 # -------------------- Plotting
 p = plot(chain)
 try
-    savefig(p, "utils/optimization/outputs/chain_plot_200.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_200.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_200.svg")
 else
-    savefig(p, "utils/optimization/outputs/chain_plot_200.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_200.png")
 end
 
 
 c = corner(chain)
-savefig(c, "utils/optimization/outputs/chain_corner_200.svg")
+savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_corner_evergreen_200.svg")
 
 # d = describe(chain)
 # open("chain_description.txt", "w") do file
 #     write(file, d)
 # end
 d = summary(chain)
-open("utils/optimization/outputs/chain_description_200.txt", "w") do file
+open("/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_description_200.txt", "w") do file
     write(file, d)
 end
 
