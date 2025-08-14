@@ -40,6 +40,8 @@ function run(
 )
     if haskey(vars_in, :temp)
         T = nonmissingtype(eltype(vars_in.temp))
+    elseif haskey(vars_in, :tas)
+        T = nonmissingtype(eltype(vars_in.tas))
     else 
         T = Float64
     end
