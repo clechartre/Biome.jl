@@ -550,8 +550,8 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
                 maxdepth=[-Inf, +Inf],
                 swb=[T(150),+Inf]
             ),
-            (clt=T(42.1), prec=T(112.8), temp=T(2.6)), 
-            (clt=T(17.4), prec=T(129.2), temp=T(5.7)),
+            (clt=T(10.4), prec=T(2.0), temp=T(23.5)), 
+            (clt=T(2.5), prec=T(1.6), temp=T(2.3)),
             U(8)
         )
     )
@@ -596,8 +596,8 @@ function LichenForb{T,U}() where {T<:Real,U<:Int}
                 maxdepth=[-Inf, +Inf],
                 swb= [-Inf,+Inf]
             ),
-            (clt=T(43.9), prec=T(53.3), temp=T(-18.4)),
-            (clt=T(9.0), prec=T(52.1), temp=T(4.1)),
+            (clt=T(10.4), prec=T(2.7), temp=T(23.6)),
+            (clt=T(3.1), prec=T(3.1), temp=T(3.1)),
             U(8)
         )
     )

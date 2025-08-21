@@ -30,7 +30,7 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
     c4::Bool = false
     threshold::T = 0.0
     t0::T = 0.0
-    tcurve::T = 0.0
+    tcurve::T = 1.0
     respfact::T = 1.0
     allocfact::T = 0.0
     grass::Bool = false

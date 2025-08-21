@@ -31,9 +31,10 @@ end
 
 function ModelSetup(Model::BiomeModel;
                     co2::Float64 = 378.0,
-                    pftlist = nothing,
+                    pftlist::Union{AbstractPFTList,Nothing} = nothing,
                     biome_assignment::Function = assign_biome,
                     kwargs...)
+
     # Separate out raster arguments from others
     raster_dict = Dict{Symbol,Raster}()
     for (key, val) in kwargs
