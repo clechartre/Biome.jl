@@ -122,14 +122,15 @@ setprogress!(false)
 # chain = sample(model, SMC(), 50)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
-chain = sample(model, SMC(), MCMCThreads(), 200, 4)
+chain = sample(model, SMC(), MCMCThreads(), 400, 4)
 
 # -------------------- Plotting
 p = plot(chain)
 try
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_plot_deciduous_400.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_plot_deciduous_400.svg")
 catch e
     @warn "Failed to save plot" exception=(e, catch_backtrace())
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_plot_deciduous_400.png")
 end
 
 

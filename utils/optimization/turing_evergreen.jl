@@ -12,7 +12,7 @@ using Turing, Distributions
 using MCMCChains, Plots
 using Random
 using StatsPlots
-Random.seed!(0)
+Random.seed!(23)
 
 # -------------------- Load Ground Truth 
 groundtruthpath = "/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/evergreen_1km_WGS84.tif"
@@ -122,27 +122,27 @@ setprogress!(false)
 # chain = sample(model, SMC(), 200)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
-chain = sample(model, SMC(), MCMCThreads(), 400, 4)
+chain = sample(model, SMC(), MCMCThreads(), 150, 4)
 
 # -------------------- Plotting
 p = plot(chain)
 try
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_400.png")
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_400.svg")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_150_deterministic_deterministic.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_150_deterministic.svg")
 catch e
     @warn "Saving SVG failed. Falling back to PNG only: $e"
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_400.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_150_deterministic.png")
 end
 
 c = corner(chain)
-savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_corner_evergreen_400.svg")
+savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_corner_evergreen_150_deterministic.svg")
 
 # d = describe(chain)
 # open("chain_description.txt", "w") do file
 #     write(file, d)
 # end
 d = summary(chain)
-open("/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_description_400.txt", "w") do file
+open("/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_description:evergreen_150_deterministic.txt", "w") do file
     write(file, d)
 end
 
