@@ -2,7 +2,7 @@
 
 Here is some basic examples on how to run the package for different model types. 
 
-## Climatological: 
+## Climate Envelope models: 
 
 ````
 using Biome
@@ -14,7 +14,7 @@ precfile = ""
 temp_raster = Raster(tempfile, name="temp")
 prec_raster = Raster(precfile, name="prec")
 
-setup = ModelSetup(KoppenModel;
+setup = ModelSetup(KoppenModel();
                    temp=temp_raster,
                    prec=prec_raster)
 
@@ -22,12 +22,38 @@ run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
 
 ````
 
-## Mechanistics 
+## Mechanistic models:
 
 ### BIOME4
 
-For the classic BIOME4 model, you don't need to provide a pftlist, the orchestrator will automatically fetch the biome classifications and PFTs. 
-If you do define PFTs, they will be overwritten by the classic BIOME4 scheme and we suggest you use [BaseModel]() to work with custom PFTs. 
+For the classic BIOME4 model, you need to initialize the BIOME4-specific PFTList.
+
+`````
+PFTList = BIOME4.PFTClassification()
+`````
+The PFTList is by default initialized in Float64 and Int, if you would rather use another type and use a different type  in your input data, specify it. 
+
+`````
+# i.e., using Float32
+PFTList = BIOME4.PFTClassification{Float32, Int}()
+`````
+
+ You are always welcome to remove some of its PFTs or to manually modify some of their characteristics. 
+
+
+Below is an example of using only a subset of the BIOME4 PFTs. 
+`````
+PFTList = BIOME4.PFTClassification{T,U}([
+        TropicalEvergreen{T,U}(),
+        TropicalDroughtDeciduous{T,U}(),
+        TemperateBroadleavedEvergreen{T,U}(),
+        TemperateDeciduous{T,U}(),
+        CoolConifer{T,U}(),
+        BorealEvergreen{T,U}()])
+````` 
+
+
+here is how you set up an entire run of BIOME4 with you own environmental input and PFTs
 
 `````
 using Biome
@@ -44,16 +70,25 @@ clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
+PFTList = BIOME4.PFTClassification()
 
-setup = ModelSetup(BIOME4Model;
+setup = ModelSetup(BIOME4Model();
                    temp=temp_raster,
                    prec=prec_raster,
                    sun=clt_raster,
                    ksat=ksat_raster,
                    whc=whc_raster,
-                   co2=373.8)
+                   co2=373.8,
+                   pftlist = PFTList)
 
 run!(setup; coordstring="alldata", outfile="output_biome4.nc")
+`````
+
+If you want to modify some of the PFT characteristics of you BIOME4 PFTList, you can do so usign the `set_characteristic`function, where we change the GDD5 of the "BorealEvergreen" PFT: 
+
+`````
+PFTList = BIOME4.PFTClassification()
+set_characteristic!(PFTList, "BorealEvergreen", :gdd5, [600.0, Inf])
 `````
 
 ## Base Model 
