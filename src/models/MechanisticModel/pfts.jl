@@ -52,8 +52,6 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
     dominance_factor::U = 5
 end
 
-# PFTCharacteristics() = PFTCharacteristics{Float64,Int}()
-
 @kwdef mutable struct PFTState{T<:Real,U<:Int}
     present::Bool = false
     fitness::T   = 0.0
@@ -66,7 +64,7 @@ end
 
 PFTState(c::PFTCharacteristics{T,U}) where {T,U} = PFTState{T,U}()
 PFTState(pft::AbstractPFT) = PFTState(pft.characteristics)
-PFTState() = PFTState{Float64,Int}()
+PFTState() = PFTState()
 
 const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
     AbstractNeedleleafEvergreenPFT => (
