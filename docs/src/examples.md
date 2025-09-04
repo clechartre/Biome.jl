@@ -93,9 +93,9 @@ set_characteristic!(PFTList, "BorealEvergreen", :gdd5, [600.0, Inf])
 
 ## Base Model 
 
-Without customization. 
+The Base Model will allow you to build your biome concept from scratch, by building your PFTs and your PFT-to-biome mapping.
 
-
+Without customization, the model looks as such. 
 `````
 using Biome
 using Rasters
@@ -149,10 +149,10 @@ clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
-# Custom PFTs
-C4Grass = GrassPFT(c4 = true)
+# Any custom PFT you want
+C4Grass = C4GrassPFT()
 
-TropicalEvergreen = EvergreenPFT(
+TropicalEvergreen = BroadleafEvergreenPFT(
     name = "TropicalEvergreen",
     phenological_type = 1,
     max_min_canopy_conductance = 0.5,
@@ -166,11 +166,11 @@ TropicalEvergreen = EvergreenPFT(
     allocfact                  = 1.0,
     constraints = (
         tcm = [-Inf, +Inf],
-        min = [0.0, +Inf],
-        gdd = [-Inf, +Inf],
+        tmin = [0.0, +Inf],
+        gdd5 = [-Inf, +Inf],
         gdd0 = [-Inf, +Inf],
         twm = [10.0, +Inf],
-        snow = [-Inf, +Inf],
+        maxdepth  = [-Inf, +Inf],
         swb = [700.0, +Inf]
     ),
     mean_val = (clt=50.2, prec=169.6, temp=24.7),
@@ -178,15 +178,15 @@ TropicalEvergreen = EvergreenPFT(
     dominance_factor = 1
 )
 
-TemperateDeciduous = DeciduousPFT(
+TemperateDeciduous = BroadleafDeciduousPFT(
     name = "TemperateDeciduous",
     constraints = (
         tcm=[-Inf, +Inf],
-        min=[-8.0, 5.0],
-        gdd=[1200, +Inf],
+        tmin=[-8.0, 5.0],
+        gdd5=[1200, +Inf],
         gdd0=[-Inf, +Inf],
         twm=[10.0, +Inf],
-        snow=[-Inf, +Inf],
+        maxdepth =[-Inf, +Inf],
         swb=[400,+Inf]
     ),
     mean_val = (clt=33.4, prec=106.3, temp=18.7),
@@ -209,7 +209,6 @@ struct TropicalEvergreenForest <: AbstractBiome
     TemperateDeciduousForest() = new(8)
   end
   
-  
 function my_biome_assign(pft::AbstractPFT;
     subpft,
     wdom,
@@ -218,7 +217,7 @@ function my_biome_assign(pft::AbstractPFT;
     tcm,
     tmin,
     pftlist,
-    PFTStates,
+    pftstates,
     gdom)
     if get_characteristic(pft, :c4)
         return Savanna()
@@ -233,31 +232,32 @@ function my_biome_assign(pft::AbstractPFT;
                 gdd0=gdd0, gdd5=gdd5,
                 tcm=tcm, tmin=tmin,
                 pftlist=pftlist,
-                PFTStates=PFTStates, gdom=gdom)
+                pftstates=pftstates, gdom=gdom)
     end
 end
 
 
-pftlist = PFTClassification([
-        DeciduousPFT(),
-        TundraPFT(),
-        GrassPFT(),
+PFTList = PFTClassification([
+        BroadleafDeciduousPFT(),
+        C3GrassPFT(),
         C4Grass,
         TropicalEvergreen,
         TemperateDeciduous
     ]
 )
-setup = ModelSetup(BaseModel;
+
+setup = ModelSetup(BaseModel();
                    temp=temp_raster,
                    prec=prec_raster,
-                   sun= clt_raster,
+                   clt= clt_raster,
                    ksat=ksat_raster,
                    whc= whc_raster,
                    co2=373.8,
-                   pftlist = pftlist,
+                   pftlist = PFTList,
                    biome_assignment = my_biome_assign)
 
-run!(setup; coordstring="-180/0/-90/90", outfile="output_CustomModel.nc")
+run!(setup; coordstring="alldata", outfile="output_testCustom.nc")
+
 `````
 
 Such model output will look like: 
