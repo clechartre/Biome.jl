@@ -14,15 +14,14 @@ using ArgParse
 using NCDatasets
 import ArchGDAL # Dependency to Rasters
 using Rasters
-using DataStructures: OrderedDict
 using DimensionalData
 
 export ModelSetup, run!
 
 mutable struct ModelSetup{M<:BiomeModel}
     model::M
-    lon::Vector{Float64}
-    lat::Vector{Float64}
+    lon::AbstractVector{<:Real}
+    lat::AbstractVector{<:Real}
     co2::Float64
     rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
@@ -113,8 +112,8 @@ function _execute!(
         endy = stry + cnty - 1
     end
 
-    # println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
-    # println("Bounding box counts: cntx=$cntx, cnty=$cnty")
+    println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
+    println("Bounding box counts: cntx=$cntx, cnty=$cnty")
 
     lon = lon_full[strx:endx]
     lat = lat_full[stry:endy]
@@ -141,7 +140,7 @@ function _execute!(
         current_chunk_size = x_chunk_end - x_chunk_start + 1
         lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
-        # println("Processing x indices from $x_chunk_start to $x_chunk_end")
+        println("Processing x indices from $x_chunk_start to $x_chunk_end")
 
         # Prepare environmental chunks
         env_chunks = Dict{Symbol,Array}()
@@ -153,12 +152,12 @@ function _execute!(
         end
 
         # Debug: print min/max of each var
-        # for (var, chunk) in env_chunks
-        #     println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
-        # end
+        for (var, chunk) in env_chunks
+            println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
+        end
 
         for y in 1:cnty
-            # println("Serially processing y index $y")
+            println("Serially processing y index $y")
     
             # Check if the row is already processed using the primary variable
             primary_var = get_primary_variable(model)
@@ -323,7 +322,7 @@ function process_cell(
 
     # Run the model 
     output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
-    # println("output at process_cell: ", output)
+    println("output at process_cell: ", output)
 
     numofpfts = length(pftlist.pft_list)
 

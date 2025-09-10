@@ -16,10 +16,11 @@ Random.seed!(0)
 # -------------------- Load Ground Truth 
 groundtruthpath = "/cluster/home/clechartre/Biome.jl/utils/optimization/deciduous_ch/deciduous.tif"
 groundtruth = Raster(groundtruthpath, name="deciduous")
-groundtruth = ifelse.(groundtruth .== 0, 0, ifelse.(groundtruth .== -9999, -9999, 1))
+groundtruth = map(x -> ismissing(x) ? -9999 : (x == 0 ? 0 : 1), groundtruth)
+
 groundtruthflat = vec(groundtruth)
 valid_idx = findall(x -> x != -9999, groundtruthflat)
-y = groundtruthflat[valid_idx]
+y = Int.(groundtruthflat[valid_idx])
 n = length(y)
 
 # -------------------- Load Climate Inputs
@@ -51,6 +52,7 @@ dims_lon = dims(inputs.temp, X)
 dims_lat = dims(inputs.temp, Y)
 nlon, nlat = length(dims_lon), length(dims_lat)
 
+
 ij_pairs = CartesianIndices((nlon, nlat))
 valid_pairs = [Tuple(I) for I in ij_pairs if groundtruth[I] != -9999]
 
@@ -68,10 +70,16 @@ ksat_vec = [extract_pixel_timeseries(inputs.ksat, i, j) for (i, j) in valid_pair
 whc_vec  = [extract_pixel_timeseries(inputs.whc,  i, j) for (i, j) in valid_pairs]
 
 # -------------------- Run Model for a Single Pixel
-function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4)
-    PFTList = BIOME4.PFTClassification()
+function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4, param5)
+    # PFTList = BIOME4.PFTClassification()
+    # FIXME this could just be the borealDeciduous instead of putting everything in there and slowing down the code
+    PFTList = PFTClassification([
+        BIOME4.BorealDeciduous()
+    ]
+)
     set_characteristic!(PFTList, "BorealDeciduous", :gdd5, [param1, param2])
     set_characteristic!(PFTList, "BorealDeciduous", :gdd0, [param3, param4])
+    set_characteristic!(PFTList, "BorealDeciduous", :tmin, [param5, Inf])  # Upper bound not used
 
     lon = [0.0]; lat = [0.0]
 
@@ -108,9 +116,11 @@ end
     delta2 ~ Uniform(50, 500)             # Force a gap
     param4 = param3 + delta2              # GDD0 upper > lower
 
+    param5 ~ Uniform(-90, 0)               # Tmin
+
     for i in 1:n
-        pred = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i], param1, param2, param3, param4)
-        prob = pred == 1 ? 0.95 : 0.05
+        pred = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i], param1, param2, param3, param4, param5)
+        # prob = pred == 1 ? 0.95 : 0.05
         y[i] ~ Bernoulli(prob)
     end
 end
@@ -122,27 +132,30 @@ setprogress!(false)
 # chain = sample(model, SMC(), 50)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
-chain = sample(model, SMC(), MCMCThreads(), 400, 4)
+chain = sample(model, SMC(), MCMCThreads(), 50, 4)
 
 # -------------------- Plotting
 p = plot(chain)
 try
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_plot_deciduous_400.svg")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_deciduous_50_probabilistic.svg")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_deciduous_50_probabilistic.png")
 catch e
     @warn "Failed to save plot" exception=(e, catch_backtrace())
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_plot_deciduous_400.png")
+    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_deciduous_50_probabilistic.png")
 end
 
 
 c = corner(chain)
-savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/chain_corner_deciduous_400.png")
+savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_corner_deciduous_50_probabilistic.png")
 
 # d = describe(chain)
 # open("chain_description.txt", "w") do file
 #     write(file, d)
 # end
 d = summary(chain)
-open("/cluster/home/clechartre/Biome.jl/utils/optimization/chain_description_deciduous_400.txt", "w") do file
+open("/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_description_deciduous_50_probabilistic.txt", "w") do file
     write(file, d)
+    e = describe(chain)
+    write(file, e)
 end
 

@@ -83,7 +83,7 @@ function run(
     #     m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment
     # )
 
-    pft_key = first(p for p in keys(pftstates) if get_characteristic(p, :name) == "BorealEvergreen")
+    pft_key = first(p for p in keys(pftstates) if get_characteristic(p, :name) == "BorealDeciduous")
     output = (biome = pftstates[pft_key].present,)
 
 
