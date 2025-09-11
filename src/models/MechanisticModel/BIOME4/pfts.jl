@@ -458,8 +458,8 @@ function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
                 maxdepth=[-Inf, +Inf],
                 swb=[T(200),+Inf]
             ),
-            (clt=T(9.4), prec=T(1.7), temp=T(23.2)),
-            (clt=T(1.4), prec=T(2.1), temp=T(2.2)),
+            (clt=T(16.6), prec=T(12.2), temp=T(21.3)),
+            (clt=T(6.9), prec=T(13.4), temp=T(6.2)),
             U(5)
         )
     )
