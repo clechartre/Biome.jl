@@ -1,6 +1,6 @@
 """
 Beginning of a code to run Turing.jl on Biome.jl to estimate parameters 
-# based on ground truth distribution of a PFT
+based on ground truth distribution of a PFT
 """
 # --------------------  Imports
 using Biome
@@ -12,11 +12,11 @@ using Turing, Distributions
 using MCMCChains, Plots
 using Random
 using StatsPlots
-Random.seed!(23)
+Random.seed!(42)
 
 # -------------------- Load Ground Truth 
-groundtruthpath = "/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/evergreen_1km_WGS84.tif"
-groundtruth = Raster(groundtruthpath, name="evergreen")
+groundtruthpath = "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/output_groundtruth.nc"
+groundtruth = Raster(groundtruthpath, name="biome")
 groundtruth = map(x -> ismissing(x) ? -9999 : (x == 0 ? 0 : 1), groundtruth)
 
 groundtruthflat = vec(groundtruth)
@@ -35,11 +35,11 @@ end
 
 function load_inputs()::BiomeInputs
     return BiomeInputs(
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/CHELSA_tas_1981-2010.nc", name="tas"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/CHELSA_pr_1981-2010.nc", name="pr"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/CHELSA_clt_1981-2010.nc", name="clt"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/soils_1km_cropped.nc", name="Ksat"),
-        Raster("/cluster/home/clechartre/Biome.jl/utils/optimization/evergreens_ch/soils_1km_cropped.nc", name="whc"),
+        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME4Py/data/generated_data/climatologies/temp_1981-2010.nc", name="temp"),
+        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME4Py/data/generated_data/climatologies/prec_1981-2010.nc", name="prec"),
+        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME4Py/data/generated_data/climatologies/sun_1981-2010.nc", name="sun"),
+        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/makesoil/output/soils_55km.nc", name="Ksat"),
+        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/makesoil/output/soils_55km.nc", name="whc"),
     )
 end
 
@@ -69,14 +69,21 @@ ksat_vec = [extract_pixel_timeseries(inputs.ksat, i, j) for (i, j) in valid_pair
 whc_vec  = [extract_pixel_timeseries(inputs.whc,  i, j) for (i, j) in valid_pairs]
 
 # -------------------- Run Model for a Single Pixel
-function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4, param5)
+function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4, param5,
+                              param6, param7, param8, param9, param10,
+                              param11, param12, param13, param14)
     PFTList = PFTClassification([
         BIOME4.BorealEvergreen()
         ]
     )
-    set_characteristic!(PFTList, "BorealEvergreen", :gdd5, [param1, param2])
-    set_characteristic!(PFTList, "BorealEvergreen", :gdd0, [param3, param4])
-    set_characteristic!(PFTList, "BorealEvergreen", :tmin, [param5, Inf])  # Upper bound not used
+
+    set_characteristic!(PFTList, "BorealEvergreen", :tcm, [param1, param2])
+    set_characteristic!(PFTList, "BorealEvergreen", :tmin, [param3, param4])
+    set_characteristic!(PFTList, "BorealEvergreen", :gdd5, [param5, param6]) 
+    set_characteristic!(PFTList, "BorealEvergreen", :gdd0, [param7, param8])
+    set_characteristic!(PFTList, "BorealEvergreen", :twm, [param9, param10])
+    set_characteristic!(PFTList, "BorealEvergreen", :maxdepth, [param11, param12])
+    set_characteristic!(PFTList, "BorealEvergreen", :swb, [param13, param14])
 
     lon = [0.0]; lat = [0.0]
 
@@ -105,18 +112,40 @@ end
 
 # -------------------- Turing Model
 @model function param_estimation(y, temp, prec, clt, ksat, whc, n)
-    param1 ~ Uniform(300, 1600)           # Lower limit of GDD5
-    delta1 ~ Uniform(50, 500)             # Force a gap between bounds
-    param2 = param1 + delta1              # GDD5 upper > lower
+    param1 ~ Uniform(-90, 100)
+    delta1 ~ Uniform(10, 100)
+    param2 = param1 + delta1
 
-    param3 ~ Uniform(500, 1800)           # Lower limit of GDD0
-    delta2 ~ Uniform(50, 500)             # Force a gap
-    param4 = param3 + delta2              # GDD0 upper > lower
+    param3 ~ Uniform(-90, 100)
+    delta2 ~ Uniform(10, 100)
+    param4 = param3 + delta2
 
-    param5 ~ Uniform(-90, 0)               # Tmin
+    param5 ~ Uniform(0, 2000)
+    delta3 ~ Uniform(100, 2000)
+    param6 = param5 + delta3
+
+    param7 ~ Uniform(0, 2000)
+    delta4 ~ Uniform(100, 3000)
+    param8 = param7 + delta4
+
+    param9 ~ Uniform(-10, 30)
+    delta5 ~ Uniform(5, 30)
+    param10 = param9 + delta5
+
+    param11 ~ Uniform(0, 3)
+    delta6 ~ Uniform(0.5, 3)
+    param12 = param11 + delta6
+
+    param13 ~ Uniform(0, 2000)
+    delta7 ~ Uniform(0, 2000)
+    param14 = param13 + delta7
 
     for i in 1:n
-        prob = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i], param1, param2, param3, param4, param5)
+        prob = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i],
+                              param1, param2, param3, param4, param5,
+                              param6, param7, param8, param9, param10,
+                              param11, param12, param13, param14
+                              )
         # prob = pred == 1 ? 0.95 : 0.05
         y[i] ~ Bernoulli(prob)
     end
@@ -129,27 +158,27 @@ setprogress!(false)
 # chain = sample(model, SMC(), 200)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
-chain = sample(model, SMC(), MCMCThreads(), 50, 6)
+chain = sample(model, SMC(), MCMCThreads(), 5, 4)
 
 # -------------------- Plotting
 p = plot(chain)
 try
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_50_probabilistic.png")
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_50_probabilistic.svg")
+    savefig(p, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_plot_evergreen_100.png")
+    savefig(p, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_plot_evergreen_100.svg")
 catch e
     @warn "Saving SVG failed. Falling back to PNG only: $e"
-    savefig(p, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_plot_evergreen_50_probabilistic.png")
+    savefig(p, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_plot_evergreen_100.png")
 end
 
 c = corner(chain)
-savefig(c, "/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_corner_evergreen_50_probabilistic.svg")
+savefig(c, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_corner_evergreen_100.svg")
 
 # d = describe(chain)
 # open("chain_description.txt", "w") do file
 #     write(file, d)
 # end
 d = summary(chain)
-open("/cluster/home/clechartre/Biome.jl/utils/optimization/outputs/chain_description:evergreen_50_probabilistic.txt", "w") do file
+open("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_description_evergreen_100.txt", "w") do file
     write(file, d)
     e = describe(chain)
     write(file, e)
