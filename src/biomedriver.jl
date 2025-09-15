@@ -21,8 +21,8 @@ export ModelSetup, run!
 
 mutable struct ModelSetup{M<:BiomeModel}
     model::M
-    lon::Vector{Float64}
-    lat::Vector{Float64}
+    lon::AbstractVector{<:Real}
+    lat::AbstractVector{<:Real}
     co2::Float64
     rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
