@@ -976,33 +976,37 @@ function assign_biome(
     pftstates::Dict{AbstractPFT,PFTState},
     kwargs... 
 )::AbstractBiome where {T<:Real}
-    boreal_evergreen_idx = findfirst(
-        pft -> get_characteristic(pft, :name) == "BorealEvergreen", 
-        pftlist.pft_list
-    )
-    boreal_evergreen_pft = pftlist.pft_list[boreal_evergreen_idx]
+    if pftstates[optpft].npp > 100.0
+        boreal_evergreen_idx = findfirst(
+            pft -> get_characteristic(pft, :name) == "BorealEvergreen", 
+            pftlist.pft_list
+        )
+        boreal_evergreen_pft = pftlist.pft_list[boreal_evergreen_idx]
 
-    temperate_broadleaved_evergreen_idx = findfirst(
-        pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", 
-        pftlist.pft_list
-    )
-    temperate_broadleaved_evergreen_pft = pftlist.pft_list[temperate_broadleaved_evergreen_idx]
-    cool_conifer_idx = findfirst(
-        pft -> get_characteristic(pft, :name) == "CoolConifer", 
-        pftlist.pft_list
-    )
-    cool_conifer_pft = pftlist.pft_list[cool_conifer_idx]
+        temperate_broadleaved_evergreen_idx = findfirst(
+            pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", 
+            pftlist.pft_list
+        )
+        temperate_broadleaved_evergreen_pft = pftlist.pft_list[temperate_broadleaved_evergreen_idx]
+        cool_conifer_idx = findfirst(
+            pft -> get_characteristic(pft, :name) == "CoolConifer", 
+            pftlist.pft_list
+        )
+        cool_conifer_pft = pftlist.pft_list[cool_conifer_idx]
 
-    if pftstates[boreal_evergreen_pft].present
-        if tcm < -15.0
-            return ColdMixedForest()
+        if pftstates[boreal_evergreen_pft].present
+            if tcm < -15.0
+                return ColdMixedForest()
+            else
+                return CoolMixedForest()
+            end
+        elseif pftstates[temperate_broadleaved_evergreen_pft].present || (pftstates[cool_conifer_pft].present && gdd5 > 3000.0 && tcm > 3.0)
+            return WarmMixedForest()
         else
-            return CoolMixedForest()
+            return TemperateDeciduousForest()
         end
-    elseif pftstates[temperate_broadleaved_evergreen_pft].present || (pftstates[cool_conifer_pft].present && gdd5 > 3000.0 && tcm > 3.0)
-        return WarmMixedForest()
     else
-        return TemperateDeciduousForest()
+        return Desert()
     end
 end
 
@@ -1020,20 +1024,24 @@ function assign_biome(
     pftstates::Dict{AbstractPFT,PFTState},
     kwargs... 
 )::AbstractBiome
-    temperate_broadleaved_evergreen_idx = findfirst(
-        pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", 
-        pftlist.pft_list
-    )
-    temperate_broadleaved_evergreen_idx !== nothing
-    temperate_broadleaved_evergreen_pft = pftlist.pft_list[temperate_broadleaved_evergreen_idx]
-    if pftstates[temperate_broadleaved_evergreen_pft].present
-        return WarmMixedForest()
-    elseif subpft !== nothing && isa(subpft, TemperateDeciduous) && (pftstates[optpft].npp - pftstates[subpft].npp) < 50.0
-        return TemperateConiferForest()
-    elseif subpft !== nothing && isa(subpft, BorealDeciduous) 
-        return ColdMixedForest()
+    if pftstates[optpft].npp > 100.0
+        temperate_broadleaved_evergreen_idx = findfirst(
+            pft -> get_characteristic(pft, :name) == "TemperateBroadleavedEvergreen", 
+            pftlist.pft_list
+        )
+        temperate_broadleaved_evergreen_idx !== nothing
+        temperate_broadleaved_evergreen_pft = pftlist.pft_list[temperate_broadleaved_evergreen_idx]
+        if pftstates[temperate_broadleaved_evergreen_pft].present
+            return WarmMixedForest()
+        elseif subpft !== nothing && isa(subpft, TemperateDeciduous) && (pftstates[optpft].npp - pftstates[subpft].npp) < 50.0
+            return TemperateConiferForest()
+        elseif subpft !== nothing && isa(subpft, BorealDeciduous) 
+            return ColdMixedForest()
+        else
+            return TemperateConiferForest()
+        end
     else
-        return TemperateConiferForest()
+        return Desert()
     end
 end
 
@@ -1113,7 +1121,7 @@ function assign_biome(
     pftstates::Dict{AbstractPFT,PFTState},
     kwargs... 
 )::AbstractBiome
-    if isa(wdom, TropicalEvergreen) || isa(wdom, TropicalDroughtDeciduous)
+    if wdom === nothing || isa(wdom, TropicalEvergreen) || isa(wdom, TropicalDroughtDeciduous)
         if wdom !== nothing && pftstates[wdom].lai > 4.0
             return TropicalSavanna()
         else
