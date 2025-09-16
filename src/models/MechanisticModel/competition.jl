@@ -157,7 +157,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
 
     for pft in pftlist.pft_list
         # skip the max‐NPP one by identity
-        if pft !== pftmaxnpp && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
+        if pft !== wdom && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
             let npp = pftstates[pft].npp
                 if npp > subnpp
                     subnpp = npp
