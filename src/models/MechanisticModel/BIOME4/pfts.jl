@@ -905,10 +905,11 @@ function assign_biome(
     subpft::AbstractPFT,
     tmin::T,
     pftstates::Dict{AbstractPFT,PFTState},
+    gdom::AbstractPFT,
     kwargs... 
 )::AbstractBiome where {T<:Real}
     if pftstates[optpft].npp > 100.0
-        if pftstates[subpft].lai > 1.0
+        if pftstates[gdom].lai > 1.0
             return tmin >= 0.0 ? TropicalXerophyticShrubland() : 
                    TemperateXerophyticShrubland()
         else

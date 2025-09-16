@@ -198,7 +198,11 @@ function initialize_environmental_variables(input_variables::NamedTuple)
 
     # Frost delay adjustment
     tminin = tcm != missval ? T(0.006)*tcm^2 + T(1.316)*tcm - T(21.9) : missval
-    tmin = tminin <= tcm ? tminin : tcm - T(5.0)
+    if haskey(cleaned, :tmin) && !isempty(cleaned.tmin)
+        tmin = cleaned.tmin[1]
+    else
+        tmin = tminin <= tcm ? tminin : (tcm - T(5.0))
+    end
 
     # Soil calculations
     k = zeros(T, 12)
