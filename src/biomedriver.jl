@@ -21,9 +21,9 @@ export ModelSetup, run!
 
 mutable struct ModelSetup{M<:BiomeModel, T<:Real}
     model::M
-    lon::Vector{T}
-    lat::Vector{T}
-    co2::T
+    lon::AbstractVector{<:Real}
+    lat::AbstractVector{<:Real}
+    co2::Float64
     rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
     biome_assignment::Function

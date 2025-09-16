@@ -87,6 +87,9 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
         AbstractDeciduousPFT, AbstractNeedleleafDeciduousPFT, AbstractBroadleafDeciduousPFT,
         AbstractC4GrassPFT, AbstractC3GrassPFT, AbstractGrassPFT,
 
+        # PFT Types
+        AbstractEvergreenPFT, AbstractDeciduousPFT, AbstractGrassPFT,
+
         # BasePFTs
         NeedleleafEvergreenPFT,  BroadleafEvergreenPFT,
         DeciduousPFT, NeedleleafDeciduousPFT, BroadleafDeciduousPFT,
