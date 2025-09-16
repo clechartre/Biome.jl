@@ -159,7 +159,12 @@ function _execute!(
 
         # Debug: print min/max of each var
         for (var, chunk) in env_chunks
-            println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
+            valid = chunk[chunk .!= -9999.0]
+            if isempty(valid)
+            println("max $var: N/A, min $var: N/A (all values are missing)")
+            else
+            println("max $var: ", maximum(valid), ", min $var: ", minimum(valid))
+            end
         end
 
         for y in 1:cnty
@@ -426,9 +431,9 @@ function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseMo
                             int_type::Type{<:Integer} = Int, 
                             float_type::Type{<:AbstractFloat} = Float64)
     return Dict(
-        "biome"  => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Biome classification")),
-        "optpft" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Dominant PFT")),
-        "npp"    => (type = float_type, dims = ("lon", "lat", "pft"), attrs = Dict("units" => "gC/m^2/month", "description" => "Net primary productivity"))
+        "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
+        "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
+        "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "m²/m²", "description" => "Annual Net primary productivity")),
     )
 end
 

@@ -93,11 +93,11 @@ function competition(
 
     # Call the assignbiome function
     if m isa BIOME4Model || m isa BIOMEDominanceModel
-        biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
+        biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdom = gdom, gdd0=gdd0,
             gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates)
     else 
-        biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, gdom=gdom
+        biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdom=gdom, gdd0=gdd0,
+            gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, 
         )
     end
 
@@ -157,7 +157,7 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
 
     for pft in pftlist.pft_list
         # skip the max‐NPP one by identity
-        if pft !== pftmaxnpp && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
+        if pft !== wdom && !get_characteristic(pft,:grass) && !get_characteristic(pft,:c4)
             let npp = pftstates[pft].npp
                 if npp > subnpp
                     subnpp = npp
