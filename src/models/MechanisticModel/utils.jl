@@ -71,7 +71,7 @@ function set_characteristic!(
     return pft
 end
 
-function add_constraint!(pft::AbstractPFT, key::Symbol, range::Tuple{Float64, Float64})
+function add_constraint!(pft::AbstractPFT, key::Symbol, range::Tuple{T, T}) where {T<:Real}
     c = pft.characteristics
     c.constraints = merge(c.constraints, (; key => collect(range)))
 end

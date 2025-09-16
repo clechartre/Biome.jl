@@ -38,13 +38,8 @@ function run(
     pftlist::AbstractPFTList,
     biome_assignment::Function
 )
-    if haskey(vars_in, :temp)
-        T = nonmissingtype(eltype(vars_in.temp))
-    elseif haskey(vars_in, :tas)
-        T = nonmissingtype(eltype(vars_in.tas))
-    else 
-        T = Float64
-    end
+    T = nonmissingtype(eltype(vars_in[1]))
+    U = Int
 
     # Initialize environmental variables from the input
     env_variables = initialize_environmental_variables(vars_in)

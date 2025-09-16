@@ -64,8 +64,8 @@ function findnpp(
     co2::T,
     p::T,
     tsoil::AbstractVector{T},
-    pftstates::PFTState{T,Int};
-)::Tuple{AbstractPFT,T,T,PFTState{T,Int}} where {T<:Real}
+    pftstates::PFTState
+)::Tuple{AbstractPFT,T,T,PFTState} where {T<:Real}
     # Initialize variables
     optnpp = T(0.0)
     optlai = T(0.0)

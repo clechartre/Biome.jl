@@ -19,7 +19,7 @@ using DimensionalData
 
 export ModelSetup, run!
 
-mutable struct ModelSetup{M<:BiomeModel}
+mutable struct ModelSetup{M<:BiomeModel, T<:Real}
     model::M
     lon::AbstractVector{<:Real}
     lat::AbstractVector{<:Real}
@@ -27,13 +27,17 @@ mutable struct ModelSetup{M<:BiomeModel}
     rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
     biome_assignment::Function
+    int_type::Type{<:Integer}
+    float_type::Type{<:AbstractFloat}
 end
 
 function ModelSetup(Model::BiomeModel;
-                    co2::Float64 = 378.0,
+                    co2::T = 378.0,
                     pftlist::Union{AbstractPFTList,Nothing} = nothing,
                     biome_assignment::Function = assign_biome,
-                    kwargs...)
+                    int_type::Type{<:Integer} = Int,
+                    float_type::Type{<:AbstractFloat} = Float64,
+                    kwargs...) where {T<:Real}
 
     # Separate out raster arguments from others
     raster_dict = Dict{Symbol,Raster}()
@@ -54,7 +58,7 @@ function ModelSetup(Model::BiomeModel;
     lon = collect(dims(rasters[:temp], X))
     lat = collect(dims(rasters[:temp], Y))
 
-    return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment)
+    return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, int_type, float_type)
 end
 
 function run!(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
@@ -108,7 +112,7 @@ function _execute!(
         endx = strx + cntx - 1
         endy = stry + cnty - 1
     else
-        coords = parse_coordinates(coordstring)
+        coords = parse_coordinates(coordstring, T)
         strx, stry, cntx, cnty = get_array_indices(lon_full, lat_full, coords...)
         endx = strx + cntx - 1
         endy = stry + cnty - 1
@@ -418,36 +422,32 @@ get_output_schema(model::BiomeModel)
 
 Define the output variables and their properties for different biome models.
 """
-function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
+function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}; 
+                            int_type::Type{<:Integer} = Int, 
+                            float_type::Type{<:AbstractFloat} = Float64)
     return Dict(
-        "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
-        "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
-        "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "gC/m^2/month", "description" => "Net primary productivity")),
+        "biome"  => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Biome classification")),
+        "optpft" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Dominant PFT")),
+        "npp"    => (type = float_type, dims = ("lon", "lat", "pft"), attrs = Dict("units" => "gC/m^2/month", "description" => "Net primary productivity"))
     )
 end
 
-function get_output_schema(model::WissmannModel)
+function get_output_schema(model::KoppenModel; int_type::Type{<:Integer} = Int)
     return Dict(
-        "climate_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Wissmann climate zone classification")),
+    "koppen_class" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Köppen-Geiger climate classification"))
     )
 end
 
-function get_output_schema(model::KoppenModel)
+function get_output_schema(model::ThornthwaiteModel; int_type::Type{<:Integer} = Int)
     return Dict(
-        "koppen_class" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Köppen-Geiger climate classification")),
+    "temperature_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite temperature zone")),
+    "moisture_zone"    => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite moisture zone"))
     )
 end
 
-function get_output_schema(model::ThornthwaiteModel)
+function get_output_schema(model::TrollPfaffenModel; int_type::Type{<:Integer} = Int)
     return Dict(
-        "temperature_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Thornthwaite temperature zone")),
-        "moisture_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Thornthwaite moisture zone")),
-    )
-end
-
-function get_output_schema(model::TrollPfaffenModel)
-    return Dict(
-        "troll_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Troll-Pfaffen climate zone")),
+    "troll_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Troll-Pfaffen climate zone"))
     )
 end
 
@@ -476,7 +476,7 @@ end
 
 Create output variables in NetCDF dataset based on the model type.
 """
-function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnty, numofpfts)
+function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector{T}, lat::AbstractVector{T}, cntx, cnty, numofpfts::U) where {T<:Real, U<:Int}
     # Define dimensions
     dims = get_required_dimensions(model, cntx, cnty; numofpfts = numofpfts)
     for (name, size) in dims
@@ -484,8 +484,8 @@ function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnt
     end
 
     # Define coordinate variables
-    lon_var = defVar(dataset, "lon", Float64, ("lon",), attrib=Dict("units" => "degrees_east"))
-    lat_var = defVar(dataset, "lat", Float64, ("lat",), attrib=Dict("units" => "degrees_north"))
+    lon_var = defVar(dataset, "lon", T, ("lon",), attrib=Dict("units" => "degrees_east"))
+    lat_var = defVar(dataset, "lat", T, ("lat",), attrib=Dict("units" => "degrees_north"))
 
     # Fill coordinate variables
     lon_var[:] = lon
@@ -513,16 +513,16 @@ function create_output_variables(dataset, model::BiomeModel, lon, lat, cntx, cnt
 end
 
 """
-    parse_coordinates(coordstring)
+    parse_coordinates(coordstring, ::Type{T}) where T<:Real
 
-Parse coordinate string into numeric bounds.
+Parse a coordinate string into numeric bounds using the specified type.
 """
-function parse_coordinates(coordstring::String)
+function parse_coordinates(coordstring::String, ::Type{T}) where {T<:Real}
     coords = split(coordstring, "/")
     if length(coords) != 4
         error("Coordinate string must have format: lon_min/lon_max/lat_min/lat_max")
     end
-    return parse.(Float64, coords)
+    return parse.(T, coords)
 end
 
 """
