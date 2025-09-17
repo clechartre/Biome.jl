@@ -1112,10 +1112,15 @@ Returns tropical grassland if NPP is sufficient, otherwise desert.
 function assign_biome(
     optpft::C4TropicalGrass;
     pftstates::Dict{AbstractPFT,PFTState},
+    wdom::AbstractPFT,
     kwargs... 
 )::AbstractBiome
     if pftstates[optpft].npp > 100.0
-        return TropicalGrassland()
+        if isa(wdom, Default)
+            return TropicalSavanna()
+        else
+            return TropicalGrassland()
+        end
     else
         return Desert()
     end

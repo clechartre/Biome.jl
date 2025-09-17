@@ -249,19 +249,16 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
         end
     end
     
-    if !isempty(weighted_npps) && pfts[1] === DEFAULT_INSTANCE
-        wdom = DEFAULT_INSTANCE
-    else
-        # Find dominant woody PFT (wdom) - highest weighted NPP among non-grass PFTs
-        max_woody_weighted_npp = 0.0
-        for pft in pftlist.pft_list
-            if pftstates[pft].present && !get_characteristic(pft, :grass)
-                weighted_npp = pftstates[pft].npp * pftstates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
-                if  weighted_npp > default_npp
-                    if weighted_npp > max_woody_weighted_npp
-                        max_woody_weighted_npp = weighted_npp
-                        wdom = pft
-                    end
+    wdom = DEFAULT_INSTANCE
+    # Find dominant woody PFT (wdom) - highest weighted NPP among non-grass PFTs
+    max_woody_weighted_npp = 0.0
+    for pft in pftlist.pft_list
+        if pftstates[pft].present && !get_characteristic(pft, :grass)
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
+            if  weighted_npp > default_npp
+                if weighted_npp > max_woody_weighted_npp
+                    max_woody_weighted_npp = weighted_npp
+                    wdom = pft
                 end
             end
         end
