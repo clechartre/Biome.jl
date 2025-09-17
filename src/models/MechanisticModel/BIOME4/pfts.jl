@@ -46,7 +46,8 @@ function WoodyDesert{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(9.2), prec=T(2.5), temp=T(23.9)),
             (clt=T(2.2), prec=T(2.8), temp=T(2.7)),
-            U(7)
+            U(7),
+            T(0.0)
         )
     )
 end
@@ -92,7 +93,8 @@ function TropicalEvergreen{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(50.2), prec=T(169.6), temp=T(24.7)),
             (clt=T(4.9),  prec=T(41.9),  temp=T(1.2)),
-            U(1)
+            U(1),
+            T(2.5)
         )
     )
 end
@@ -138,7 +140,8 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(44.0), prec=T(163.3), temp=T(23.7)),
             (clt=T(12.9), prec=T(81.5),  temp=T(2.3)),
-            U(1)
+            U(1),
+            T(2.5)
         )
     )
 end
@@ -184,7 +187,8 @@ function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(33.4), prec=T(106.3), temp=T(18.7)),
             (clt=T(13.3), prec=T(83.6),  temp=T(3.2)),
-            U(2)
+            U(2),
+            T(3.0)
         )
     )
 end
@@ -230,7 +234,8 @@ function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(40.9), prec=T(70.2), temp=T(8.4)),
             (clt=T(8.6), prec=T(41.9), temp=T(4.7)),
-            U(3)
+            U(3),
+            T(2.5)
         )
     )
 end
@@ -276,7 +281,8 @@ function CoolConifer{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(28.1), prec=T(54.5), temp=T(13.9)),
             (clt=T(8.6), prec=T(49.9), temp=T(3.4)),
-            U(3)
+            U(3),
+            T(2.5) # or 1.5
         )
     )
 end
@@ -322,7 +328,8 @@ function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(48.1), prec=T(58.7), temp=T(-2.7)),
             (clt=T(7.6), prec=T(35.7), temp=T(4.0)),
-            U(3)
+            U(3),
+            T(2.5)
         )
     )
 end
@@ -368,7 +375,8 @@ function BorealDeciduous{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(34.6), prec=T(39.29), temp=T(-0.5)),
             (clt=T(7.4), prec=T(26.9), temp=T(2.6)),
-            U(3)
+            U(3),
+            T(1.5)
         )
     )
 end
@@ -414,7 +422,8 @@ function C3C4TemperateGrass{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(16.6), prec=T(12.2), temp=T(21.3)), 
             (clt=T(6.9), prec=T(13.4), temp=T(6.2)),
-            U(5)
+            U(5),
+            T(0.4)
         )
     )
 end
@@ -460,7 +469,8 @@ function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(16.6), prec=T(12.2), temp=T(21.3)),
             (clt=T(6.9), prec=T(13.4), temp=T(6.2)),
-            U(5)
+            U(5),
+            T(0.4)
         )
     )
 end
@@ -506,7 +516,8 @@ function TundraShrubs{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(51.4), prec=T(50.0), temp=T(-10.8)), 
             (clt=T(9.0), prec=T(43.3), temp=T(5.1)),
-            U(6)
+            U(6),
+            T(0.0)
         )
     )
 end
@@ -552,7 +563,8 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(10.4), prec=T(2.0), temp=T(23.5)), 
             (clt=T(2.5), prec=T(1.6), temp=T(2.3)),
-            U(8)
+            U(8),
+            T(0.4)
         )
     )
 end
@@ -598,7 +610,8 @@ function LichenForb{T,U}() where {T<:Real,U<:Int}
             ),
             (clt=T(10.4), prec=T(2.7), temp=T(23.6)),
             (clt=T(3.1), prec=T(3.1), temp=T(3.1)),
-            U(8)
+            U(8),
+            T(0.0)
         )
     )
 end
@@ -1099,10 +1112,15 @@ Returns tropical grassland if NPP is sufficient, otherwise desert.
 function assign_biome(
     optpft::C4TropicalGrass;
     pftstates::Dict{AbstractPFT,PFTState},
+    wdom::AbstractPFT,
     kwargs... 
 )::AbstractBiome
     if pftstates[optpft].npp > 100.0
-        return TropicalGrassland()
+        if isa(wdom, Default)
+            return TropicalSavanna()
+        else
+            return TropicalGrassland()
+        end
     else
         return Desert()
     end

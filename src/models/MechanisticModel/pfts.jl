@@ -50,6 +50,7 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
         clt   = 9.7, prec  = 39.0, temp  = 3.2
     )
     dominance_factor::U = 5
+    minimum_lai::T = 0.0
 end
 
 @kwdef mutable struct PFTState{T<:Real,U<:Int}

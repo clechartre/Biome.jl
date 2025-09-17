@@ -23,7 +23,7 @@ mutable struct ModelSetup{M<:BiomeModel, T<:Real}
     model::M
     lon::AbstractVector{<:Real}
     lat::AbstractVector{<:Real}
-    co2::Float64
+    co2::T
     rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
     biome_assignment::Function
