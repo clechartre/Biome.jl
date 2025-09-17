@@ -195,6 +195,9 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
     for (i, pft) in enumerate(pftlist.pft_list)
         if !pftstates[pft].present || pftstates[pft].npp == 0.0
             continue  # Skip if PFT is not present
+        elseif pftstates[pft].lai < get_characteristic(pft, :minimum_lai)
+            pftstates[pft].present = false
+            continue
         else
             valid = true
             cons = get_characteristic(pft, :constraints)[:swb]
