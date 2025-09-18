@@ -13,9 +13,10 @@ using MCMCChains, Plots
 using Random
 using StatsPlots
 Random.seed!(42)
+ENV["GKSwstype"] = "100"
 
 # -------------------- Load Ground Truth 
-groundtruthpath = "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/output_groundtruth.nc"
+groundtruthpath = "/home/lechartr/Biome.jl/data/output_groundtruth.nc"
 groundtruth = Raster(groundtruthpath, name="biome")
 groundtruth = map(x -> ismissing(x) ? -9999 : (x == 0 ? 0 : 1), groundtruth)
 
@@ -35,11 +36,11 @@ end
 
 function load_inputs()::BiomeInputs
     return BiomeInputs(
-        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME4Py/data/generated_data/climatologies/temp_1981-2010.nc", name="temp"),
-        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME4Py/data/generated_data/climatologies/prec_1981-2010.nc", name="prec"),
-        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME4Py/data/generated_data/climatologies/sun_1981-2010.nc", name="sun"),
-        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/makesoil/output/soils_55km.nc", name="Ksat"),
-        Raster("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/makesoil/output/soils_55km.nc", name="whc"),
+        Raster("/home/lechartr/Biome.jl/data/temp_1981-2010.nc", name="temp"),
+        Raster("/home/lechartr/Biome.jl/data/prec_1981-2010.nc", name="prec"),
+        Raster("/home/lechartr/Biome.jl/data/sun_1981-2010.nc", name="sun"),
+        Raster("/home/lechartr/Biome.jl/data/soils_55km.nc", name="Ksat"),
+        Raster("/home/lechartr/Biome.jl/data/soils_55km.nc", name="whc"),
     )
 end
 
@@ -69,9 +70,11 @@ ksat_vec = [extract_pixel_timeseries(inputs.ksat, i, j) for (i, j) in valid_pair
 whc_vec  = [extract_pixel_timeseries(inputs.whc,  i, j) for (i, j) in valid_pairs]
 
 # -------------------- Run Model for a Single Pixel
-function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4, param5,
-                              param6, param7, param8, param9, param10,
-                              param11, param12, param13, param14)
+function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, param4,
+                             param5, param6, param7, param8, param9, param10
+                            # ,
+                            #   param11, param12, param13, param14
+                              )
     PFTList = PFTClassification([
         BIOME4.BorealEvergreen()
         ]
@@ -82,14 +85,14 @@ function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, para
     set_characteristic!(PFTList, "BorealEvergreen", :gdd5, [param5, param6]) 
     set_characteristic!(PFTList, "BorealEvergreen", :gdd0, [param7, param8])
     set_characteristic!(PFTList, "BorealEvergreen", :twm, [param9, param10])
-    set_characteristic!(PFTList, "BorealEvergreen", :maxdepth, [param11, param12])
-    set_characteristic!(PFTList, "BorealEvergreen", :swb, [param13, param14])
+    # set_characteristic!(PFTList, "BorealEvergreen", :maxdepth, [param11, param12])
+    # set_characteristic!(PFTList, "BorealEvergreen", :swb, [param13, param14])
 
     lon = [0.0]; lat = [0.0]
 
-    temp_r = Raster(temp, dims=(X(lon), Y(lat), Ti(1:size(temp, 3))), name="tas")
-    prec_r = Raster(prec, dims=(X(lon), Y(lat), Ti(1:size(prec, 3))), name="pr")
-    clt_r  = Raster(clt,  dims=(X(lon), Y(lat), Ti(1:size(clt, 3))), name="clt")
+    temp_r = Raster(temp, dims=(X(lon), Y(lat), Ti(1:size(temp, 3))), name="temp")
+    prec_r = Raster(prec, dims=(X(lon), Y(lat), Ti(1:size(prec, 3))), name="prec")
+    clt_r  = Raster(clt,  dims=(X(lon), Y(lat), Ti(1:size(clt, 3))), name="sun")
     ksat_r = Raster(ksat, dims=(X(lon), Y(lat), Ti(1:size(ksat, 3))), name="Ksat")
     whc_r  = Raster(whc,  dims=(X(lon), Y(lat), Ti(1:size(whc, 3))), name="whc")
 
@@ -101,7 +104,6 @@ function runmodel_pixel(temp, prec, clt, ksat, whc, param1, param2, param3, para
     uuid = string(uuid4())
     outfile = "output_$(uuid).nc"
     output = run!(setup; coordstring="alldata", outfile=outfile)
-    println("output", output)
     biome_val = output[:biome]
 
     # biome_val = Raster(outfile, name="biome")[1, 1]
@@ -132,19 +134,25 @@ end
     delta5 ~ Uniform(5, 30)
     param10 = param9 + delta5
 
-    param11 ~ Uniform(0, 3)
-    delta6 ~ Uniform(0.5, 3)
-    param12 = param11 + delta6
+    # param11 ~ Uniform(0, 3)
+    # delta6 ~ Uniform(0.5, 3)
+    # param12 = param11 + delta6
 
-    param13 ~ Uniform(0, 2000)
-    delta7 ~ Uniform(0, 2000)
-    param14 = param13 + delta7
+    # param13 ~ Uniform(0, 2000)
+    # delta7 ~ Uniform(0, 2000)
+    # param14 = param13 + delta7
 
     for i in 1:n
+        if temp[i, 1, 1] == -9999
+            continue  # Skip invalid pixels
+        end
         prob = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i],
-                              param1, param2, param3, param4, param5,
-                              param6, param7, param8, param9, param10,
-                              param11, param12, param13, param14
+                              param1, param2, param3, param4
+                              , 
+                              param5,
+                              param6, param7, param8, param9, param10
+                              #,
+                            #   param11, param12, param13, param14
                               )
         # prob = pred == 1 ? 0.95 : 0.05
         y[i] ~ Bernoulli(prob)
@@ -154,33 +162,101 @@ end
 model = param_estimation(y, temp_vec, prec_vec, clt_vec, ksat_vec, whc_vec, n)
 
 # -------------------- Sampling
-setprogress!(false)
+setprogress!(true)
 # chain = sample(model, SMC(), 200)  # Use SMC since gradients don't work well here
 # chain = sample(model, SMC(), 500, 3)  does not work because SMC only supports a single thread
 # chain = sample(model, NUTS(), MCMCThreads(), 1_500, 3)
-chain = sample(model, SMC(), MCMCThreads(), 5, 4)
-
+chain1 = sample(model, SMC(), 500) # Not designed to run together? MCMCThreads() is for independent-chain MCMC (e.g., NUTS/HMC).
+chain2 = sample(model, SMC(), 500)
+chain3 = sample(model, SMC(), 500)
+chain4 = sample(model, SMC(), 500)
 # -------------------- Plotting
+chain = chainscat(chain1, chain2, chain3, chain4)
 p = plot(chain)
 try
-    savefig(p, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_plot_evergreen_100.png")
-    savefig(p, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_plot_evergreen_100.svg")
+    savefig(p, "/home/lechartr/Biome.jl/output/chain_plot_synthetic_groundtruth.png")
+    savefig(p, "/home/lechartr/Biome.jl/output/chain_plot_synthetic_groundtruth.svg")
 catch e
     @warn "Saving SVG failed. Falling back to PNG only: $e"
-    savefig(p, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_plot_evergreen_100.png")
+    savefig(p, "/home/lechartr/Biome.jl/output/chain_plot_synthetic_groundtruth.png")
 end
 
 c = corner(chain)
-savefig(c, "/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_corner_evergreen_100.svg")
+savefig(c, "/home/lechartr/Biome.jl/output/chain_corner_synthetic_groundtruth.svg")
 
 # d = describe(chain)
 # open("chain_description.txt", "w") do file
 #     write(file, d)
 # end
 d = summary(chain)
-open("/Users/capucinelechartre/Documents/DocumentsWSLM29592/PhD/BIOME/utils/optimization/synthetic/chain_description_evergreen_100.txt", "w") do file
+open("/home/lechartr/Biome.jl/output/chain_description_synthetic_groundtruth.txt", "w") do file
     write(file, d)
     e = describe(chain)
     write(file, e)
 end
 
+# -------------------- Prior vs Posterior plot
+using DataFrames, StatsPlots
+
+# helper to extract posterior draws from the Chain
+getsamps(ch, sym) = vec(Array(ch[sym]))
+
+# --- posterior draws (reconstruct deterministic nodes)
+p1_post = getsamps(chain, :param1)
+d1_post = getsamps(chain, :delta1)
+p2_post = p1_post .+ d1_post
+
+p3_post = getsamps(chain, :param3)
+d2_post = getsamps(chain, :delta2)
+p4_post = p3_post .+ d2_post
+
+# --- prior draws (mirror your model's priors)
+Nprior = max(5_000, length(p1_post))  # smooth violins
+p1_pri = rand(Uniform(-90, 100), Nprior)
+d1_pri = rand(Uniform(10, 100),  Nprior)
+p2_pri = p1_pri .+ d1_pri
+
+p3_pri = rand(Uniform(-90, 100), Nprior)
+d2_pri = rand(Uniform(10, 100),  Nprior)
+p4_pri = p3_pri .+ d2_pri
+
+# --- long dataframe for grouped violins
+mkdf(vals::Vector{<:Real}, name::String, which::String) =
+    DataFrame(parameter=fill(name, length(vals)),
+                value=vals,
+                which=fill(which, length(vals)))
+
+df = vcat(
+    mkdf(p1_pri, "param1", "Prior"),
+    mkdf(p2_pri, "param2", "Prior"),
+    mkdf(p3_pri, "param3", "Prior"),
+    mkdf(p4_pri, "param4", "Prior"),
+    mkdf(p1_post, "param1", "Posterior"),
+    mkdf(p2_post, "param2", "Posterior"),
+    mkdf(p3_post, "param3", "Posterior"),
+    mkdf(p4_post, "param4", "Posterior"),
+)
+
+# --- plot
+default(framestyle = :box)
+ppp = @df df violin(
+    :parameter, :value,
+    group = :which,
+    side = :both,
+    legend = :topleft,
+    xlabel = "Parameters",
+    ylabel = "Value",
+    title = "Prior vs Posterior"
+)
+
+# overlay medians for readability
+med = combine(groupby(df, [:parameter, :which]), :value => median => :med)
+@df med scatter!(:parameter, :med, group=:which, ms=4, markerstrokewidth=0)
+
+try
+    savefig(ppp, "/home/lechartr/Biome.jl/output/prior_posterior_violin.png")
+    savefig(ppp, "/home/lechartr/Biome.jl/output/prior_posterior_violin.svg")
+catch e
+    @warn "Saving SVG failed. Falling back to PNG only: $e"
+    savefig(ppp, "/home/lechartr/Biome.jl/output/prior_posterior_violin.png")
+end
