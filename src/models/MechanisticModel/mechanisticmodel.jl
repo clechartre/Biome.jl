@@ -84,7 +84,7 @@ function run(
     # )
 
     pft_key = first(p for p in keys(pftstates) if get_characteristic(p, :name) == "BorealEvergreen")
-    # output = (biome = pftstates[pft_key].present,)
+    output = (biome = pftstates[pft_key].present,)
 
 
     # # Prepare output vector
@@ -97,17 +97,6 @@ function run(
     #     lat,
     #     lon
     # )
-
-    # Prepare output vector
-    output = create_output_vector(
-        pftstates[pft_key].present,
-        pftlist.pft_list[1],
-        pftstates,
-        pftlist,
-        1,
-        lat,
-        lon
-    )
 
     return output
 end
@@ -274,8 +263,7 @@ Includes biome index, optimal PFT index, per-PFT NPP values,
 and geographic coordinates.
 """
 function create_output_vector(
-    # biome::AbstractBiome,
-    biome::T,
+    biome::AbstractBiome,
     optpft::AbstractPFT,
     pftstates::Dict{AbstractPFT,PFTState},
     pftlist::AbstractPFTList,
@@ -287,17 +275,13 @@ function create_output_vector(
     optindex = optpft === nothing ? 0 : something(findfirst(pft -> pft == optpft, pftlist.pft_list), 0)
 
     # Convert biome to integer index
-    # biomeindex = get_biome_characteristic(biome, :value)
-    biomeindex = biome
+    biomeindex = get_biome_characteristic(biome, :value)
 
     # Collect NPP values for all PFTs
-    # FIXME this doesn't seem to work if we only define a single PFT, should work :((((
     nppindex = Vector{T}(undef, numofpfts + 1)
-    # for (i, pft) in enumerate(pftlist.pft_list)
-    #     # nppindex[i] = pftstates[pft].present ? pftstates[pft].npp : T(0.0)
-    #     nppindex[i] = T(0.0)
-    # end
-    nppindex[1] = T(0.0)  # If biome present, NPP=100, else 0
+    for (i, pft) in enumerate(pftlist.pft_list)
+        nppindex[i] = pftstates[pft].present ? pftstates[pft].npp : T(0.0)
+    end
     nppindex[end] = T(0.0)  # Last one as zero if not used (padding)
 
     return (
@@ -308,4 +292,3 @@ function create_output_vector(
         lon = lon
     )
 end
-

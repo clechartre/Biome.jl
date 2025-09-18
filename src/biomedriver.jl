@@ -112,8 +112,8 @@ function _execute!(
         endy = stry + cnty - 1
     end
 
-    println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
-    println("Bounding box counts: cntx=$cntx, cnty=$cnty")
+    # println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
+    # println("Bounding box counts: cntx=$cntx, cnty=$cnty")
 
     lon = lon_full[strx:endx]
     lat = lat_full[stry:endy]
@@ -140,7 +140,7 @@ function _execute!(
         current_chunk_size = x_chunk_end - x_chunk_start + 1
         lon_chunk = lon_full[x_chunk_start:x_chunk_end]
 
-        println("Processing x indices from $x_chunk_start to $x_chunk_end")
+        # println("Processing x indices from $x_chunk_start to $x_chunk_end")
 
         # Prepare environmental chunks
         env_chunks = Dict{Symbol,Array}()
@@ -153,16 +153,16 @@ function _execute!(
 
         # Debug: print min/max of each var
         for (var, chunk) in env_chunks
-            println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
+            # println("max $var: ", maximum(chunk), ", min $var: ", minimum(chunk))
         end
 
         for y in 1:cnty
-            println("Serially processing y index $y")
+            # println("Serially processing y index $y")
     
             # Check if the row is already processed using the primary variable
             primary_var = get_primary_variable(model)
             if any(output_stack[primary_var][:, y] .!= -9999.0)
-                println("Row $y already processed, skipping.")
+                # println("Row $y already processed, skipping.")
                 continue
             end
     
@@ -197,7 +197,7 @@ function _execute!(
     end
 
 
-    # # Final sync before closing
+    # Final sync before closing
     # sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
     # close(output_dataset)
 end
@@ -322,7 +322,7 @@ function process_cell(
 
     # Run the model 
     output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
-    println("output at process_cell: ", output)
+    # println("output at process_cell: ", output)
 
     numofpfts = length(pftlist.pft_list)
 
