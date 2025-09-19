@@ -437,6 +437,12 @@ function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseMo
     )
 end
 
+function get_output_schema(model::WissmannModel)
+    return Dict(
+        "climate_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Wissmann climate zone classification")),
+    )
+end
+
 function get_output_schema(model::KoppenModel; int_type::Type{<:Integer} = Int)
     return Dict(
     "koppen_class" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Köppen-Geiger climate classification"))
