@@ -11,14 +11,13 @@ This guide shows how to configure and run **BiomeDriver.ModelSetup** for differe
 ```julia
 using Biome
 using Rasters
-using BiomeDriver
 
 # Load rasters
 temp_r = Raster("/path/to/temp.nc", name="temp")
 prec_r = Raster("/path/to/prec.nc", name="prec")
 
 # Minimal example (Köppen model)
-setup = ModelSetup(KoppenModel; temp=temp_r, prec=prec_r)
+setup = ModelSetup(KoppenModel(); temp=temp_r, prec=prec_r)
 run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
 ```
 
@@ -30,13 +29,14 @@ run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
 
 * `model::BiomeModel` — which model you want to run (e.g., `BaseModel()`, `BIOMEDominanceModel()`, `KoppenModel()`)
 * `lon, lat` — coordinates auto-extracted from your **temp** raster
-* `co2::Real` — atmospheric CO₂ (defaults to 378.0)
+* `co2::Real` — atmospheric CO₂ (optional, only used in the mechanistic models; defaults to 378.0)
 * `rasters::NamedTuple` — your environmental inputs (any keyword set to a `Raster`)
-* `pftlist` — a `PFTClassification` or `BIOME4.PFTClassification` (optional; default depends on model)
+* `pftlist` — a `PFTClassification` or `BIOME4.PFTClassification` (optional, only used in the mechanistic models; default depends on model)
 * `biome_assignment::Function` — override biome mapping (optional)
 * `int_type`, `float_type` — numeric types (optional)
 
 The driver slices the domain (using `coordstring`), processes in chunks, resumes from an existing NetCDF if found, and writes outputs per model schema.
+* Provide coordstring in a lon/lat system with `lonmin/lonmax/latmin/latmax` between -180/180/-90/90.
 
 ---
 
@@ -65,13 +65,12 @@ All rasters must share **the same grid, ordering, and resolution**. Missing valu
 
 ```julia
 # Example: scale precipitation ×10, invert sunshine to cloudiness
+# In this example, we make sure we do not transform the NoValueData -9999
 prec_r .= ifelse.(coalesce.(prec_r, -9999) .!= -9999, 10 .* coalesce.(prec_r, -9999), -9999)
-cloud_r = copy(sun_r)
 cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9999), -9999)
 ```
 
-
-**CO₂:** `co2` keyword (e.g., `373.8`).
+**CO₂:** `co2` value as a Float (e.g., `373.8`, `324.0`).
 
 **PFT list:**
 
@@ -103,8 +102,6 @@ cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9
 * `ThornthwaiteModel` → `temperature_zone`, `moisture_zone` (`lon,lat`)
 * `TrollPfaffenModel` → `troll_zone` (`lon,lat`)
 
-**Primary output variables:** as above (used for resume logic).
-
 ---
 
 ## 4) Input raster expectations
@@ -129,9 +126,7 @@ run!(setup; coordstring="-180/0/-90/90", outfile="subset.nc")
 
 ---
 
-## 6) Examples by model
-
-### A) Base model with custom PFT constraints and biome assignment
+## 6) Examples Base model with custom PFT constraints and biome assignment
 
 ```julia
 using Biome, Rasters
@@ -173,20 +168,3 @@ setup = ModelSetup(BaseModel();
 run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
 ```
 
-### B) BIOMEDominanceModel on a regional grid (unit transforms shown)
-
-```julia
-using Biome, Rasters
-
-# Load region rasters
-temp_r = Raster(".../temp_1981-2010_europe.nc", name="temp")
-prec_r = Raster(".../prec_1981-2010_europe.nc", name="prec")
-sun_r  = Raster(".../sun_1981-2010_europe.nc",  name="sun")
-ksat_r = Raster(".../soils_55km_europe.nc",     name="Ksat")
-whc_r  = Raster(".../soils_55km_europe.nc",     name="whc")
-
-# Transform examples
-prec_r .= ifelse.(coalesce.(prec_r, -9999) .!= -9999, 10 .* coalesce.(prec_r, -9999), -9999)
-cloud_r = copy(sun_r)
-cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce.(sun_r,
-```

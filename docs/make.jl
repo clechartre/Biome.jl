@@ -12,7 +12,7 @@ makedocs(
   pages = [
         "Home" => "index.md",
         "User Guide" => Any[
-        "Getting Started" =>  Any["install.md",
+        "Getting Started" =>  Any["getting-started.md", "model-setup.md",
         "data.md"],
         "Plant Functional Types" => "pfts.md",
         "Biomes" => "biomes.md",
@@ -27,6 +27,7 @@ makedocs(
         ],
         "Examples" => "examples.md",
         "API" => "api.md",
+        "Contributing" => "contributing.md",
         
     ]
 )

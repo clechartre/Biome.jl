@@ -2,7 +2,9 @@
 
 ![BIOME4 example](assets/output_b4.svg)
 
-**Figure.** Example BIOME4-family output. The NetCDF typically contains `biome` (class id), `optpft` (dominant PFT id), and `npp` (per-PFT) on the model grid.
+**Figure.** Example BIOME4-famil| Step | Original BIOME4 | Dominance-mode (Biome.jl) |
+|---|---|---|
+| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT's optima for `clt/temp/prec`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |utput. The NetCDF typically contains `biome` (class id), `optpft` (dominant PFT id), and `npp` (per-PFT) on the model grid.
 
 We offer two ways to run the BIOME4 logic:
 
@@ -40,27 +42,23 @@ This mode keeps the BIOME4 physiology (environmental sieve → LAI & NPP per PFT
 
 ### Rationale (dominance envelope)
 
-For each PFT and each climate variable (cloudiness, precipitation, temperature), we define an optimum and spread (fitted as a Gaussian in the PFT’s observed/climatological niche). For a pixel value \(x_v\) and variable \(v \in \{\text{clt}, \text{temp}, \text{prec}\}\), we compute a standardized dominance contribution:
+For each PFT and each climate variable (cloudiness, precipitation, temperature), we define an optimum and spread (fitted as a Gaussian in the PFT's observed/climatological niche). For a pixel value ``x_v`` and variable ``v ∈ {clt, temp, prec}``, we compute a standardized dominance contribution:
 
-$$
-\mathrm{dom}_v
-= \exp\!\left(-\frac{(x_v - \mu_{\mathrm{PFT},v})^2}{2\,\sigma_{\mathrm{PFT},v}^2}\right)
-$$
+```math
+\mathrm{dom}_v = \exp\!\left(-\frac{(x_v - \mu_{\mathrm{PFT},v})^2}{2\,\sigma_{\mathrm{PFT},v}^2}\right)
+```
 
 Then sum (or weight/sum) across variables:
 
-$$
-\text{dominance\_environment}
-= \mathrm{dom}_{\text{clt}} + \mathrm{dom}_{\text{temp}} + \mathrm{dom}_{\text{prec}}
-$$
+```math
+\text{dominance\_environment} = \mathrm{dom}_{\text{clt}} + \mathrm{dom}_{\text{temp}} + \mathrm{dom}_{\text{prec}}
+```
 
-Finally, combine climate dominance with productivity and a PFT-specific $\text{dominance\_factor}$:
+Finally, combine climate dominance with productivity and a PFT-specific ``\text{dominance\_factor}``:
 
-$$
-\mathrm{score}_{\mathrm{PFT}}
-= \text{dominance\_environment}\times \mathrm{NPP}_{\mathrm{PFT}}
-\times \frac{1}{\text{dominance\_factor}_{\mathrm{PFT}}}
-$$
+```math
+\mathrm{score}_{\mathrm{PFT}} = \text{dominance\_environment}\times \mathrm{NPP}_{\mathrm{PFT}} \times \frac{1}{\text{dominance\_factor}_{\mathrm{PFT}}}
+```
 
 
 The PFT with the highest score is the dominant (**optpft**). Woody and grass subdominants are tracked for mixed cases.
