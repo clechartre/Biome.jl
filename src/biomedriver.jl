@@ -26,7 +26,7 @@ mutable struct ModelSetup{M<:BiomeModel, T<:Real}
     co2::T
     rasters::NamedTuple
     pftlist::Union{AbstractPFTList,Nothing}
-    biome_assignment::Function
+    biome_assignment::Union{Function, Nothing}
     int_type::Type{<:Integer}
     float_type::Type{<:AbstractFloat}
 end
@@ -34,7 +34,7 @@ end
 function ModelSetup(Model::BiomeModel;
                     co2::T = 378.0,
                     pftlist::Union{AbstractPFTList,Nothing} = nothing,
-                    biome_assignment::Function = assign_biome,
+                    biome_assignment::Union{Function,Nothing} = nothing,
                     int_type::Type{<:Integer} = Int,
                     float_type::Type{<:AbstractFloat} = Float64,
                     kwargs...) where {T<:Real}
@@ -57,6 +57,14 @@ function ModelSetup(Model::BiomeModel;
     # Extract longitude and latitude from the temp raster
     lon = collect(dims(rasters[:temp], X))
     lat = collect(dims(rasters[:temp], Y))
+
+    if biome_assignment === nothing
+        if Model isa BIOME4Model || Model isa BIOMEDominanceModel
+            biome_assignment = BIOME4.assign_biome
+        else
+            biome_assignment = Biome.assign_biome
+        end
+    end
 
     return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, int_type, float_type)
 end
