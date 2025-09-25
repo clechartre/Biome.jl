@@ -91,15 +91,9 @@ function competition(
         optpft, wdom, grasspft, grassnpp, woodnpp, woodylai, grasslai, pftstates
     )
 
-    # Call the assignbiome function
-    if m isa BIOME4Model || m isa BIOMEDominanceModel
-        biome = BIOME4.assign_biome(optpft; subpft=subpft, wdom=wdom, gdom = gdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates)
-    else 
-        biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdom=gdom, gdd0=gdd0,
-            gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, 
-        )
-    end
+    biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdom=gdom, gdd0=gdd0,
+        gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, 
+    )
 
     return biome, optpft, npp
 end
