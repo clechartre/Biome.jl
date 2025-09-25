@@ -135,74 +135,57 @@ function _execute!(
         output_stack = create_output_rasterstack(model, lon, lat, cntx, cnty, numofpfts)
     end
 
-    # Set up chunking variables
-    chunk_size = 1000 # We're only processing 1000 rows at a time
+    # Loop over all grid cells
+    for y in 1:cnty
+        println("Processing y index $y")
+        lat_chunk = lat[y]
 
-    # Read latitude (only once since it's the same for all x chunks)
-    lat_chunk = collect(dims(env_raster[1], Y))[stry:endy]
-
-    for x_chunk_start in strx:chunk_size:endx
-        x_chunk_end = min(x_chunk_start + chunk_size - 1, endx)
-        current_chunk_size = x_chunk_end - x_chunk_start + 1
-        lon_chunk = lon_full[x_chunk_start:x_chunk_end]
-
-        println("Processing x indices from $x_chunk_start to $x_chunk_end")
-
-        # Prepare environmental chunks
-        env_chunks = Dict{Symbol,Array}()
-
-        for (entry, raster) in enumerate(env_raster)
-            var = keys(env_raster)[entry]
-            chunk = raster[x_chunk_start:x_chunk_end, stry:endy, :]
-            env_chunks[var] = uniform_fill_value(Array(chunk))
+        # Check if the row is already processed using the primary variable
+        primary_var = get_primary_variable(model)
+        if all(output_stack[primary_var][:, y] .!= -9999.0)
+            println("Row $y already processed, skipping.")
+            continue
         end
 
-        # Debug: print min/max of each var
-        for (var, chunk) in env_chunks
-            valid = chunk[chunk .!= -9999.0]
-            if isempty(valid)
-            println("max $var: N/A, min $var: N/A (all values are missing)")
-            else
-            println("max $var: ", maximum(valid), ", min $var: ", minimum(valid))
+        for x in 1:cntx
+            lon_val = lon[x]
+
+            # Prepare environmental variables for this cell
+            env_chunks = Dict{Symbol,Array}()
+            for (var, raster) in pairs(env_raster)
+                if ndims(raster) == 2
+                    chunk = raster[x, y]
+                    env_chunks[var] = [chunk]
+                else
+                    chunk = raster[x, y, :]
+                    env_chunks[var] = uniform_fill_value(Array(chunk))
+                end
             end
-        end
 
-        for y in 1:cnty
-            println("Serially processing y index $y")
-    
-            # Check if the row is already processed using the primary variable
-            primary_var = get_primary_variable(model)
-            if any(output_stack[primary_var][:, y] .!= -9999.0)
-                println("Row $y already processed, skipping.")
+            # Skip cell if all environmental variables are missing
+            if any(chunk -> all(v -> v == -9999.0, chunk), values(env_chunks))
                 continue
             end
-    
-            for x in 1:current_chunk_size
-                if any(chunk -> all(v -> v == -9999.0, chunk[x, y, :]), values(env_chunks))
-                    continue
-                end
-    
-                process_cell(
-                    x, 
-                    y, 
-                    strx, 
-                    lat_chunk, 
-                    co2,
-                    env_chunks,
-                    dz, lon_chunk,
-                    output_stack, 
-                    model, 
-                    pftlist, 
-                    biome_assignment
-                )
-            end
-    
-            # Sync to NetCDF every 10 rows
-            if y % 10 == 0
-                sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-            end
+
+            process_cell(
+                x, 
+                y, 
+                strx, 
+                lat, 
+                co2,
+                env_chunks,
+                dz, lon,
+                output_stack, 
+                model, 
+                pftlist, 
+                biome_assignment
+            )
         end
 
+        # Sync to NetCDF every 10 rows
+        if y % 10 == 0
+            sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+        end
     end
 
     # Final sync before closing
@@ -325,7 +308,7 @@ function process_cell(
 
     input_variables = merge(
         (; lat = lat_chunk[y], co2 = co2, p = p, dz = dz, lon = lon_chunk[x]),
-        (; (k => env_chunks[k][x, y, :] for k in keys(env_chunks))...)
+        (; (k => (ndims(env_chunks[k]) == 1 ? env_chunks[k] : ndims(env_chunks[k]) == 2 ? env_chunks[k][x, y] : env_chunks[k][x, y, :]) for k in keys(env_chunks))...)
     )
 
     # Run the model 
