@@ -296,7 +296,7 @@ function process_cell(
     # Check if already processed
     primary_var = get_primary_variable(model)
     if output_stack[primary_var][x, y] != -9999.0
-        println("Cell ($x_global_index, $y_global_index) already processed, skipping.")
+        println("Cell ($x, $y) already processed, skipping.")
         return
     end
 
