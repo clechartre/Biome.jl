@@ -1,0 +1,26 @@
+# Auto-migrated from pfts.json
+name = "TropicalDroughtDeciduous"
+phenology = 3
+
+[parameters]
+phenological_type = 3
+GDD0_full_leaf_out = -99.9
+Emax = 10
+root_fraction_top_soil = 0.7
+tcurve = 1
+dominance_factor = 1
+sw_drop = 0.5
+kk = 0.7
+allocfact = 1
+t0 = 10
+max_min_canopy_conductance = 0.5
+sapwood_respiration = 1
+respfact = 0.8
+grass = false
+GDD5_full_leaf_out = -99.9
+optratioa = 0.9
+c4 = false
+threshold = 0.2
+leaf_longevity = 9
+sw_appear = 0.6
+

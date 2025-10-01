@@ -1,0 +1,26 @@
+# Auto-migrated from pfts.json
+name = "C3C4TemperateGrass"
+phenology = 3
+
+[parameters]
+phenological_type = 3
+GDD0_full_leaf_out = 100
+Emax = 6.5
+root_fraction_top_soil = 0.83
+tcurve = 1
+dominance_factor = 5
+sw_drop = 0.2
+kk = 0.4
+allocfact = 1
+t0 = 4.5
+max_min_canopy_conductance = 0.8
+sapwood_respiration = 2
+respfact = 1.6
+grass = true
+GDD5_full_leaf_out = -99.9
+optratioa = 0.65
+c4 = false
+threshold = 0.4
+leaf_longevity = 8
+sw_appear = 0.3
+

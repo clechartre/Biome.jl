@@ -1,0 +1,13 @@
+
+#pft-app .pft-ui { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+#pft-app .pft-row { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+#pft-app .pft-controls { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+#pft-app .pft-controls select { padding: .4rem .6rem; }
+#pft-app .pft-card { border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem; }
+#pft-app .pft-table { width: 100%; border-collapse: collapse; }
+#pft-app .pft-table th, #pft-app .pft-table td { border-bottom: 1px solid #eee; padding: .4rem .6rem; vertical-align: top; }
+#pft-app .pft-table th { text-align: left; width: 30%; }
+#pft-app .pft-map { width: 100%; max-width: 960px; border-radius: .75rem; border: 1px solid #e5e7eb; }
+@media (min-width: 1000px) {
+  #pft-app .pft-row { grid-template-columns: 1fr 1fr; align-items: start; }
+}

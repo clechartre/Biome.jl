@@ -1,0 +1,26 @@
+# Auto-migrated from pfts.json
+name = "ColdHerbaceous"
+phenology = 2
+
+[parameters]
+phenological_type = 2
+GDD0_full_leaf_out = 25
+Emax = 1
+root_fraction_top_soil = 0.93
+tcurve = 0.6
+dominance_factor = 8
+sw_drop = -99.9
+kk = 0.3
+allocfact = 1
+t0 = -7
+max_min_canopy_conductance = 0.8
+sapwood_respiration = 2
+respfact = 4
+grass = true
+GDD5_full_leaf_out = -99.9
+optratioa = 0.75
+c4 = false
+threshold = 0.33
+leaf_longevity = 8
+sw_appear = -99.9
+

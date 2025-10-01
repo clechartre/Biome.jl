@@ -1,6 +1,5 @@
 push!(LOAD_PATH, "../src/")
 using Documenter, Biome
-include(joinpath(@__DIR__, "build_pft_assets.jl"))
 
 __precompile__(false)
 

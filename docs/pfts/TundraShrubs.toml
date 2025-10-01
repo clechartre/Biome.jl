@@ -1,0 +1,26 @@
+# Auto-migrated from pfts.json
+name = "TundraShrubs"
+phenology = 1
+
+[parameters]
+phenological_type = 1
+GDD0_full_leaf_out = -99.9
+Emax = 1
+root_fraction_top_soil = 0.93
+tcurve = 0.6
+dominance_factor = 6
+sw_drop = -99.9
+kk = 0.5
+allocfact = 1
+t0 = -7
+max_min_canopy_conductance = 0.8
+sapwood_respiration = 1
+respfact = 4
+grass = true
+GDD5_full_leaf_out = -99.9
+optratioa = 0.9
+c4 = false
+threshold = 0.33
+leaf_longevity = 8
+sw_appear = -99.9
+
