@@ -2,15 +2,26 @@
 
 ## The PFT concept
 
-Plant functional types (PFTs) are the basis of the mechanical schemes. Instead of defining individual species, which tend to be restricted to a single area of the globe, or not extensively studies, PFTs allow to generalize life forms and strategies.
+Plant functional types (PFTs) are the basis of the mechanical schemes. Instead of defining individual species, which tend to be restricted to a single area of the globe, or not extensively studied, using PFTs allows to generalize life forms and strategies.
 
-The defintion of PFTs often includes information on their climatic range and on their phenology, leaf form, or general energy acquisition strategy. For instance, the original PFTs used in BIOME4 are: Tropical Evergreen, Tropical Deciduous, Temperate Broadleaved Evergreen, Temperate Deciduous, Temperate Needleleaf Everegreen, Boreal Evergreen, Boreal Deciduous, Temperate C3 Grass, Tropical/Warm-temperate Grass (C4), Desert Woody (C3 or C4), Tundra Shrub, Cold Herbaceous, Lichen/Forb (Kaplan & Prentice., 2004). However, this list is not finite and could be extended to for example: Epiphytes, CAM Succulents, C4 Forbs, Mangroves, and so on.
+The defintion of PFTs often includes information on their climatic range and on their phenology, leaf form, or general energy acquisition strategy. 
+
+For instance, the original PFTs used in BIOME4 are: Tropical Evergreen, Tropical Deciduous, Temperate Broadleaved Evergreen, Temperate Deciduous, Temperate Needleleaf Everegreen, Boreal Evergreen, Boreal Deciduous, Temperate C3 Grass, Tropical/Warm-temperate Grass (C4), Desert Woody (C3 or C4), Tundra Shrub, Cold Herbaceous, Lichen/Forb (Kaplan & Prentice., 2004).
+
+However, this list is not finite and could be extended to for example: Epiphytes, CAM Succulents, C4 Forbs, Mangroves, and so on.
 
 ## PFTs in the model
 
-In this package, we provide you with base PFTs based on Phenology: Deciduous, Evergreen, Grass and Tundra. And with additional traits you could add onto them to compose your own PFT: Broadleaf/Needleleaf, Tropical/Temperate/Boreal. You also can manually modify these traits (see [defining your own PFTs](#defining-your-own-pfts)).
+In this package, we provide you with base PFTs based on Phenology: 
+* Broadleaf Evergreen
+* Broadleaf Deciduous
+* Needleleaf Evergreen
+* Needleleaf Decidous
+* C3 Grass
+* C4 Grass
 
-We provide you with 5 base PFTs: 3 trees (evergreen): Temperate, Tropical, Boreal; and 2 Grass-like: Grass and Tundra, and a Default and None with 0/default values. We have initialized them with generic parameters.
+We have initialized them with generic parameters.
+You also can manually modify these traits (see [defining your own PFTs](#defining-your-own-pfts)).
 
 When running the BIOME4 model, the default PFTs as defined by Kaplan and Prentice (2001) will be used.
 
