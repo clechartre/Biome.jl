@@ -1,7 +1,12 @@
 # Existing Plant functional types
 
+Select a PFT to see its parameters and distribution map.
+
 !!! note
-    Select a PFT to see its parameters and distribution map.
+    To submit new PFTs to this database, all you need to do is: 
+      * Add the PFT parameters to `docs/pfts/nameofthepft.toml`
+      * Add a map of the potential PFT distribution to `docs/src/assets/pfts/maps/nameofthepft.png`
+      * Submit a PR!
 
 
 ```@raw html
