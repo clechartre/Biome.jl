@@ -7,14 +7,20 @@ makedocs(
   sitename  = "Biome.jl",
   authors = "Capucine Lechartre and contributors",
   modules   = [Biome],
-  format    = Documenter.HTML(),
+  format    = Documenter.HTML(;
+  assets = [
+        "assets/pfts/pfts.css",   # you'll add this file
+        "assets/pfts/pfts.js",    # you'll add this file
+    ],
+    ),
   checkdocs = :warn,
   pages = [
         "Home" => "index.md",
         "User Guide" => Any[
-        "Getting Started" =>  Any["install.md",
+        "Getting Started" =>  Any["getting-started.md", "model-setup.md",
         "data.md"],
         "Plant Functional Types" => "pfts.md",
+        "PFT Database" => "pft_database.md",
         "Biomes" => "biomes.md",
         "Climate Models"  => Any[
             "Koppen-Geiger" => "koppen.md",
@@ -27,6 +33,7 @@ makedocs(
         ],
         "Examples" => "examples.md",
         "API" => "api.md",
+        "Contributing" => "contributing.md",
         
     ]
 )

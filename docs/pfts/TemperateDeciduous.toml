@@ -1,0 +1,26 @@
+# Auto-migrated from pfts.json
+name = "TemperateDeciduous"
+phenology = 2
+
+[parameters]
+phenological_type = 2
+GDD0_full_leaf_out = -99.9
+Emax = 10
+root_fraction_top_soil = 0.65
+tcurve = 1
+dominance_factor = 3
+sw_drop = -99.9
+kk = 0.6
+allocfact = 1.2
+t0 = 4
+max_min_canopy_conductance = 0.8
+sapwood_respiration = 1
+respfact = 1.6
+grass = false
+GDD5_full_leaf_out = 200
+optratioa = 0.8
+c4 = false
+threshold = 0.33
+leaf_longevity = 7
+sw_appear = -99.9
+

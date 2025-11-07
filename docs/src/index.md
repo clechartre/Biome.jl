@@ -1,18 +1,32 @@
-# Biome.jl a modular framework of climate-based biome prediction. 
+# Biome.jl
+🌱 *A modular framework for climate-based biome prediction*
 
-Welcome to the documentation of Biome.jl. 
+Welcome to the documentation of **Biome.jl** a flexible, open-source modeling framework designed to simulate and analyze biome distributions under varying environmental conditions.
+We provide a modular and customizable engine to explore plant functional type (PFT) dynamics, equilibrium vegetation outcomes, and climate-driven biome classifications at global or regional scales.
 
-This package provides a platform for simulating climate-driven biome classification schemes alongside the mechanistic model [BIOME4](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling) and a modular version based on the BIOME4 logic.
+The package integrates both **climatic envelope schemes**  and **mechanistic simulation approaches** inspired by the [BIOME4](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling) model from Kaplan and Prentice (2001).
 
+Biome.jl extends these classical frameworks by enabling:
 
+- Customization of [PFT](./pfts.md) definitions and physiological parameters
+- User-defined competition rules and [biome classification](./biomes.md) schemes
+- Integration with parameter estimation tools (e.g. [Turing.jl](https://turinglang.org/))
+- High-resolution simulations and parallel processing on gridded landscapes
+- Scenario-based modeling (e.g. climate change, CO₂ concentration, soil constraints)
 
-## Features 
+The goal of Biome.jl is to foster **community-driven development of biome models** that are reproducible, transparent, and extensible. 
 
+This documentation provides a comprehensive guide to:
 
-## Examples
+- Setting up and configuring models
+- Preparing input datasets
+- Defining custom PFTs and biomes
+- Running simulations across different schemes
+- Calibrating parameters and evaluating results
 
-![examples](assets/output_thornthwaite_examples.svg)![example2](assets/output_wissmann_example.svg)
+---
 
+Start with the [Getting Started](./getting-started.md) guide to install and run your first Biome.jl model, or jump to the [Model Configuration](./model-setup.md) section for a deeper dive into custom simulations.
 
 ## Credits
 

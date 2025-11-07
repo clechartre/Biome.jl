@@ -1,0 +1,26 @@
+# Auto-migrated from pfts.json
+name = "C4TropicalGrass"
+phenology = 3
+
+[parameters]
+phenological_type = 3
+GDD0_full_leaf_out = -99.9
+Emax = 8
+root_fraction_top_soil = 0.57
+tcurve = 1
+dominance_factor = 5
+sw_drop = 0.2
+kk = 0.4
+allocfact = 1
+t0 = 10
+max_min_canopy_conductance = 0.8
+sapwood_respiration = 2
+respfact = 0.8
+grass = true
+GDD5_full_leaf_out = -99.9
+optratioa = 0.65
+c4 = true
+threshold = 0.4
+leaf_longevity = 10
+sw_appear = 0.3
+
