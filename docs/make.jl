@@ -1,8 +1,6 @@
 push!(LOAD_PATH, "../src/")
 using Documenter, Biome
 
-__precompile__(false)
-
 makedocs(
   sitename  = "Biome.jl",
   authors = "Capucine Lechartre and contributors",

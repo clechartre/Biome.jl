@@ -20,6 +20,7 @@ function competition(
     pftlist::AbstractPFTList,  
     pftstates::Dict{AbstractPFT,PFTState},
     biome_assignment::Function,
+    env_variables::NamedTuple
 )::Tuple{AbstractBiome, AbstractPFT, T} where {T <: Real, U <: Int}
 
     # Initialize all variables using the singleton instances
@@ -92,7 +93,7 @@ function competition(
     )
 
     biome = biome_assignment(optpft; subpft=subpft, wdom=wdom, gdom=gdom, gdd0=gdd0,
-        gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, 
+        gdd5=gdd5, tcm=tcm, tmin=tmin, pftlist=pftlist, pftstates=pftstates, env_variables=env_variables
     )
 
     return biome, optpft, npp

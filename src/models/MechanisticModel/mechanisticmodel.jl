@@ -77,7 +77,7 @@ function run(
 
     # Determine winning biome through PFT competition
     biome, optpft, npp = competition(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment
+        m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment, env_variables
     )
 
     # Prepare output vector

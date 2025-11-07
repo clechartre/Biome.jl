@@ -141,7 +141,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             dominance_factor = 2
         ),
     AbstractNeedleleafDeciduousPFT => (
-            name                    = "NeedleleafDeciduous",
+            name                    = "NeedleleafDeciduousBase",
             phenological_type       = 2,                   # deciduous
             max_min_canopy_conductance = 0.4,        # average of 0.2–0.8
             Emax                    = 6.5,                               # typical value for needleleaf
