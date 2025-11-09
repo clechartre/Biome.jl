@@ -38,9 +38,6 @@ function run(
     pftlist::AbstractPFTList,
     biome_assignment::Function
 )
-    T = nonmissingtype(eltype(vars_in[1]))
-    U = Int
-
     # Initialize environmental variables from the input
     env_variables = initialize_environmental_variables(vars_in)
     @unpack temp, clt, prec, mclou, mprec, mtemp, tprec, dtemp, 
@@ -235,7 +232,8 @@ function initialize_pftstates(pftlist::AbstractPFTList, mclou::T, mprec::T, mtem
     numofpfts = length(pftlist.pft_list)
 
     # Create the Dict that holds the PFT dynamic states
-    PFTStateobj() = PFTState(PFTCharacteristics())
+    # Specify the abstract types so that we match the rest of the data
+    PFTStateobj() = PFTState(PFTCharacteristics{T, Int}())
     pftstates = Dict{AbstractPFT,PFTState}()
 
     for pft in pftlist.pft_list

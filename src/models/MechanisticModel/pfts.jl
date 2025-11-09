@@ -438,3 +438,35 @@ function dominance_environment_mv(pft::AbstractPFT, clt::Real, prec::Real, temp:
 
     return max(value, 0.01)  # Ensure a small positive minimum
 end
+
+"""
+    change_type(x, Tnew::Type; Unew::Type=Int)
+
+Recursively convert all numeric fields and nested structs within `x` to use
+the new numeric type `Tnew`, preserving structure and field names.
+If the structure is parametric (e.g. `PFTClassification{T,U}`), it returns
+a new instance of the same type but with `{Tnew, Unew}`.
+"""
+function change_type(x, Tnew::Type; Unew::Type=Int)
+    if x isa Number
+        return convert(Tnew, x)
+    elseif x isa AbstractVector
+        return [change_type(el, Tnew; Unew=Unew) for el in x]
+    elseif x isa NamedTuple
+        return NamedTuple{keys(x)}(change_type.(values(x), Tnew; Unew=Unew))
+    elseif fieldcount(typeof(x)) > 0
+        # If it's a composite struct, rebuild it
+        vals = [change_type(getfield(x, f), Tnew; Unew=Unew) for f in fieldnames(typeof(x))]
+        if length(typeof(x).parameters) == 2 &&
+           typeof(x).parameters[1] <: Real &&
+           typeof(x).parameters[2] <: Int
+            newT = typeof(x).name.wrapper{Tnew, Unew}
+            return newT(vals...)
+        else
+            return typeof(x)(vals...)
+        end
+    else
+        return x
+    end
+end
+

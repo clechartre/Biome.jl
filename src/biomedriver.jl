@@ -3,7 +3,9 @@ module BiomeDriver
 using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel,
         BIOME4, ClimateModel, MechanisticModel,
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
-        AbstractBiomeCharacteristics, AbstractBiome, PFTClassification, P0, G, CP, T0, M, R0, run, assign_biome
+        AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
+        P0, G, CP, T0, M, R0, 
+        run, assign_biome, change_type
 
 # Standard library
 using Statistics
@@ -32,12 +34,11 @@ mutable struct ModelSetup{M<:BiomeModel, T<:Real}
 end
 
 function ModelSetup(Model::BiomeModel;
-                    co2::T = 378.0,
+                    co2::Real = 378.0,
                     pftlist::Union{AbstractPFTList,Nothing} = nothing,
                     biome_assignment::Union{Function,Nothing} = nothing,
-                    int_type::Type{<:Integer} = Int,
-                    float_type::Type{<:AbstractFloat} = Float64,
-                    kwargs...) where {T<:Real}
+                    fill_value::Real = -9999.0,
+                    kwargs...)
 
     # Separate out raster arguments from others
     raster_dict = Dict{Symbol,Raster}()
@@ -51,8 +52,38 @@ function ModelSetup(Model::BiomeModel;
     @assert :temp in keys(raster_dict) "A `temp` raster must be provided."
     @assert :prec in keys(raster_dict) "A `prec` raster must be provided."
 
-    # Convert Dict to NamedTuple
-    rasters = NamedTuple((Symbol(key),value) for (key,value) in raster_dict)
+    # Use the element type of the first raster as the canonical type,
+    # but drop Missing so float_type is the non-missing element type.
+    first_raster = first(values(raster_dict))
+    float_type = Missings.nonmissingtype(eltype(first_raster))
+
+    # Ensure raster element types (ignoring Missing) match the target type and detect missing values.
+    type_mismatch = any(r -> Missings.nonmissingtype(eltype(r)) != float_type, values(raster_dict))
+
+    if type_mismatch
+
+        # Convert Rasters
+        @warn "Raster element types do not match $(float_type). Converting all rasters to $float_type and replacing missing with $fill_value."
+        for (k, r) in pairs(raster_dict)
+            data = Array(r)
+            # Replace missing values with the fill value (converted) and convert to float_type
+            fillv = convert(float_type, fill_value)
+            dataf = convert.(float_type, coalesce.(data, fillv))
+            # Preserve dims and recreate Raster with float_type data
+            raster_dict[k] = Raster(dataf, dims=dims(r), name=k)
+        end
+
+        # Convert PFTList
+        @warn "Converting PFT list to match raster data types."
+        pftlist = change_type(pftlist, float_type)
+
+    end
+
+    # Convert CO2 to the raster non-missing element type
+    co2 = convert(float_type, co2)
+
+    # Convert Dict to NamedTuple (keeps keys as symbols)
+    rasters = (; (Symbol(k) => v for (k, v) in raster_dict)...)
 
     # Extract longitude and latitude from the temp raster
     lon = collect(dims(rasters[:temp], X))
@@ -66,7 +97,7 @@ function ModelSetup(Model::BiomeModel;
         end
     end
 
-    return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, int_type, float_type)
+    return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, Int64, float_type)
 end
 
 function run!(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
@@ -96,7 +127,7 @@ function _execute!(
 
     if  pftlist === nothing
         @warn "No pftlist provided, using default PFT classification."
-        pftlist = get_pft_list(model)
+        pftlist = get_pft_list(model) # FIXME we should specify the type here
     end
 
     if pftlist !== nothing
@@ -585,7 +616,7 @@ function parse_command_line()
 
         "--co2"
         help = "CO2 concentration"
-        arg_type = Float64
+        arg_type = Real
         default = 400.0
 
         "--tempfile"
