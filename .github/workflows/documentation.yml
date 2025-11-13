@@ -3,16 +3,13 @@ name: Documentation
 on:
   push:
     branches:
-      - master # update to match your development branch (master, main, dev, trunk, ...)
+      - master
       - dominance-post-refactoring
     tags: '*'
   pull_request:
 
 jobs:
   build:
-    # These permissions are needed to:
-    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
-    # - Delete old caches: https://github.com/julia-actions/cache#usage
     permissions:
       actions: write
       contents: write
@@ -21,24 +18,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1'
-      - uses: julia-actions/cache@v2
-      - name: Clean Julia compiled cache
-        run: rm -rf ~/.julia/compiled
-      - name: Clean Julia artifacts cache
-        run: rm -rf ~/.julia/artifacts
-      - name: Install dependencies
-        shell: julia --color=yes --project=. {0}
+
+      - name: Install system libraries (Ubuntu)
         run: |
-          using Pkg
-          Pkg.instantiate()
-          Pkg.build()
-          Pkg.develop(PackageSpec(path=pwd()))
-  
-      - name: Build and deploy
+          sudo apt-get update
+          sudo apt-get install -y libssh2-1 libssh2-1-dev libgit2-1.0 libgit2-dev libssl-dev
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12' # pin to a specific minor version; try '1.11' if 1.12 fails
+
+      # Optional: remove or reconfigure caching while debugging
+      # - uses: julia-actions/cache@v2
+      #   with:
+      #     path: ~/.julia/artifacts
+      #     key: ${{ runner.os }}-julia-artifacts-${{ matrix.julia-version }}-${{ github.sha }}
+
+      - name: Clean Julia compiled & artifacts caches
+        run: |
+          rm -rf ~/.julia/compiled
+          rm -rf ~/.julia/artifacts
+          # optionally remove registries if you suspect corruption:
+          # rm -rf ~/.julia/registries
+
+      - name: Diagnostics - Julia and environment
+        run: |
+          julia -e 'println("Julia: ", VERSION)'
+          julia -e 'using Pkg; Pkg.status()'
+
+      - name: Install dependencies & precompile
+        run: |
+          julia -e 'using Pkg; Pkg.instantiate()'
+          julia -e 'using Pkg; Pkg.precompile()'
+
+      - name: Develop local package (if needed)
+        run: julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()))'
+
+      - name: Build and deploy docs
         run: julia --color=yes --project=. docs/make.jl
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
-          DOCUMENTER_KEY: ${{secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
