@@ -7,8 +7,8 @@ makedocs(
   modules   = [Biome],
   format    = Documenter.HTML(;
   assets = [
-        "assets/pfts/pfts.css",   # you'll add this file
-        "assets/pfts/pfts.js",    # you'll add this file
+        "assets/pfts/pfts.css",
+        "assets/pfts/pfts.js",
     ],
     ),
   checkdocs = :warn,
