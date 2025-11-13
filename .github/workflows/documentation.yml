@@ -18,22 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install system libraries (Ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libssh2-1 libssh2-1-dev libgit2-1.0 libgit2-dev libssl-dev
-
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2
         with:
           version: '1.12' # pin to a specific minor version; try '1.11' if 1.12 fails
-
-      # Optional: remove or reconfigure caching while debugging
-      # - uses: julia-actions/cache@v2
-      #   with:
-      #     path: ~/.julia/artifacts
-      #     key: ${{ runner.os }}-julia-artifacts-${{ matrix.julia-version }}-${{ github.sha }}
 
       - name: Clean Julia compiled & artifacts caches
         run: |
