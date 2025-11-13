@@ -3,16 +3,12 @@ name: Documentation
 on:
   push:
     branches:
-      - master # update to match your development branch (master, main, dev, trunk, ...)
-      - dominance-post-refactoring
+      - master
     tags: '*'
   pull_request:
 
 jobs:
   build:
-    # These permissions are needed to:
-    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
-    # - Delete old caches: https://github.com/julia-actions/cache#usage
     permissions:
       actions: write
       contents: write
@@ -21,18 +17,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
         with:
-          version: '1'
-      - uses: julia-actions/cache@v2
-      - name: Install dependencies
-        shell: julia --color=yes --project=docs {0}
+          version: '1.10.5'
+
+      - name: Clean Julia compiled & artifacts caches
         run: |
-          using Pkg
-          Pkg.develop(PackageSpec(path=pwd()))
-          Pkg.instantiate()
-      - name: Build and deploy
-        run: julia --color=yes --project=docs docs/make.jl
+          rm -rf ~/.julia/compiled
+          rm -rf ~/.julia/artifacts
+          # optionally remove registries if you suspect corruption:
+          # rm -rf ~/.julia/registries
+
+      - name: Diagnostics - Julia and environment
+        run: |
+          julia -e 'println("Julia: ", VERSION)'
+          julia -e 'using Pkg; Pkg.status()'
+
+      - name: Install dependencies & precompile
+        run: |
+          julia -e 'using Pkg; Pkg.instantiate()'
+          julia -e 'using Pkg; Pkg.precompile()'
+
+      - name: Develop local package
+        run: julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()))'
+
+      - name: Build and deploy docs
+        run: julia --color=yes docs/make.jl
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
-          DOCUMENTER_KEY: ${{secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

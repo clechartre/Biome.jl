@@ -1,11 +1,12 @@
 [deps]
+Biome = "5eeb3664-5dad-11f0-365e-cf48b074b7a5"
 DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Example = "7876af07-990d-54b4-ab0e-23690620f79a"
-Biome = "5eeb3664-5dad-11f0-365e-cf48b074b7a5"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 
 [compat]
 julia = "1.8"
 
-[paths]
-Biome = { path = ".." }
+[paths.Biome]
+path = ".."

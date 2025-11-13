@@ -1,7 +1,12 @@
-push!(LOAD_PATH, "../src/")
+# push!(LOAD_PATH, "../src/")
+
+using Pkg
+Pkg.activate(@__DIR__)
+Pkg.instantiate()
+
 using Documenter, Biome
 
-__precompile__(false)
+
 
 makedocs(
   sitename  = "Biome.jl",
@@ -9,8 +14,8 @@ makedocs(
   modules   = [Biome],
   format    = Documenter.HTML(;
   assets = [
-        "assets/pfts/pfts.css",   # you'll add this file
-        "assets/pfts/pfts.js",    # you'll add this file
+        "assets/pfts/pfts.css",
+        "assets/pfts/pfts.js",
     ],
     ),
   checkdocs = :warn,
