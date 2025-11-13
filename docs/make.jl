@@ -1,5 +1,12 @@
-push!(LOAD_PATH, "../src/")
+# push!(LOAD_PATH, "../src/")
+
+using Pkg
+Pkg.activate(@DIR)
+Pkg.instantiate()
+
 using Documenter, Biome
+
+
 
 makedocs(
   sitename  = "Biome.jl",

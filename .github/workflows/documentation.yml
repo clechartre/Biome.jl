@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - dominance-post-refactoring
     tags: '*'
   pull_request:
 
@@ -40,7 +39,7 @@ jobs:
           julia -e 'using Pkg; Pkg.instantiate()'
           julia -e 'using Pkg; Pkg.precompile()'
 
-      - name: Develop local package (if needed)
+      - name: Develop local package
         run: julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()))'
 
       - name: Build and deploy docs
