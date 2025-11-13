@@ -1,7 +1,7 @@
 # push!(LOAD_PATH, "../src/")
 
 using Pkg
-Pkg.activate(@DIR)
+Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
 using Documenter, Biome
