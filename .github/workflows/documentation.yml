@@ -25,11 +25,16 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
+      - name: Clean Julia compiled cache
+        run: rm -rf ~/.julia/compiled
+      - name: Clean Julia artifacts cache
+        run: rm -rf ~/.julia/artifacts
       - name: Install dependencies
         shell: julia --color=yes --project=. {0}
         run: |
           using Pkg
           Pkg.instantiate()
+          Pkg.build()
           Pkg.develop(PackageSpec(path=pwd()))
   
       - name: Build and deploy
