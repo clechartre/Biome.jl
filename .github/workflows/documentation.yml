@@ -43,7 +43,7 @@ jobs:
         run: julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()))'
 
       - name: Build and deploy docs
-        run: julia --color=yes --project=. docs/make.jl
+        run: julia --color=yes docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
