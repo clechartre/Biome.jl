@@ -53,19 +53,24 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
     minimum_lai::T = 0.0
 end
 
-@kwdef mutable struct PFTState{T<:Real,U<:Int}
-    present::Bool = false
-    fitness::T   = 0.0
-    greendays::U   = 0
-    firedays::T    = 0.0
-    mwet::Vector{T} = zeros(T, 12)
-    npp::T         = 0.0
-    lai::T         = 0.0
+mutable struct PFTState{T<:Real,U<:Int}
+    present::Bool
+    fitness::T
+    greendays::U
+    firedays::T
+    mwet::Vector{T}
+    npp::T
+    lai::T
 end
+
+# Default constructor with type parameters
+PFTState{T,U}() where {T<:Real,U<:Int} = PFTState{T,U}(false, T(0.0), U(0), T(0.0), zeros(T, 12), T(0.0), T(0.0))
+
+# Convenience constructor for Float64,Int defaults
+PFTState() = PFTState{Float64,Int}()
 
 PFTState(c::PFTCharacteristics{T,U}) where {T,U} = PFTState{T,U}()
 PFTState(pft::AbstractPFT) = PFTState(pft.characteristics)
-PFTState() = PFTState()
 
 const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
     AbstractNeedleleafEvergreenPFT => (

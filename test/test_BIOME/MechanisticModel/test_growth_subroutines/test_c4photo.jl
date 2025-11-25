@@ -1,13 +1,12 @@
 using Test
 using Base.Math: exp
-using BIOME 
 
 @testset "C4 Photosynthesis Tests" begin
     
     @testset "Positive Test - Normal C4 photosynthesis conditions" begin
         # Create real C4 PFTs using the actual constructors
-        c4_tropical = C4TropicalGrass()
-        c4_woody_desert = WoodyDesert() 
+        c4_tropical = BIOME4.C4TropicalGrass()
+        c4_woody_desert = BIOME4.WoodyDesert() 
         
         # Realistic environmental parameters for active photosynthesis
         ratio = 0.7          # Normal intercellular/ambient CO2 ratio
@@ -49,7 +48,7 @@ using BIOME
     
     @testset "Negative Test - Conditions limiting photosynthesis" begin
         # Create real C4 PFT for controlled testing
-        c4_tropical = C4TropicalGrass()
+        c4_tropical = BIOME4.C4TropicalGrass()
         
         # Test with extreme cold temperature
         ratio = 0.7
@@ -89,7 +88,7 @@ using BIOME
     
     @testset "Non-C4 PFT Test" begin
         # Create a non-C4 PFT to test error handling
-        c3_deciduous = TemperateDeciduous()  # This is a C3 plant
+        c3_deciduous = BIOME4.TemperateDeciduous()  # This is a C3 plant
         
         # Test that function handles non-C4 PFT appropriately
         # The function should print a warning but may crash due to uninitialized variables
@@ -98,7 +97,7 @@ using BIOME
     
     @testset "Edge Cases" begin
         # Create real C4 PFT
-        c4_tropical = C4TropicalGrass()
+        c4_tropical = BIOME4.C4TropicalGrass()
         
         # Test with very low ratio (should trigger damage calculation)
         leafresp_low, grossphot_low, aday_low = c4photo(0.2, 20.0, 12.0, 30.0, 6.0, 0.8, 101.3, 400.0, c4_tropical)
@@ -121,7 +120,7 @@ using BIOME
     
     @testset "Edge Cases with Low Values" begin
         # Create real C4 PFT
-        c4_tropical = C4TropicalGrass()
+        c4_tropical = BIOME4.C4TropicalGrass()
         
         # Test conditions that produce very small positive values instead of domain errors
         # These parameters lead to extremely low photosynthesis but valid results

@@ -1,5 +1,6 @@
 using Test
 using Statistics
+using Biome: snow
 
 
 @testset "Snow Tests" begin
@@ -406,5 +407,137 @@ using Statistics
         # Should have accumulated some snow and then melted some
         @test maxdepth_iter > 0.0
         @test sum(dmelt_iter) > 0.0
+    end
+    
+    @testset "Environment Data Override Tests" begin
+        # Test basic env data functionality
+        dtemp_test = vcat(fill(-5.0, 100), fill(15.0, 265))
+        dprecin_test = fill(2.0, 365)
+        
+        # First get calculated values without env
+        dprec_calc, dmelt_calc, maxdepth_calc = snow(dtemp_test, dprecin_test)
+        
+        # Test complete override of all values
+        env_complete = (
+            dprec = fill(10.0, 365),
+            dmelt = fill(5.0, 365),
+            maxdepth = 100.0
+        )
+        
+        dprec_env, dmelt_env, maxdepth_env = snow(dtemp_test, dprecin_test, env_complete)
+        
+        # All values should come from env, not calculated
+        @test all(dprec_env .≈ 10.0)
+        @test all(dmelt_env .≈ 5.0)
+        @test maxdepth_env ≈ 100.0
+        
+        # Verify they are different from calculated values
+        @test !(all(dprec_env .≈ dprec_calc))
+        @test !(all(dmelt_env .≈ dmelt_calc))
+        @test maxdepth_env != maxdepth_calc
+        
+        # Test partial override - only some values provided
+        env_partial = (
+            dprec = fill(8.0, 365),
+            maxdepth = 75.0
+        )
+        
+        dprec_partial, dmelt_partial, maxdepth_partial = snow(dtemp_test, dprecin_test, env_partial)
+        
+        # Overridden values should come from env
+        @test all(dprec_partial .≈ 8.0)
+        @test maxdepth_partial ≈ 75.0
+        
+        # Non-overridden values should be calculated
+        @test all(dmelt_partial .≈ dmelt_calc)
+        
+        # Test single value override
+        env_single = (dmelt = fill(3.0, 365),)
+        
+        dprec_single, dmelt_single, maxdepth_single = snow(dtemp_test, dprecin_test, env_single)
+        
+        # Only dmelt should be overridden
+        @test all(dmelt_single .≈ 3.0)
+        @test all(dprec_single .≈ dprec_calc)
+        @test maxdepth_single ≈ maxdepth_calc
+        
+        # Test empty env (should behave like no env)
+        env_empty = NamedTuple()
+        
+        dprec_empty, dmelt_empty, maxdepth_empty = snow(dtemp_test, dprecin_test, env_empty)
+        
+        # Should match calculated values exactly
+        @test all(dprec_empty .≈ dprec_calc)
+        @test all(dmelt_empty .≈ dmelt_calc)
+        @test maxdepth_empty ≈ maxdepth_calc
+        
+        # Test with nothing (explicit nothing should behave like no env parameter)
+        dprec_nothing, dmelt_nothing, maxdepth_nothing = snow(dtemp_test, dprecin_test, nothing)
+        
+        # Should match calculated values exactly
+        @test all(dprec_nothing .≈ dprec_calc)
+        @test all(dmelt_nothing .≈ dmelt_calc)
+        @test maxdepth_nothing ≈ maxdepth_calc
+        
+        # Test with non-matching array lengths in env (should still work with env arrays)
+        # Note: The function should use env arrays as-is, no length validation against input arrays
+        env_different_length = (
+            dprec = fill(12.0, 365),  # Same length as expected
+            dmelt = fill(6.0, 365),   # Same length as expected
+            maxdepth = 150.0
+        )
+        
+        dprec_diff, dmelt_diff, maxdepth_diff = snow(dtemp_test, dprecin_test, env_different_length)
+        
+        @test all(dprec_diff .≈ 12.0)
+        @test all(dmelt_diff .≈ 6.0)
+        @test maxdepth_diff ≈ 150.0
+        @test length(dprec_diff) == 365
+        @test length(dmelt_diff) == 365
+        
+        # Test type preservation with env data
+        dtemp_f32 = Float32.(dtemp_test)
+        dprecin_f32 = Float32.(dprecin_test)
+        env_f32 = (
+            dprec = fill(Float32(7.5), 365),
+            dmelt = fill(Float32(2.5), 365),
+            maxdepth = Float32(50.0)
+        )
+        
+        dprec_f32_env, dmelt_f32_env, maxdepth_f32_env = snow(dtemp_f32, dprecin_f32, env_f32)
+        
+        # Should preserve Float32 types
+        @test eltype(dprec_f32_env) == Float32
+        @test eltype(dmelt_f32_env) == Float32
+        @test typeof(maxdepth_f32_env) == Float32
+        
+        @test all(dprec_f32_env .≈ Float32(7.5))
+        @test all(dmelt_f32_env .≈ Float32(2.5))
+        @test maxdepth_f32_env ≈ Float32(50.0)
+        
+        # Test that env overrides work with extreme temperature scenarios
+        dtemp_extreme_cold = fill(-20.0, 365)
+        dprecin_uniform = fill(3.0, 365)
+        
+        # Without env, extreme cold should give specific results
+        dprec_cold_calc, dmelt_cold_calc, maxdepth_cold_calc = snow(dtemp_extreme_cold, dprecin_uniform)
+        
+        # With env, should override regardless of input conditions
+        env_override = (
+            dprec = fill(1.0, 365),
+            dmelt = fill(4.0, 365),
+            maxdepth = 25.0
+        )
+        
+        dprec_cold_env, dmelt_cold_env, maxdepth_cold_env = snow(dtemp_extreme_cold, dprecin_uniform, env_override)
+        
+        @test all(dprec_cold_env .≈ 1.0)
+        @test all(dmelt_cold_env .≈ 4.0)
+        @test maxdepth_cold_env ≈ 25.0
+        
+        # Should be different from calculated values
+        @test !(all(dprec_cold_env .≈ dprec_cold_calc))
+        @test !(all(dmelt_cold_env .≈ dmelt_cold_calc))
+        @test maxdepth_cold_env != maxdepth_cold_calc
     end
 end

@@ -73,6 +73,11 @@ function run(m::TrollPfaffenModel, input_variables::NamedTuple, args...; kwargs.
     # Extract temperature and precipitation data
     @unpack_namedtuple_climate input_variables
 
+    # Handle Missing data 
+    if any(ismissing, temp) || any(ismissing, prec)
+        return (troll_zone = TROLL[:NA],)
+    end
+
     # Calculate statistics
     temp_max = maximum(temp)
     temp_min = minimum(temp)
@@ -155,11 +160,11 @@ function is_between(x, low, high)
     return low <= x <= high
 end
 
-function get_growing_degree_days(temp::Vector{T}, base_temp::T) where T<:Real
+function get_growing_degree_days(temp::Vector{Union{Missing, T}}, base_temp::T) where T<:Real
     return sum(max(t - base_temp, 0.0) for t in temp)
 end
 
-function get_humid_months(temp::Vector{T}, prec::Vector{T}) where T<:Real
+function get_humid_months(temp::Vector{Union{Missing, T}}, prec::Vector{Union{Missing, T}}) where T<:Real
     temp_daily = daily_interp(temp)
     prec_daily = daily_interp(prec)
     humid_days = sum(prec_daily[i] > 2 * temp_daily[i] for i in 1:365)

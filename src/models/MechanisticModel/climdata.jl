@@ -1,16 +1,18 @@
 """
-    climdata(temp, prec, dtemp)
+    climdata(temp, prec, dtemp, env=nothing)
 
 Calculate growing degree days (GDD), temperature extremes, and precipitation.
 
 This function computes various climate indices including growing degree days
 above different temperature thresholds, coldest and warmest monthly temperatures,
-and total annual precipitation.
+and total annual precipitation. If environment data is provided, it will be used
+to override the calculated values.
 
 # Arguments
 - `temp`: Monthly temperature array (12 elements, °C)
 - `prec`: Monthly precipitation array (12 elements, mm)
 - `dtemp`: Daily temperature array (365 elements, °C)
+- `env`: Optional NamedTuple with pre-calculated values (:tcm, :gdd5, :gdd0, :twm)
 
 # Returns
 A tuple containing:
@@ -23,12 +25,13 @@ A tuple containing:
 - GDD calculations use daily temperature data
 - Negative temperature differences are set to zero for GDD calculations
 - Function assumes 365-day year
+- If env data is provided, those values take precedence over calculated ones
 """
 function climdata(
     temp::AbstractArray{T},
     prec::AbstractArray{T},
     dtemp::AbstractArray{T},
-    env::NamedTuple
+    env::Union{NamedTuple,Nothing}=nothing
 )::Tuple{T,T,T,T} where {T<:Real}
 
     # Initialize temperature extremes
@@ -65,10 +68,15 @@ function climdata(
         gdd0 += above_0
     end
 
-    return (
-        get(env, :tcm, tcm),
-        get(env, :gdd5, gdd5),
-        get(env, :gdd0, gdd0),
-        get(env, :twm, twm)
-    )
+    # Use env data if available, otherwise use calculated values
+    if env !== nothing
+        return (
+            get(env, :tcm, tcm),
+            get(env, :gdd5, gdd5),
+            get(env, :gdd0, gdd0),
+            get(env, :twm, twm)
+        )
+    else
+        return (tcm, gdd5, gdd0, twm)
+    end
 end

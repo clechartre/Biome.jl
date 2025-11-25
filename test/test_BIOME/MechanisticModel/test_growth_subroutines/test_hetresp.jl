@@ -4,14 +4,9 @@ using Test
     
     @testset "Positive Test - Normal conditions" begin
         # Create different PFT types
-        tropical_evergreen = TropicalEvergreen()
-        tropical_drought = TropicalDroughtDeciduous()
-        temperate_deciduous = TemperateDeciduous()
-        
-        # Set PFT names for partitioning logic
-        tropical_evergreen.characteristics.name = "tropical_evergreen"
-        tropical_drought.characteristics.name = "tropical_drought_deciduous"
-        temperate_deciduous.characteristics.name = "temperate_deciduous"
+        tropical_evergreen = BIOME4.TropicalEvergreen()
+        tropical_drought = BIOME4.TropicalDroughtDeciduous()
+        temperate_deciduous = BIOME4.TemperateDeciduous()
         
         # Realistic environmental data
         nppann = 1500.0
@@ -95,11 +90,8 @@ using Test
     
     @testset "NPP Partitioning Tests" begin
         # Test the different partitioning strategies
-        tropical = TropicalEvergreen()
-        temperate = TemperateDeciduous()
-        
-        tropical.characteristics.name = "tropical_evergreen"
-        temperate.characteristics.name = "temperate_deciduous"
+        tropical = BIOME4.TropicalEvergreen()
+        temperate = BIOME4.TemperateDeciduous()
         
         nppann = 1000.0
         tsoil = fill(18.0, 12)
@@ -148,8 +140,7 @@ using Test
     end
     
     @testset "Temperature and Moisture Dependencies" begin
-        test_pft = BorealEvergreen()
-        test_pft-characteristics.name = "boreal_evergreen"
+        test_pft = BIOME4.BorealEvergreen()
         
         nppann = 800.0
         aet = fill(80.0, 12)
@@ -209,8 +200,7 @@ using Test
     end
     
     @testset "Isotope Calculations" begin
-        test_pft = CoolConifer()
-        test_pft.characteristics.name = "cool_conifer"
+        test_pft = BIOME4.CoolConifer()
         
         nppann = 1200.0
         tsoil = fill(8.0, 12)
@@ -247,8 +237,7 @@ using Test
     end
     
     @testset "Edge Cases" begin
-        test_pft = TemperateDeciduous()
-        test_pft.characteristics.name = "temperate_deciduous"
+        test_pft = BIOME4.TemperateDeciduous()
         
         tsoil = fill(18.0, 12)
         aet = fill(100.0, 12)
@@ -321,8 +310,7 @@ using Test
     end
     
     @testset "Array Length Validation" begin
-        test_pft = BorealDeciduous()
-        test_pft.characteristics.name = "boreal_deciduous"
+        test_pft = BIOME4.BorealDeciduous()
         
         nppann = 600.0
         isoveg = -27.0
@@ -342,8 +330,7 @@ using Test
     end
     
     @testset "Type Consistency Tests" begin
-        test_pft = LichenForb()
-        test_pft.characteristics.name = "lichen_forb"
+        test_pft = BIOME4.LichenForb()
         
         # Test with Float32
         nppann_f32 = Float32(800.0)

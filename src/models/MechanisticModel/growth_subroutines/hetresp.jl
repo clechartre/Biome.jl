@@ -70,7 +70,7 @@ function hetresp(
         return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
     else
         # Partition annual NPP into pools according to Foley strategy
-        if get_characteristic(pft, :name) == "tropical_evergreen" || get_characteristic(pft, :name) == "tropical_drought_deciduous"
+        if isa(pft, BIOME4.TropicalEvergreen) || isa(pft, BIOME4.TropicalDroughtDeciduous)
             Plit = T(0.650) * nppann
             Pfst = T(0.980) * T(0.350) * nppann
             Pslo = T(0.020) * T(0.350) * nppann

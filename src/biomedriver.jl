@@ -93,7 +93,7 @@ function ModelSetup(Model::BiomeModel;
         if Model isa BIOME4Model || Model isa BIOMEDominanceModel
             biome_assignment = BIOME4.assign_biome
         else
-            biome_assignment = Biome.assign_biome
+            biome_assignment = assign_biome
         end
     end
 

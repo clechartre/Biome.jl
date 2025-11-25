@@ -9,6 +9,22 @@ Linearly interpolate the mid-month values (mly) to daily values, modifying `dly`
 # Returns
 - `dly`:  A vector of 365T values representing daily interpolated values.
 """
+function daily_interp(mly::AbstractArray{Union{Missing, T}}) where {T<:Real}
+    # Coerce any `missing` values to `NaN` (as Float64) so the interpolation
+    # routine can operate on a concrete numeric array. This preserves the
+    # shape and allows callers that accidentally pass `Union{Missing,Float64}`
+    # to get a numeric (Float64) result instead of a method error.
+    if any(ismissing, mly)
+        mly_clean = Float64.(coalesce.(mly, NaN))
+        return daily_interp(mly_clean)
+    end
+
+    # If there are no missings, dispatch to the real-typed method below by
+    # converting to a concrete AbstractArray{T} (this keeps a single core
+    # implementation for interpolation logic).
+    return daily_interp(collect(T.(mly)))
+end
+
 function daily_interp(mly::AbstractArray{T})::AbstractArray{T} where {T<:Real}
     # Ensure mly has 12 elements
     if length(mly) != 12

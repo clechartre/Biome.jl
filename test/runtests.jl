@@ -1,7 +1,7 @@
 using Test
 using Biome
 
-@testset "Bione.jl Tests" begin
+@testset "Biome.jl Tests" begin
     @testset "MechanisticModel Tests" begin
         include("test_BIOME/MechanisticModel/test_climdata.jl")
         include("test_BIOME/MechanisticModel/test_constraints.jl")

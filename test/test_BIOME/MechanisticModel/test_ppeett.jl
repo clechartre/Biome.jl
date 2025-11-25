@@ -1,5 +1,6 @@
 using Test
 using Statistics
+using Biome: ppeett, safe_exp
 
 @testset "PPEETT Tests" begin
     
@@ -393,5 +394,158 @@ using Statistics
         
         # Daylength at equator should still be ~12 hours
         @test all(abs.(dayl_zero .- 12.0) .< 1.0)
+    end
+    
+    @testset "Environment Data Override Tests" begin
+        # Test basic env data functionality
+        lat_test = 45.0
+        dtemp_test = vcat(
+            fill(5.0, 90),   # Cool period
+            fill(20.0, 92),  # Warm period
+            fill(15.0, 92),  # Moderate period
+            fill(10.0, 91)   # Cool period
+        )
+        dclou_test = fill(50.0, 365)  # Moderate cloud cover
+        temp_test = [5.0, 8.0, 12.0, 16.0, 20.0, 24.0, 26.0, 23.0, 18.0, 13.0, 8.0, 4.0]
+        
+        # First get calculated values without env
+        dpet_calc, dayl_calc, sun_calc, rad0_calc, ddayl_calc = ppeett(lat_test, dtemp_test, dclou_test, temp_test)
+        
+        # Test complete override of all values
+        env_complete = (
+            dpet = fill(5.0, 365),
+            dayl = fill(10.0, 12),
+            sun = fill(15.0, 12),
+            rad0 = 2000.0,
+            ddayl = fill(8.0, 365)
+        )
+        
+        dpet_env, dayl_env, sun_env, rad0_env, ddayl_env = ppeett(lat_test, dtemp_test, dclou_test, temp_test, env_complete)
+        
+        # All values should come from env, not calculated
+        @test all(dpet_env .≈ 5.0)
+        @test all(dayl_env .≈ 10.0)
+        @test all(sun_env .≈ 15.0)
+        @test rad0_env ≈ 2000.0
+        @test all(ddayl_env .≈ 8.0)
+        
+        # Verify they are different from calculated values
+        @test !(all(dpet_env .≈ dpet_calc))
+        @test !(all(dayl_env .≈ dayl_calc))
+        @test !(all(sun_env .≈ sun_calc))
+        @test rad0_env != rad0_calc
+        @test !(all(ddayl_env .≈ ddayl_calc))
+        
+        # Test partial override - only some values provided
+        env_partial = (
+            dpet = fill(7.0, 365),
+            rad0 = 1500.0
+        )
+        
+        dpet_partial, dayl_partial, sun_partial, rad0_partial, ddayl_partial = ppeett(lat_test, dtemp_test, dclou_test, temp_test, env_partial)
+        
+        # Overridden values should come from env
+        @test all(dpet_partial .≈ 7.0)
+        @test rad0_partial ≈ 1500.0
+        
+        # Non-overridden values should be calculated
+        @test all(dayl_partial .≈ dayl_calc)
+        @test all(sun_partial .≈ sun_calc)
+        @test all(ddayl_partial .≈ ddayl_calc)
+        
+        # Test single value override
+        env_single = (sun = fill(20.0, 12),)
+        
+        dpet_single, dayl_single, sun_single, rad0_single, ddayl_single = ppeett(lat_test, dtemp_test, dclou_test, temp_test, env_single)
+        
+        # Only sun should be overridden
+        @test all(sun_single .≈ 20.0)
+        @test all(dpet_single .≈ dpet_calc)
+        @test all(dayl_single .≈ dayl_calc)
+        @test rad0_single ≈ rad0_calc
+        @test all(ddayl_single .≈ ddayl_calc)
+        
+        # Test empty env (should behave like no env)
+        env_empty = NamedTuple()
+        
+        dpet_empty, dayl_empty, sun_empty, rad0_empty, ddayl_empty = ppeett(lat_test, dtemp_test, dclou_test, temp_test, env_empty)
+        
+        # Should match calculated values exactly
+        @test all(dpet_empty .≈ dpet_calc)
+        @test all(dayl_empty .≈ dayl_calc)
+        @test all(sun_empty .≈ sun_calc)
+        @test rad0_empty ≈ rad0_calc
+        @test all(ddayl_empty .≈ ddayl_calc)
+        
+        # Test with nothing (explicit nothing should behave like no env parameter)
+        dpet_nothing, dayl_nothing, sun_nothing, rad0_nothing, ddayl_nothing = ppeett(lat_test, dtemp_test, dclou_test, temp_test, nothing)
+        
+        # Should match calculated values exactly
+        @test all(dpet_nothing .≈ dpet_calc)
+        @test all(dayl_nothing .≈ dayl_calc)
+        @test all(sun_nothing .≈ sun_calc)
+        @test rad0_nothing ≈ rad0_calc
+        @test all(ddayl_nothing .≈ ddayl_calc)
+        
+        # Test type preservation with env data
+        dtemp_f32 = Float32.(dtemp_test)
+        dclou_f32 = Float32.(dclou_test)
+        temp_f32 = Float32.(temp_test)
+        lat_f32 = Float32(lat_test)
+        env_f32 = (
+            dpet = fill(Float32(3.5), 365),
+            dayl = fill(Float32(11.5), 12),
+            sun = fill(Float32(18.0), 12),
+            rad0 = Float32(1800.0),
+            ddayl = fill(Float32(9.5), 365)
+        )
+        
+        dpet_f32_env, dayl_f32_env, sun_f32_env, rad0_f32_env, ddayl_f32_env = ppeett(lat_f32, dtemp_f32, dclou_f32, temp_f32, env_f32)
+        
+        # Should preserve Float32 types
+        @test eltype(dpet_f32_env) == Float32
+        @test eltype(dayl_f32_env) == Float32
+        @test eltype(sun_f32_env) == Float32
+        @test typeof(rad0_f32_env) == Float32
+        @test eltype(ddayl_f32_env) == Float32
+        
+        @test all(dpet_f32_env .≈ Float32(3.5))
+        @test all(dayl_f32_env .≈ Float32(11.5))
+        @test all(sun_f32_env .≈ Float32(18.0))
+        @test rad0_f32_env ≈ Float32(1800.0)
+        @test all(ddayl_f32_env .≈ Float32(9.5))
+        
+        # Test that env overrides work with extreme conditions
+        lat_extreme = 80.0  # Arctic latitude
+        dtemp_extreme = fill(-30.0, 365)  # Very cold
+        dclou_extreme = fill(90.0, 365)   # Very cloudy
+        temp_extreme = fill(-25.0, 12)    # Very cold months
+        
+        # Without env, extreme conditions should give specific results
+        dpet_extreme_calc, dayl_extreme_calc, sun_extreme_calc, rad0_extreme_calc, ddayl_extreme_calc = ppeett(lat_extreme, dtemp_extreme, dclou_extreme, temp_extreme)
+        
+        # With env, should override regardless of input conditions
+        env_override = (
+            dpet = fill(2.0, 365),
+            dayl = fill(6.0, 12),
+            sun = fill(12.0, 12),
+            rad0 = 800.0,
+            ddayl = fill(4.0, 365)
+        )
+        
+        dpet_extreme_env, dayl_extreme_env, sun_extreme_env, rad0_extreme_env, ddayl_extreme_env = ppeett(lat_extreme, dtemp_extreme, dclou_extreme, temp_extreme, env_override)
+        
+        @test all(dpet_extreme_env .≈ 2.0)
+        @test all(dayl_extreme_env .≈ 6.0)
+        @test all(sun_extreme_env .≈ 12.0)
+        @test rad0_extreme_env ≈ 800.0
+        @test all(ddayl_extreme_env .≈ 4.0)
+        
+        # Should be different from calculated values
+        @test !(all(dpet_extreme_env .≈ dpet_extreme_calc))
+        @test !(all(dayl_extreme_env .≈ dayl_extreme_calc))
+        @test !(all(sun_extreme_env .≈ sun_extreme_calc))
+        @test rad0_extreme_env != rad0_extreme_calc
+        @test !(all(ddayl_extreme_env .≈ ddayl_extreme_calc))
     end
 end
