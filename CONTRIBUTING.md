@@ -290,7 +290,6 @@ What actually happened.
 
 **Additional context**
 Any other relevant information.
-```
 
 ## Pull Request Process
 
