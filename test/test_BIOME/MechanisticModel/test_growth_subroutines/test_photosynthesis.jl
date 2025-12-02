@@ -2,16 +2,14 @@ using Test
 
 # Create mock PFT types for testing
 struct MockPFT <: AbstractPFT
-    characteristics::Characteristics
+    characteristics::PFTCharacteristics
 end
 
 @testset "C3 Photosynthesis Tests" begin
     
     @testset "Positive Test - Normal C3 photosynthesis conditions" begin
         # Create mock C3 PFT with typical characteristics
-        ch = Characteristics()
-        ch.t0 = 5.0      # Minimum temperature for photosynthesis
-        ch.tcurve = 1.0  # Temperature curve parameter
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_c3_pft = MockPFT(ch)
         
         # Realistic environmental parameters for active photosynthesis
@@ -40,9 +38,7 @@ end
         @test grossphot > leafresp
         
         # Test with cooler temperate conditions
-        ch_temperate = Characteristics()
-        ch_temperate.t0 = 0.0
-        ch_temperate.tcurve = 0.8
+        ch_temperate = PFTCharacteristics(t0 = 0.0, tcurve = 0.8)
         mock_temperate_pft = MockPFT(ch_temperate)
         
         leafresp2, grossphot2, aday2 = photosynthesis(ratio, dsun, daytime, 15.0, age, fpar, p, ca, mock_temperate_pft)
@@ -57,9 +53,7 @@ end
     end
     
     @testset "Temperature Dependency Tests" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Standard conditions
@@ -93,9 +87,7 @@ end
     end
     
     @testset "CO2 Ratio Dependency Tests" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Standard conditions
@@ -127,9 +119,7 @@ end
     end
     
     @testset "Solar Radiation Dependency Tests" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Standard conditions
@@ -161,9 +151,7 @@ end
     end
     
     @testset "Negative Tests - Limiting conditions" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Standard conditions
@@ -217,9 +205,7 @@ end
     end
     
     @testset "Age Dependency Tests" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Standard conditions
@@ -251,9 +237,7 @@ end
     end
     
     @testset "Type Consistency Tests" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Test with Float32
@@ -287,9 +271,7 @@ end
     end
     
     @testset "Mathematical Edge Cases" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Test with extreme parameters that might cause numerical issues
@@ -342,15 +324,11 @@ end
         # Test with different PFT characteristics
         
         # Cold-adapted PFT
-        ch_cold = Characteristics()
-        ch_cold.t0 = -5.0    # Can photosynthesize at lower temperatures
-        ch_cold.tcurve = 0.5  # Different temperature response
+        ch_cold = PFTCharacteristics(t0 = -5.0, tcurve = 0.5)
         mock_cold_pft = MockPFT(ch_cold)
         
         # Warm-adapted PFT  
-        ch_warm = Characteristics()
-        ch_warm.t0 = 15.0    # Needs higher temperatures
-        ch_warm.tcurve = 1.5  # Different temperature response
+        ch_warm = PFTCharacteristics(t0 = 15.0, tcurve = 1.5)
         mock_warm_pft = MockPFT(ch_warm)
         
         # Standard conditions
@@ -373,9 +351,7 @@ end
     end
     
     @testset "Return Value Relationships" begin
-        ch = Characteristics()
-        ch.t0 = 5.0
-        ch.tcurve = 1.0
+        ch = PFTCharacteristics(t0 = 5.0, tcurve = 1.0)
         mock_pft = MockPFT(ch)
         
         # Optimal conditions

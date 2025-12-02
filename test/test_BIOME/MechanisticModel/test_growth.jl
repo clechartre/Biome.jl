@@ -30,7 +30,7 @@ using Test
         # Test determine_c4_and_optratio function
         
         # Create a C3 PFT
-        c3_pft = TemperateDeciduous()
+        c3_pft = BIOME4.TemperateDeciduous()
         c3_pft.characteristics.c4 = false
         c3_pft.characteristics.optratioa = 0.8
         
@@ -45,7 +45,7 @@ using Test
         @test optratio_override ≈ 0.4
         
         # Create a C4 PFT
-        c4_pft = C4TropicalGrass()
+        c4_pft = BIOME4.C4TropicalGrass()
         c4_pft.characteristics.c4 = true
         
         c4_natural, optratio_natural = determine_c4_and_optratio(c4_pft, 0.8, nothing)
@@ -80,9 +80,9 @@ using Test
         k = fill(0.3, 365)
         
         # Create PFT
-        pft = TemperateDeciduous()
+        pft = BIOME4.TemperateDeciduous()
 
-        
+
         # Daylength (hours)
         dayl = [9.0, 10.0, 12.0, 14.0, 15.0, 16.0, 15.5, 14.5, 12.5, 11.0, 9.5, 8.5]
         
@@ -167,7 +167,7 @@ using Test
         k = fill(0.2, 365)     # Sandy soil
         
         # Create C4 tropical grass PFT
-        pft = C4TropicalGrass()
+        pft = BIOME4.C4TropicalGrass()
         
         dayl = fill(12.0, 12)  # Constant daylength near equator
         dtemp = fill(27.0, 365)
@@ -180,7 +180,7 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_c4, monthly_npp_c4, monthly_c4npp_c4, updated_states_c4 = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -211,7 +211,7 @@ using Test
         k = fill(0.4, 365)
         
         # Create boreal evergreen PFT
-        pft = BorealEvergreen()
+        pft = BIOME4.BorealEvergreen()
         
         dayl = [6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 15.0, 13.0, 11.0, 9.0, 7.0, 5.0]
         dtemp = vcat(
@@ -228,7 +228,7 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_cold, monthly_npp_cold, monthly_c4npp_cold, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -257,7 +257,7 @@ using Test
         k = fill(0.1, 365)     # Low water holding capacity
         
         # Create woody desert PFT
-        pft = WoodyDesert()
+        pft = BIOME4.WoodyDesert()
         
         dayl = [10.0, 11.0, 12.0, 13.0, 14.0, 14.5, 14.0, 13.0, 12.0, 11.0, 10.0, 9.5]
         dtemp = fill(25.0, 365)
@@ -270,7 +270,7 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_dry, monthly_npp_dry, monthly_c4npp_dry, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -301,7 +301,7 @@ using Test
         dpet = fill(3.0, 365)
         k = fill(0.3, 365)
         
-        pft = TemperateDeciduous()
+        pft = BIOME4.TemperateDeciduous()
         
         dayl = fill(12.0, 12)
         dtemp = fill(15.0, 365)
@@ -314,7 +314,7 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_zero_lai, monthly_npp_zero, monthly_c4npp_zero, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -344,7 +344,7 @@ using Test
         dpet = fill(Float32(3.0), 365)
         k = fill(Float32(0.3), 365)
         
-        pft = TemperateDeciduous{Float32,Int}()
+        pft = BIOME4.TemperateDeciduous{Float32,Int}()
         
         dayl = Float32[10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 14.5, 13.5, 12.5, 11.5, 10.5, 9.5]
         dtemp = fill(Float32(15.0), 365)
@@ -357,7 +357,7 @@ using Test
         mnpp = zeros(Float32, 12)
         c4mnpp = zeros(Float32, 12)
         
-        pft_states = PFTState{Float32, Int}()
+        pft_states = PFTState(pft)
         
         npp_f32, monthly_npp_f32, monthly_c4npp_f32, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -392,7 +392,7 @@ using Test
         dphen_correct = fill(1.0, 365, 2)
         tsoil_correct = fill(15.0, 12)
         
-        pft = TemperateDeciduous()
+        pft = BIOME4.TemperateDeciduous()
 
         
         co2 = 400.0
@@ -401,7 +401,7 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         # This should work
         npp, monthly_npp, monthly_c4npp, _ = growth(
@@ -434,7 +434,7 @@ using Test
         # Test the compare_c3_c4_npp function separately
         
         # Create a mixed C3C4 PFT
-        pft = C3C4TemperateGrass()
+        pft = BIOME4.C3C4TemperateGrass()
         pft.characteristics.name = "C3C4WoodyDesert"
         
         mnpp = [10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 30.0, 25.0, 20.0, 15.0, 10.0, 5.0]
@@ -476,7 +476,7 @@ using Test
         @test isfinite(annc4npp)
         
         # Test with pure C4 tropical grass
-        pft_c4 = C4TropicalGrass()
+        pft_c4 = BIOME4.C4TropicalGrass()
         pft_c4.characteristics.name = "C4TropicalGrass"
         
         result_nppsum_c4, c4pct_c4, c4month_c4, result_mnpp_c4, annc4npp_c4, _, _, _, _, _ = compare_c3_c4_npp(
@@ -503,7 +503,7 @@ using Test
         dpet = fill(1.5, 365)  # Low PET
         k = fill(0.45, 365)  # Higher water holding capacity
         
-        pft = BorealEvergreen()
+        pft = BIOME4.BorealEvergreen()
 
         # Extreme day length variation
         dayl = [4.0, 6.0, 9.0, 12.0, 16.0, 18.0, 17.0, 14.0, 11.0, 8.0, 5.0, 3.0]
@@ -518,7 +518,7 @@ using Test
         
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_boreal, monthly_npp_boreal, monthly_c4npp_boreal, states_boreal = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -562,7 +562,7 @@ using Test
         k = fill(0.25, 365)    # Lower water holding capacity
         
         # Mediterranean shrubland PFT
-        pft = TemperateBroadleavedEvergreen()
+        pft = BIOME4.TemperateBroadleavedEvergreen()
         
         dayl = [9.5, 11.0, 12.5, 14.0, 15.0, 15.5, 15.0, 14.0, 12.5, 11.0, 9.8, 9.0]
         dtemp = vcat([fill(temp[i], [31,28,31,30,31,30,31,31,30,31,30,31][i]) for i in 1:12]...)
@@ -584,7 +584,7 @@ using Test
         
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_med, monthly_npp_med, monthly_c4npp_med, states_med = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -630,7 +630,7 @@ using Test
         k = fill(0.4, 365)     # Good water storage from snowmelt
         
         # Alpine shrub/tundra PFT
-        pft = BorealEvergreen()
+        pft = BIOME4.BorealEvergreen()
 
         # Extreme day length variation at high latitude
         dayl = [3.0, 5.0, 8.0, 11.0, 15.0, 17.0, 16.0, 13.0, 10.0, 7.0, 4.0, 2.0]
@@ -680,7 +680,7 @@ using Test
         
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
-        pft_states = PFTState{Float64, Int}()
+        pft_states = PFTState(pft)
         
         npp_alpine, monthly_npp_alpine, monthly_c4npp_alpine, states_alpine = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
@@ -716,7 +716,7 @@ using Test
         dpet = fill(3.5, 365)
         k = fill(0.3, 365)
         
-        pft = TemperateDeciduous()
+        pft = BIOME4.TemperateDeciduous()
         
         dayl = fill(12.0, 12)
         dtemp = fill(18.0, 365)
@@ -730,7 +730,7 @@ using Test
         c4mnpp = zeros(Float64, 12)
         
         # Test with initial state
-        initial_states = PFTState{Float64, Int}()
+        initial_states = PFTState(pft)
         initial_states.greendays = 0
         initial_states.mwet = zeros(Float64, 12)
         initial_states.firedays = 0
@@ -779,7 +779,7 @@ using Test
         dpet = fill(10.0, 365)  # Very high PET (impossible conditions)
         k = fill(0.05, 365)     # Very low water holding
         
-        pft = WoodyDesert()
+        pft = BIOME4.WoodyDesert()
 
         dayl = fill(6.0, 12)
         dtemp = fill(-5.0, 365)

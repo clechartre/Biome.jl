@@ -5,8 +5,8 @@ using Test
     
     @testset "Positive Test - Normal hydrological conditions" begin
         # Create different PFT types
-        evergreen = BorealEvergreen()
-        deciduous = TemperateDeciduous()
+        evergreen = BIOME4.BorealEvergreen()
+        deciduous = BIOME4.TemperateDeciduous()
         
         # Set required PFT characteristics
         evergreen.characteristics.sw_drop = 0.3
@@ -85,7 +85,7 @@ using Test
     
     @testset "Phenological Type Tests" begin
         # Test different phenological types
-        deciduous_pft = TemperateDeciduous()
+        deciduous_pft = BIOME4.TemperateDeciduous()
         deciduous_pft.characteristics.sw_drop = 0.25
         
         # Create seasonal phenology pattern (cold deciduous)
@@ -133,7 +133,7 @@ using Test
     end
     
     @testset "Water Balance Tests" begin
-        test_pft = CoolConifer()
+        test_pft = BIOME4.CoolConifer()
         test_pft.characteristics.sw_drop = 0.3
         
         # Simple water balance test with known inputs
@@ -172,7 +172,7 @@ using Test
     end
     
     @testset "Drought Stress Tests" begin
-        drought_pft = WoodyDesert()
+        drought_pft = BIOME4.WoodyDesert()
         drought_pft.characteristics.sw_drop = 0.2
         
         # Severe drought conditions
@@ -218,7 +218,7 @@ using Test
     end
     
     @testset "Temperature Effects Tests" begin
-        cold_pft = BorealDeciduous()
+        cold_pft = BIOME4.BorealDeciduous()
         cold_pft.characteristics.sw_drop = 0.35
         
         # Test extreme cold conditions
@@ -260,7 +260,7 @@ using Test
     end
     
     @testset "Edge Cases" begin
-        edge_pft = TropicalEvergreen()
+        edge_pft = BIOME4.TropicalEvergreen()
         edge_pft.characteristics.sw_drop = 0.25
         
         # Standard conditions for baseline
@@ -321,7 +321,7 @@ using Test
     end
     
     @testset "Array Length Validation" begin
-        test_pft = LichenForb()
+        test_pft = BIOME4.LichenForb()
         test_pft.characteristics.sw_drop = 0.4
         
         # Standard parameters
@@ -348,7 +348,7 @@ using Test
     end
     
     @testset "Type Consistency Tests" begin
-        test_pft = TundraShrubs()
+        test_pft = BIOME4.TundraShrubs()
         test_pft.characteristics.sw_drop = 0.45
         
         # Test with Float32
@@ -386,7 +386,7 @@ using Test
     end
     
     @testset "Mass Conservation Tests" begin
-        conserve_pft = C4TropicalGrass()
+        conserve_pft = BIOME4.C4TropicalGrass()
         conserve_pft.characteristics.sw_drop = 0.3
         
         # Controlled conditions for mass balance

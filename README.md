@@ -7,17 +7,23 @@
     <img alt="MIT license" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square">
   </a>
 
-# Biome.jl: A Package for simulating biome schemes
+# Biome.jl: Climate-Driven Vegetation Modeling in Julia
 
-Biome.jl is a package that provides a platform for simulating climate-driven biome classification schemes alongside the mechanistic model BIOME4 and provide a framework for customizing your own mechanistic biome definition based on the scheme of BIOME4. 
+**Biome.jl** is a Julia package for simulating climate-driven biome classification and vegetation patterns. It provides implementations of both mechanistic models (including the well-established BIOME4 model) and empirical climate envelope approaches for predicting global vegetation distributions.
 
-The BIOME4 equilibrium global vegetation model was first used in experiments described in Kaplan et al. (2003). The computational core of the model was last updated in 1999, and at the time was called [BIOME4 v4.2b2 ](https://github.com/jedokaplan/BIOME4). For more information about the original model, please refer to: [Kaplan, Jed & Prentice, Iain. (2001). Geophysical Applications of Vegetation Modeling.](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling)
+## What is Biome.jl?
 
-This GitHub repository contains the translation to Julia of the original FORTRAN77 computational core to run on sample input data, also provided in this repository.
+This package offers:
+- **BIOME4 Model**: A Julia translation of the original FORTRAN77 equilibrium vegetation model by Kaplan et al. (2003)
+- **Custom Biome Schemes**: Framework for creating your own climate-vegetation classification systems
+- **Plant Functional Types (PFTs)**: Flexible system for defining and parameterizing vegetation types
+- **Climate Envelope Models**: Simpler approaches based on temperature and precipitation thresholds
 
-The original code works with a main routine and subroutines. You can see the infrastructure in the following graph. In this Julia version, we kept the overall structure where higher level modules call functions from sub-modules.
+The models predict vegetation types and biome distributions based on climate variables, making them useful for studying climate-vegetation relationships, climate change impacts, and paleoclimate reconstructions.
 
-Below an example of output generated with the model using the Kaplan BIOME4 logic.
+## Model Output Example
+
+Below is an example global biome map generated using the BIOME4 model logic:
 
 <p align="middle">
   <img src="figures/output_b4.svg"/>
@@ -45,101 +51,139 @@ To run Biome.jl using Julia, you need to set up the required environment by inst
       Pkg.instantiate()
     ```
 
-# Requirements in Input data:
+## Model Types
 
-## Climate Enveloppe Models 
+### 1. Climate Envelope Models
+Simpler models requiring only basic climate data:
+- **Temperature**: Monthly mean temperature (°C) 
+- **Precipitation**: Monthly total precipitation (mm)
 
-## Mechanistic Models 
-BIOME4 requires the following variables to run (in the form of gridded fields):
+### 2. Mechanistic Models
+More complex models that simulate plant physiology and require:
+- **Temperature**: Monthly mean temperature (°C) -- Climatology
+- **Precipitation**: Monthly total precipitation (mm) -- Climatology
+- **Cloud cover**: Monthly mean cloud cover (%) -- Climatology
+- **Soil properties**: Water holding capacity (mm/mm) and hydraulic conductivity (mm/h) -- For multiple soil depths
+- **CO₂ concentration**: Atmospheric CO₂ (ppm) -- Single value
 
-- climatological monthly mean fields of temperature (°C)
-- climatological monthly mean cloud cover (%)
-- climatological mean monthly total precipitation (mm)
-- soil water holding capacity in two or more layers (mm/mm)
-- soil saturated conductivity in two or more layers (mm/h)
+## Input Data Format
+All spatial data should be provided as rasters to the `ModelSetup` class intentiation with:
+- Monthly time dimension (12 months)
+- Spatial dimensions (longitude/latitude)
+- Consistent spatial resolution and projection
 
-BIOME4 also requires a single global value for atmospheric CO₂ concentrations
+## Data Sources
 
-### The input generation scripts
-Since we want to be able to generate our own input data, we've created 3 input generation scripts, available in `utils/data_generation`. 
+### Climate Data
+- **Recommended**: [CHELSA database](https://www.chelsa-climate.org//) for high-resolution climate data
+- **Alternative**: ERA5, WorldClim, or other gridded climate datasets
 
-See the previous sections for description of the datasets and where to retrieve them.
+### Soil Data  
+- Use the [makesoil](https://github.com/ARVE-Research/makesoil) tool to generate soil hydraulic properties
+- Generates water holding capacity (whc) and hydraulic conductivity (Ksat) from soil texture data
 
-#### 1. Climatological data 
-The Climatological data, temperature, tmin, cloud cover, and precipitation is downloaded from the [CHELSA database](https://chelsa-climate.org/bioclim/). Each variable is downloaded for a specified year, for each month of the year. 
-Aside for yearly data, the CHELSA database also provides averaged datasets over longer time periods. 
 
-#### 2. Soil characteristics data
-The data on soil characteristics are generated using the [makesoil](https://github.com/ARVE-Research/makesoil) module from Arve research. This script will automatically generate a NetCDF file with the two variables that are necessary to run BIOME4: the soil water holding capacity (whc), and the soil saturated conductivity (Ksat).
+## Examples
 
-## Running your first Model
-This package can be executed using specific environmental data files. The script requires at minimum a temperature and a precipitation file for the climate enveloppe models. 
-For running the mechanistic models, a cloud cover file, soil characteristics and CO2 will be required. 
+### Climate Envelope Model Example
+For a simple climate-based classification:
 
+```julia
+using Biome, Rasters
+
+# Load climate data
+temp = Raster("temperature_1981-2010.nc", name="temp")
+prec = Raster("precipitation_1981-2010.nc", name="prec")
+
+
+# Run model
+setup = ModelSetup(KoppenModel(); temp=temp, prec=prec)
+run!(setup; outfile="climate_biomes.nc")
 ```
-using Biome
-using Rasters
 
-tempfile = "temp_1981-2010.nc"
-precfile = "prec_1981-2010.nc"
-cltfile = "sun_1981-2010.nc"
-soilfile = "soils_55km.nc"
+### BIOME4 Mechanistic Model Example
+For the full physiological model:
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
-clt_raster = Raster(cltfile, name="sun")
-ksat_raster = Raster(soilfile, name="Ksat")
-whc_raster = Raster(soilfile, name="whc")
+```julia
+using Biome, Rasters
 
-pftlist = PFTClassification([
-        TropicalPFT(),
-        TemperatePFT(),
-        BorealPFT(),
-        TundraPFT(),
-        GrassPFT()
-    ]
+# Load all required data
+temp = Raster("temperature.nc", name="temp")
+prec = Raster("precipitation.nc", name="prec") 
+clt = Raster("cloudcover.nc", name="sun")
+ksat = Raster("soils.nc", name="Ksat")
+whc = Raster("soils.nc", name="whc")
+
+# Use default BIOME4 PFT classification
+pfts = BIOME4.PFTClassification()
+
+# Run mechanistic model
+setup = ModelSetup(BIOME4Model(); 
+    temp=temp,
+    prec=prec,
+    clt=clt,
+    ksat=ksat,
+    whc=whc, 
+    co2=373.8,
+    PFTList=pfts)
+run!(setup; coordstring = "alldata", outfile="biome4_output.nc")
+```
+
+
+### Coordinate Specification
+- `"alldata"`: Process entire input domain
+- `"lon1/lon2/lat1/lat2"`: Specify bounding box (e.g., "-10/30/35/70" for Europe)
+- Single coordinates: `"lon/lat"` for point locations
+
+## Customization
+
+### Custom Plant Functional Types
+You can define your own PFTs with specific climate tolerances:
+
+```julia
+# Create custom PFT with specific temperature/precipitation limits
+custom_pft = BroadleafEvergreenPFT(
+    name = "Mediterranean", 
+    phenological_type = 1,
+    constraints = (
+      gdd5=[1000, Inf],     # Growing degree days > 5°C
+      tcm=[5, 20]        # Coldest month temperature range
+    )
 )
-
-setup = ModelSetup(BaseModel;
-                   temp=temp_raster,
-                   prec=prec_raster,
-                   sun= clt_raster,
-                   ksat=ksat_raster,
-                   whc= whc_raster,
-                   co2=373.8,
-                   pftlist = pftlist)
-
-run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
+pftlist = PFTClassification([custom_pft, ...])
 ```
 
+### Model Parameters
+Modify BIOME4 PFT parameters:
 
-#### Command Example
-You can run the model using the following SLURM command:
-
-```
-julia --project=. src/driver.jl --coordstring "alldata"\
-  --co2 373.847 \
-  --tempfile  "path/to/tempfile.nc" \
-  --precfile "path/to/precfile.nc"\
-  --sunfile "path/to/sunfile.nc"\
-  --soilfile "path/to/soilfile.nc""\
-  --year "NAME"\
-  --model "biome4"
-
+```julia
+pfts = BIOME4.PFTClassification()
+set_characteristic!(pfts, "BorealEvergreen", :gdd5, [600.0, Inf])
+set_characteristic!(pfts, "BorealDeciduous", :tcm, [-40.0, 18.0])
 ```
 
+## Troubleshooting
 
-## Preparation
+- **Memory issues**: Use coordinate strings to process smaller regions
+- **Missing data**: Ensure all input files have consistent spatial grids
+- **Slow performance**: Consider using fewer PFTs, lower resolution data, or parallelize your work
 
-This project has been created from the
-[MeteoSwiss Python blueprint](https://github.com/MeteoSwiss-APN/mch-python-blueprint)
-for the CSCS.
+## More Information
 
+- See `examples/` directory for complete working examples
+- Check `test/` directory for model validation examples
+- Documentation: [Link to docs when available]
+
+## Background
+
+This project translates the original FORTRAN77 BIOME4 model (Kaplan et al. 2003) to modern Julia, making it more accessible and extensible. The original BIOME4 v4.2b2 computational core has been preserved while adding new functionality for custom biome definitions.
 
 ## Credits
 
-All calculations and logic was developped by Jed Kaplan in the original BIOME4 version.
+- **Original BIOME4 model**: Jed Kaplan ([Kaplan & Prentice, 2001](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling))
+- **Julia translation & package development**: Capucine Lechartre (capucine.lechartre@wsl.ch)
+- **Original FORTRAN code**: Available at [github.com/jedokaplan/BIOME4](https://github.com/jedokaplan/BIOME4)
 
-All translations to Julia and the repository architecture were designed by Capucine Lechartre. For any question related to the code, please contact me at capucine.lechartre@wsl.ch
+## References
 
-This package was created with [`copier`](https://github.com/copier-org/copier) and the [`MeteoSwiss-APN/mch-python-blueprint`](https://meteoswiss-apn.github.io/mch-python-blueprint/) project template.
+Kaplan, J.O., Bigelow, N.H., Prentice, I.C., Harrison, S.P., Bartlein, P.J., Christensen, T.R., Cramer, W., Matveyeva, N.V., McGuire, A.D., Murray, D.F. and Razzhivin, V.Y., 2003. Climate change and Arctic ecosystems: 2. Modeling, paleodata‐model comparisons, and future projections. *Journal of Geophysical Research*, 108(D19).

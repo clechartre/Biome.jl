@@ -1,4 +1,5 @@
 using Test
+include("../../../../src/models/MechanisticModel/growth_subroutines/isotope.jl")
 
 @testset "Isotope Fractionation Tests" begin
     

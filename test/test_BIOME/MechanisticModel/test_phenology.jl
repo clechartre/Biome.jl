@@ -5,7 +5,7 @@ using Statistics
     
     @testset "Positive Test - Boreal Deciduous" begin
         # Create Boreal Deciduous PFT
-        boreal_dec = BorealDeciduous()
+        boreal_dec = BIOME4.BorealDeciduous()
         boreal_dec.characteristics.GDD0_full_leaf_out = 400.0
         boreal_dec.characteristics.GDD5_full_leaf_out = 350.0
 
@@ -39,7 +39,7 @@ using Statistics
     
     @testset "Evergreen PFT Tests" begin
         # Create evergreen PFT
-        evergreen = BorealEvergreen()
+        evergreen = BIOME4.BorealEvergreen()
         evergreen.characteristics.GDD0_full_leaf_out = 250.0
         evergreen.characteristics.GDD5_full_leaf_out = 200.0
         
@@ -62,7 +62,7 @@ using Statistics
         @test minimum(result_evergreen[:, 1]) > 0.5  # Should not drop too low
         
         # Compare with deciduous - evergreen should have less variation
-        boreal_dec = BorealDeciduous()
+        boreal_dec = BIOME4.BorealDeciduous()
         boreal_dec.characteristics.GDD0_full_leaf_out = 400.0
         boreal_dec.characteristics.GDD5_full_leaf_out = 350.0
 
@@ -77,7 +77,7 @@ using Statistics
     
     @testset "Temperature Threshold Tests" begin
         # Test with different temperature thresholds
-        test_pft = TemperateDeciduous()
+        test_pft = BIOME4.TemperateDeciduous()
         test_pft.characteristics.GDD0_full_leaf_out = 350.0
         test_pft.characteristics.GDD5_full_leaf_out = 300.0
         
@@ -116,11 +116,11 @@ using Statistics
     
     @testset "GDD Threshold Tests" begin
         # Test different GDD requirements
-        low_gdd_pft = C3C4TemperateGrass()
+        low_gdd_pft = BIOME4.C3C4TemperateGrass()
         low_gdd_pft.characteristics.GDD0_full_leaf_out = 150.0
         low_gdd_pft.characteristics.GDD5_full_leaf_out = 100.0
         
-        high_gdd_pft = C3C4TemperateGrass()
+        high_gdd_pft = BIOME4.C3C4TemperateGrass()
         high_gdd_pft.characteristics.GDD0_full_leaf_out = 600.0
         high_gdd_pft.characteristics.GDD5_full_leaf_out = 500.0
         
@@ -149,7 +149,7 @@ using Statistics
     end
     
     @testset "Extreme Temperature Tests" begin
-        extreme_pft = TundraShrubs()
+        extreme_pft = BIOME4.TundraShrubs()
         extreme_pft.characteristics.GDD0_full_leaf_out = 250.0
         extreme_pft.characteristics.GDD5_full_leaf_out = 200.0
 
@@ -186,7 +186,7 @@ using Statistics
     end
     
     @testset "Seasonal Timing Tests" begin
-        seasonal_pft = CoolConifer()
+        seasonal_pft = BIOME4.CoolConifer()
         seasonal_pft.characteristics.GDD0_full_leaf_out = 300.0
         seasonal_pft.characteristics.GDD5_full_leaf_out = 250.0
 
@@ -239,7 +239,7 @@ using Statistics
     end
     
     @testset "Type Consistency Tests" begin
-        type_pft = LichenForb()
+        type_pft = BIOME4.LichenForb()
         type_pft.characteristics.GDD0_full_leaf_out = 200.0
         type_pft.characteristics.GDD5_full_leaf_out = 150.0
         
@@ -263,7 +263,7 @@ using Statistics
     end
     
     @testset "Array Length Validation" begin
-        valid_pft = WoodyDesert()
+        valid_pft = BIOME4.WoodyDesert()
         valid_pft.characteristics.phenological_type = 2
         valid_pft.characteristics.GDD0_full_leaf_out = 150.0
         valid_pft.characteristics.GDD5_full_leaf_out = 100.0
@@ -290,11 +290,11 @@ using Statistics
     
     @testset "PFT Characteristic Tests" begin
         # Test different PFT characteristics
-        char_pft1 = TropicalEvergreen()
+        char_pft1 = BIOME4.TropicalEvergreen()
         char_pft1.characteristics.GDD0_full_leaf_out = 100.0
         char_pft1.characteristics.GDD5_full_leaf_out = 50.0
         
-        char_pft2 = TropicalEvergreen()
+        char_pft2 = BIOME4.TropicalEvergreen()
         char_pft2.characteristics.GDD0_full_leaf_out = 500.0
         char_pft2.characteristics.GDD5_full_leaf_out = 400.0
         
@@ -323,7 +323,7 @@ using Statistics
     end
     
     @testset "Edge Case - Flat Temperature Profile" begin
-        flat_pft = C4TropicalGrass()
+        flat_pft = BIOME4.C4TropicalGrass()
         flat_pft.characteristics.GDD0_full_leaf_out = 200.0
         flat_pft.characteristics.GDD5_full_leaf_out = 250.0
 

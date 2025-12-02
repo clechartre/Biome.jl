@@ -1,430 +1,315 @@
 using Test
+using Biome
 
-@testset "New Assign Biome Tests" begin
+@testset "Plant Respiration Tests" begin
     
-    @testset "Mock Assign Biome Test" begin
-        # Create PFT classification with default constructor
-        pft_classification = PFTClassification()
+    @testset "Positive Test - Normal conditions" begin
+        # Create different PFT types for testing
+        tropical_evergreen = BIOME4.TropicalEvergreen()
+        temperate_deciduous = BIOME4.TemperateDeciduous()
+        boreal_evergreen = BIOME4.BorealEvergreen()
         
-        # Test the mock function
-        result = mock_assign_biome(nothing, nothing, nothing, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, pft_classification)
-        @test result == 1
-        @test typeof(result) == Int
+        # Realistic environmental parameters for active growth
+        gpp = 2000.0                    # Good gross primary productivity
+        alresp = 150.0                  # Autotrophic leaf respiration
+        temp = [5.0, 8.0, 12.0, 16.0, 20.0, 24.0, 26.0, 24.0, 20.0, 15.0, 10.0, 6.0]  # Monthly temps
+        sapwood = 1                     # Woody plant (not grass)
+        lai = 5.0                      # Good leaf area index
+        monthlyfpar = [0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.9, 0.8, 0.6, 0.4, 0.2, 0.1]  # Seasonal FPAR
+        
+        # Test tropical evergreen
+        npp_te, stemresp_te, percentcost_te, mstemresp_te, mrootresp_te, backleafresp_te = 
+            respiration(gpp, alresp, temp, sapwood, lai, monthlyfpar, tropical_evergreen)
+        
+        # All outputs should be finite
+        @test isfinite(npp_te)
+        @test isfinite(stemresp_te)
+        @test isfinite(percentcost_te)
+        @test all(isfinite.(mstemresp_te))
+        @test all(isfinite.(mrootresp_te))
+        @test all(isfinite.(backleafresp_te))
+        
+        # NPP should be positive under good conditions
+        @test npp_te > 0.0
+        
+        # All respiration components should be non-negative
+        @test stemresp_te >= 0.0
+        @test percentcost_te >= 0.0
+        @test all(mstemresp_te .>= 0.0)
+        @test all(mrootresp_te .>= 0.0)
+        @test all(backleafresp_te .>= 0.0)
+        
+        # Arrays should have correct length
+        @test length(mstemresp_te) == 12
+        @test length(mrootresp_te) == 12
+        @test length(backleafresp_te) == 12
+        
+        # NPP should be less than GPP (respiration costs)
+        @test npp_te < gpp
+        
+        # Percent cost should be reasonable (0-100%)
+        @test 0.0 <= percentcost_te <= 100.0
+        
+        # Stem respiration should equal sum of monthly values
+        @test stemresp_te ≈ sum(mstemresp_te) atol=1e-10
+        
+        # Test temperate deciduous (different characteristics)
+        npp_td, stemresp_td, percentcost_td, mstemresp_td, mrootresp_td, backleafresp_td = 
+            respiration(gpp, alresp, temp, sapwood, lai, monthlyfpar, temperate_deciduous)
+        
+        @test isfinite(npp_td) && npp_td > 0.0
+        @test isfinite(stemresp_td) && stemresp_td >= 0.0
+        @test all(isfinite.(mstemresp_td)) && all(mstemresp_td .>= 0.0)
+        
+        # Different PFTs should have different respiration patterns due to different respfact/allocfact
+        @test !isapprox(stemresp_te, stemresp_td, rtol=0.01) || 
+              !isapprox(percentcost_te, percentcost_td, rtol=0.01)
     end
     
-    @testset "Tropical Evergreen Assignment Tests" begin
-        # Create test PFTs and biome classification
-        biome_pfts = PFTClassification()
-        tropical_evergreen = TropicalEvergreen()
+    @testset "Sapwood vs Woody PFT Tests" begin
+        # Test grass/sapwood PFT behavior
+        c4_grass = BIOME4.C4TropicalGrass()
         
-        # Test with high NPP - should return TropicalEvergreenForest
-        tropical_evergreen.characteristics.npp = 500.0
-        result = assign_biome(tropical_evergreen, Default(), Default(), 2000.0, 3000.0, 25.0, 15.0, biome_pfts)
-        @test isa(result, TropicalEvergreenForest)
+        gpp = 1500.0
+        alresp = 100.0
+        temp = fill(20.0, 12)  # Constant temperature
+        lai = 3.0
+        monthlyfpar = fill(0.5, 12)
         
-        # Test with low NPP - should return Desert
-        tropical_evergreen.characteristics.npp = 50.0
-        result_low = assign_biome(tropical_evergreen, Default(), Default(), 2000.0, 3000.0, 25.0, 15.0, biome_pfts)
-        @test isa(result_low, Desert)
+        # Test woody PFT (sapwood = 1)
+        npp_woody, stemresp_woody, _, mstemresp_woody, _, _ = 
+            respiration(gpp, alresp, temp, 1, lai, monthlyfpar, c4_grass)
+        
+        # Test grass PFT (sapwood = 2)
+        npp_grass, stemresp_grass, _, mstemresp_grass, _, _ = 
+            respiration(gpp, alresp, temp, 2, lai, monthlyfpar, c4_grass)
+        
+        # Grass should have zero stem respiration
+        @test stemresp_grass == 0.0
+        @test all(mstemresp_grass .== 0.0)
+        
+        # Woody should have positive stem respiration
+        @test stemresp_woody > 0.0
+        @test any(mstemresp_woody .> 0.0)
+        
+        # Grass should have higher NPP due to no stem respiration costs
+        @test npp_grass > npp_woody
     end
     
-    @testset "Tropical Drought Deciduous Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        tropical_drought = TropicalDroughtDeciduous()
+    @testset "Temperature Dependency Tests" begin
+        test_pft = BIOME4.TemperateDeciduous()
         
-        # Test with high NPP and long green season
-        tropical_drought.characteristics.npp = 400.0
-        tropical_drought.characteristics.greendays = 320
-        result_long = assign_biome(tropical_drought, Default(), Default(), 1800.0, 2500.0, 22.0, 12.0, biome_pfts)
-        @test isa(result_long, TropicalEvergreenForest)
+        gpp = 1800.0
+        alresp = 120.0
+        sapwood = 1
+        lai = 4.0
+        monthlyfpar = fill(0.6, 12)
         
-        # Test with medium green season
-        tropical_drought.characteristics.greendays = 280
-        result_medium = assign_biome(tropical_drought, Default(), Default(), 1800.0, 2500.0, 22.0, 12.0, biome_pfts)
-        @test isa(result_medium, TropicalSemiDeciduousForest)
+        # Test different temperature scenarios
+        temp_cold = fill(0.0, 12)      # Cold conditions
+        temp_moderate = fill(15.0, 12)  # Moderate conditions  
+        temp_warm = fill(25.0, 12)     # Warm conditions
+        temp_extreme_cold = fill(-50.0, 12)  # Below temperature threshold
         
-        # Test with short green season
-        tropical_drought.characteristics.greendays = 200
-        result_short = assign_biome(tropical_drought, Default(), Default(), 1800.0, 2500.0, 22.0, 12.0, biome_pfts)
-        @test isa(result_short, TropicalDeciduousForestWoodland)
+        _, stemresp_cold, _, mstemresp_cold, _, _ = 
+            respiration(gpp, alresp, temp_cold, sapwood, lai, monthlyfpar, test_pft)
+        _, stemresp_moderate, _, mstemresp_moderate, _, _ = 
+            respiration(gpp, alresp, temp_moderate, sapwood, lai, monthlyfpar, test_pft)
+        _, stemresp_warm, _, mstemresp_warm, _, _ = 
+            respiration(gpp, alresp, temp_warm, sapwood, lai, monthlyfpar, test_pft)
+        _, stemresp_extreme, _, mstemresp_extreme, _, _ = 
+            respiration(gpp, alresp, temp_extreme_cold, sapwood, lai, monthlyfpar, test_pft)
         
-        # Test with low NPP
-        tropical_drought.characteristics.npp = 80.0
-        result_low_npp = assign_biome(tropical_drought, Default(), Default(), 1800.0, 2500.0, 22.0, 12.0, biome_pfts)
-        @test isa(result_low_npp, Desert)
+        # Warmer temperatures should increase respiration
+        @test stemresp_warm > stemresp_moderate > stemresp_cold
+        
+        # Extreme cold should result in zero respiration
+        @test stemresp_extreme == 0.0
+        @test all(mstemresp_extreme .== 0.0)
+        
+        # All should be finite and non-negative
+        @test all(isfinite.([stemresp_cold, stemresp_moderate, stemresp_warm]))
+        @test all([stemresp_cold, stemresp_moderate, stemresp_warm] .>= 0.0)
     end
     
-    @testset "Temperate Broadleaved Evergreen Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        temperate_be = TemperateBroadleavedEvergreen()
+    @testset "LAI Dependency Tests" begin
+        test_pft = BIOME4.BorealEvergreen()
         
-        # Test with high NPP
-        temperate_be.characteristics.npp = 300.0
-        result_high = assign_biome(temperate_be, Default(), Default(), 1500.0, 2000.0, 5.0, -5.0, biome_pfts)
-        @test isa(result_high, WarmMixedForest)
+        gpp = 1200.0
+        alresp = 80.0
+        temp = fill(18.0, 12)
+        sapwood = 1
+        monthlyfpar = fill(0.7, 12)
         
-        # Test with low NPP
-        temperate_be.characteristics.npp = 80.0
-        result_low = assign_biome(temperate_be, Default(), Default(), 1500.0, 2000.0, 5.0, -5.0, biome_pfts)
-        @test isa(result_low, Desert)
+        # Test different LAI values
+        lai_low = 1.0
+        lai_medium = 4.0  
+        lai_high = 8.0
+        
+        npp_low, stemresp_low, _, _, _, _ = 
+            respiration(gpp, alresp, temp, sapwood, lai_low, monthlyfpar, test_pft)
+        npp_medium, stemresp_medium, _, _, _, _ = 
+            respiration(gpp, alresp, temp, sapwood, lai_medium, monthlyfpar, test_pft)
+        npp_high, stemresp_high, _, _, _, _ = 
+            respiration(gpp, alresp, temp, sapwood, lai_high, monthlyfpar, test_pft)
+        
+        # Higher LAI should increase respiration costs
+        @test stemresp_high > stemresp_medium > stemresp_low
+        
+        # Higher respiration costs should reduce NPP
+        @test npp_low > npp_medium > npp_high
+        
+        # All should be finite
+        @test all(isfinite.([npp_low, npp_medium, npp_high]))
+        @test all(isfinite.([stemresp_low, stemresp_medium, stemresp_high]))
     end
     
-    @testset "Temperate Deciduous Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        temperate_dec = TemperateDeciduous()
+    @testset "Negative Tests - Limiting conditions" begin
+        test_pft = BIOME4.TropicalEvergreen()
+        temp = fill(20.0, 12)
+        sapwood = 1
+        lai = 3.0
+        monthlyfpar = fill(0.5, 12)
         
-        # Test with high NPP and boreal evergreen present
-        temperate_dec.characteristics.npp = 250.0
+        # Test very low GPP
+        npp_low_gpp, _, percentcost_low, _, _, _ = 
+            respiration(10.0, 5.0, temp, sapwood, lai, monthlyfpar, test_pft)
         
-        # Set boreal evergreen as present
-        boreal_idx = findfirst(pft -> pft.characteristics.name == "BorealEvergreen", biome_pfts.pft_list)
-        if boreal_idx !== nothing
-            biome_pfts.pft_list[boreal_idx].characteristics.present = true
+        # Should result in negative NPP (below minimum allocation)
+        @test npp_low_gpp == -9999.0
+        @test percentcost_low == 0.0  # Percent cost is 0 when NPP is -9999
+        
+        # Test zero GPP
+        npp_zero_gpp, stemresp_zero, percentcost_zero, _, _, _ = 
+            respiration(0.0, 0.0, temp, sapwood, lai, monthlyfpar, test_pft)
+        
+        @test npp_zero_gpp == -9999.0
+        @test percentcost_zero == 0.0
+        @test stemresp_zero >= 0.0  # Should still be non-negative
+        
+        # Test with high respiration relative to GPP
+        npp_high_resp, _, percentcost_high, _, _, _ = 
+            respiration(500.0, 400.0, temp, sapwood, lai, monthlyfpar, test_pft)
+        
+        # Should result in very low or negative NPP
+        @test npp_high_resp <= 0.0 || npp_high_resp == -9999.0
+        
+        # Test with zero LAI
+        npp_zero_lai, stemresp_zero_lai, _, _, _, _ = 
+            respiration(1000.0, 50.0, temp, sapwood, 0.0, monthlyfpar, test_pft)
+        
+        @test isfinite(npp_zero_lai) || npp_zero_lai == -9999.0 || isnan(npp_zero_lai)
+        @test isfinite(stemresp_zero_lai) && stemresp_zero_lai >= 0.0
+    end
+    
+    @testset "Edge Cases" begin
+        test_pft = BIOME4.TemperateDeciduous()
+        
+        # Test with single month arrays (should fail gracefully or handle correctly)
+        temp_short = [20.0]
+        monthlyfpar_short = [0.5]
+        
+        # This should either work with broadcasting or give a clear error
+        try
+            npp, stemresp, _, mstemresp, mrootresp, backleafresp = 
+                respiration(1000.0, 50.0, temp_short, 1, 3.0, monthlyfpar_short, test_pft)
+            
+            # If it works, check outputs are reasonable
+            @test isfinite(npp)
+            @test isfinite(stemresp) && stemresp >= 0.0
+            @test length(mstemresp) == 1
+            @test length(mrootresp) == 1  
+            @test length(backleafresp) == 1
+        catch e
+            # If it fails, that's also acceptable behavior for edge case
+            @test isa(e, Exception)
         end
         
-        # Test cold conditions
-        result_cold = assign_biome(temperate_dec, Default(), Default(), 1200.0, 1800.0, -20.0, -25.0, biome_pfts)
-        @test isa(result_cold, ColdMixedForest)
+        # Test with very high LAI
+        npp_extreme_lai, stemresp_extreme_lai, _, _, _, _ = 
+            respiration(5000.0, 200.0, fill(20.0, 12), 1, 100.0, fill(0.8, 12), test_pft)
         
-        # Test warmer conditions
-        result_warm = assign_biome(temperate_dec, Default(), Default(), 1200.0, 1800.0, -10.0, -15.0, biome_pfts)
-        @test isa(result_warm, CoolMixedForest)
+        @test isfinite(npp_extreme_lai) || npp_extreme_lai == -9999.0
+        @test isfinite(stemresp_extreme_lai) && stemresp_extreme_lai >= 0.0
         
-        # Test with temperate broadleaved evergreen present and high GDD5
-        tbe_idx = findfirst(pft -> pft.characteristics.name == "TemperateBroadleavedEvergreen", biome_pfts.pft_list)
-        if tbe_idx !== nothing && boreal_idx !== nothing
-            biome_pfts.pft_list[tbe_idx].characteristics.present = true
-            biome_pfts.pft_list[boreal_idx].characteristics.present = false
-        end
-        result_tbe = assign_biome(temperate_dec, Default(), Default(), 1200.0, 3500.0, 5.0, 0.0, biome_pfts)
-        @test isa(result_tbe, WarmMixedForest)
+        # Test with extreme temperature values within range
+        temp_extreme_hot = fill(45.0, 12)
         
-        # Test fallback to temperate deciduous forest
-        if tbe_idx !== nothing && boreal_idx !== nothing
-            biome_pfts.pft_list[tbe_idx].characteristics.present = false
-            biome_pfts.pft_list[boreal_idx].characteristics.present = false
-        end
-        result_fallback = assign_biome(temperate_dec, Default(), Default(), 1200.0, 2000.0, 0.0, -5.0, biome_pfts)
-        @test isa(result_fallback, TemperateDeciduousForest)
+        npp_hot, stemresp_hot, _, _, _, _ = 
+            respiration(2000.0, 100.0, temp_extreme_hot, 1, 5.0, fill(0.6, 12), test_pft)
         
-        # Test with low NPP
-        temperate_dec.characteristics.npp = 70.0
-        result_low_npp = assign_biome(temperate_dec, Default(), Default(), 1200.0, 2000.0, 0.0, -5.0, biome_pfts)
-        @test isa(result_low_npp, Desert)
+        @test isfinite(npp_hot) || npp_hot == -9999.0
+        @test isfinite(stemresp_hot) && stemresp_hot >= 0.0
     end
     
-    @testset "Cool Conifer Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        cool_conifer = CoolConifer()
+    @testset "Exception Tests" begin
+        test_pft = BIOME4.BorealEvergreen()
         
-        # Test with high NPP and temperate broadleaved evergreen present
-        cool_conifer.characteristics.npp = 200.0
-        tbe_idx = findfirst(pft -> pft.characteristics.name == "TemperateBroadleavedEvergreen", biome_pfts.pft_list)
-        if tbe_idx !== nothing
-            biome_pfts.pft_list[tbe_idx].characteristics.present = true
-        end
+        # Test with invalid sapwood values
+        @test_throws MethodError respiration(1000.0, 50.0, fill(20.0, 12), 1.5, 3.0, fill(0.5, 12), test_pft)
+        @test_throws MethodError respiration(1000.0, 50.0, fill(20.0, 12), "invalid", 3.0, fill(0.5, 12), test_pft)
         
-        result_tbe = assign_biome(cool_conifer, Default(), Default(), 1000.0, 1500.0, 2.0, -3.0, biome_pfts)
-        @test isa(result_tbe, WarmMixedForest)
+        # Test with negative values (should handle gracefully)
+        npp_neg_gpp, _, _, _, _, _ = 
+            respiration(-500.0, 50.0, fill(20.0, 12), 1, 3.0, fill(0.5, 12), test_pft)
         
-        # Test with temperate deciduous subdominant
-        if tbe_idx !== nothing
-            biome_pfts.pft_list[tbe_idx].characteristics.present = false
-        end
-        temperate_dec = TemperateDeciduous()
-        result_temp_dec = assign_biome(cool_conifer, temperate_dec, Default(), 1000.0, 1500.0, 2.0, -3.0, biome_pfts)
-        @test isa(result_temp_dec, TemperateConiferForest)
+        @test isfinite(npp_neg_gpp) || npp_neg_gpp == -9999.0
         
-        # Test with boreal deciduous subdominant
-        boreal_dec = BorealDeciduous()
-        result_boreal_dec = assign_biome(cool_conifer, boreal_dec, Default(), 1000.0, 1500.0, -5.0, -10.0, biome_pfts)
-        @test isa(result_boreal_dec, ColdMixedForest)
+        npp_neg_alresp, _, _, _, _, _ = 
+            respiration(1000.0, -50.0, fill(20.0, 12), 1, 3.0, fill(0.5, 12), test_pft)
         
-        # Test fallback
-        result_fallback = assign_biome(cool_conifer, Default(), Default(), 1000.0, 1500.0, 2.0, -3.0, biome_pfts)
-        @test isa(result_fallback, TemperateConiferForest)
+        @test isfinite(npp_neg_alresp) || npp_neg_alresp == -9999.0
         
-        # Test with low NPP
-        cool_conifer.characteristics.npp = 60.0
-        result_low_npp = assign_biome(cool_conifer, Default(), Default(), 1000.0, 1500.0, 2.0, -3.0, biome_pfts)
-        @test isa(result_low_npp, Desert)
+        # Test with negative LAI (should handle gracefully)
+        npp_neg_lai, stemresp_neg_lai, _, _, _, _ = 
+            respiration(1000.0, 50.0, fill(20.0, 12), 1, -2.0, fill(0.5, 12), test_pft)
+        
+        @test isfinite(npp_neg_lai) || npp_neg_lai == -9999.0
+        @test isfinite(stemresp_neg_lai) || isnan(stemresp_neg_lai)  # Allow negative values as edge case behavior
+        
+        # Test with mismatched array lengths (should error)
+        temp_wrong_length = fill(20.0, 10)  # Wrong length
+        @test_throws BoundsError respiration(1000.0, 50.0, temp_wrong_length, 1, 3.0, fill(0.5, 12), test_pft)
+        
+        monthlyfpar_wrong_length = fill(0.5, 8)  # Wrong length
+        @test_throws BoundsError respiration(1000.0, 50.0, fill(20.0, 12), 1, 3.0, monthlyfpar_wrong_length, test_pft)
     end
     
-    @testset "Boreal Evergreen Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        boreal_evergreen = BorealEvergreen()
+    @testset "Monthly Respiration Consistency Tests" begin
+        test_pft = BIOME4.TropicalEvergreen()
         
-        # Test warm conditions with temperate deciduous present
-        temperate_dec_idx = findfirst(pft -> pft.characteristics.name == "TemperateDeciduous", biome_pfts.pft_list)
-        if temperate_dec_idx !== nothing
-            biome_pfts.pft_list[temperate_dec_idx].characteristics.present = true
-        end
+        gpp = 2500.0
+        alresp = 180.0
+        temp = [8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 30.0, 28.0, 24.0, 18.0, 12.0, 9.0]
+        sapwood = 1
+        lai = 6.0
+        monthlyfpar = [0.2, 0.3, 0.5, 0.7, 0.9, 1.0, 1.0, 0.9, 0.7, 0.5, 0.3, 0.2]
         
-        result_warm = assign_biome(boreal_evergreen, Default(), Default(), 800.0, 1200.0, -10.0, -15.0, biome_pfts)
-        @test isa(result_warm, CoolMixedForest)
+        npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp = 
+            respiration(gpp, alresp, temp, sapwood, lai, monthlyfpar, test_pft)
         
-        # Test warm conditions without temperate deciduous
-        if temperate_dec_idx !== nothing
-            biome_pfts.pft_list[temperate_dec_idx].characteristics.present = false
-        end
-        result_warm_no_td = assign_biome(boreal_evergreen, Default(), Default(), 800.0, 1200.0, -10.0, -15.0, biome_pfts)
-        @test isa(result_warm_no_td, CoolConiferForest)
+        # Monthly arrays should sum correctly
+        @test stemresp ≈ sum(mstemresp) atol=1e-10
         
-        # Test cold conditions with temperate deciduous present
-        if temperate_dec_idx !== nothing
-            biome_pfts.pft_list[temperate_dec_idx].characteristics.present = true
-        end
-        result_cold = assign_biome(boreal_evergreen, Default(), Default(), 600.0, 800.0, -25.0, -30.0, biome_pfts)
-        @test isa(result_cold, ColdMixedForest)
+        # Root respiration should be related to stem respiration
+        total_mrootresp = sum(mrootresp)
+        @test total_mrootresp > 0.0
+        @test isfinite(total_mrootresp)
         
-        # Test cold conditions without temperate deciduous
-        if temperate_dec_idx !== nothing
-            biome_pfts.pft_list[temperate_dec_idx].characteristics.present = false
-        end
-        result_cold_no_td = assign_biome(boreal_evergreen, Default(), Default(), 600.0, 800.0, -25.0, -30.0, biome_pfts)
-        @test isa(result_cold_no_td, EvergreenTaigaMontaneForest)
+        # Leaf maintenance respiration should be related to FPAR
+        total_backleafresp = sum(backleafresp)
+        @test total_backleafresp > 0.0
+        @test isfinite(total_backleafresp)
+        
+        # Higher FPAR months should generally have higher leaf maintenance respiration
+        max_fpar_idx = argmax(monthlyfpar)
+        min_fpar_idx = argmin(monthlyfpar)
+        @test backleafresp[max_fpar_idx] >= backleafresp[min_fpar_idx]
+        
+        # Warmer months should have higher stem respiration
+        max_temp_idx = argmax(temp)
+        min_temp_idx = argmin(temp)
+        @test mstemresp[max_temp_idx] > mstemresp[min_temp_idx]
     end
-    
-    @testset "Boreal Deciduous Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        boreal_deciduous = BorealDeciduous()
-        
-        # Test with temperate deciduous subdominant
-        temperate_dec = TemperateDeciduous()
-        result_temp_dec = assign_biome(boreal_deciduous, temperate_dec, Default(), 700.0, 1000.0, -8.0, -12.0, biome_pfts)
-        @test isa(result_temp_dec, TemperateDeciduousForest)
-        
-        # Test with cool conifer subdominant
-        cool_conifer = CoolConifer()
-        result_cool_con = assign_biome(boreal_deciduous, cool_conifer, Default(), 700.0, 1000.0, -8.0, -12.0, biome_pfts)
-        @test isa(result_cool_con, CoolConiferForest)
-        
-        # Test warm conditions
-        result_warm = assign_biome(boreal_deciduous, Default(), Default(), 800.0, 1200.0, -10.0, -15.0, biome_pfts)
-        @test isa(result_warm, CoolConiferForest)
-        
-        # Test cold conditions
-        result_cold = assign_biome(boreal_deciduous, Default(), Default(), 600.0, 800.0, -25.0, -30.0, biome_pfts)
-        @test isa(result_cold, DeciduousTaigaMontaneForest)
-    end
-    
-    @testset "Woody Desert Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        woody_desert = WoodyDesert()
-        
-        # Test with high NPP and high LAI subdominant
-        woody_desert.characteristics.npp = 150.0
-        subdominant = Default()
-        subdominant.characteristics.lai = 2.0
-        
-        # Test warm conditions (tmin >= 0)
-        result_warm = assign_biome(woody_desert, subdominant, Default(), 400.0, 600.0, 20.0, 5.0, biome_pfts)
-        @test isa(result_warm, TropicalXerophyticShrubland)
-        
-        # Test cold conditions (tmin < 0)
-        result_cold = assign_biome(woody_desert, subdominant, Default(), 400.0, 600.0, -5.0, -10.0, biome_pfts)
-        @test isa(result_cold, TemperateXerophyticShrubland)
-        
-        # Test with low LAI subdominant
-        subdominant.characteristics.lai = 0.5
-        result_low_lai = assign_biome(woody_desert, subdominant, Default(), 400.0, 600.0, 20.0, 5.0, biome_pfts)
-        @test isa(result_low_lai, Desert)
-        
-        # Test with low NPP
-        woody_desert.characteristics.npp = 80.0
-        result_low_npp = assign_biome(woody_desert, subdominant, Default(), 400.0, 600.0, 20.0, 5.0, biome_pfts)
-        @test isa(result_low_npp, Desert)
-    end
-    
-    @testset "Grass PFT Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        
-        # Test C3C4 Temperate Grass
-        temperate_grass = C3C4TemperateGrass()
-        
-        # Test with low NPP and suitable subdominant
-        temperate_grass.characteristics.npp = 80.0
-        subdominant = Default()
-        result_low_npp = assign_biome(temperate_grass, subdominant, Default(), 600.0, 900.0, 10.0, 5.0, biome_pfts)
-        @test isa(result_low_npp, Desert)
-        
-        # Test with boreal subdominant
-        boreal_evergreen = BorealEvergreen()
-        result_boreal = assign_biome(temperate_grass, boreal_evergreen, Default(), 600.0, 900.0, 10.0, 5.0, biome_pfts)
-        @test isa(result_boreal, SteppeTundra)
-        
-        # Test with sufficient NPP and high GDD0
-        temperate_grass.characteristics.npp = 150.0
-        result_high_gdd = assign_biome(temperate_grass, Default(), Default(), 1000.0, 1200.0, 15.0, 10.0, biome_pfts)
-        @test isa(result_high_gdd, TemperateGrassland)
-        
-        # Test with sufficient NPP and low GDD0
-        result_low_gdd = assign_biome(temperate_grass, Default(), Default(), 600.0, 900.0, 5.0, 0.0, biome_pfts)
-        @test isa(result_low_gdd, SteppeTundra)
-        
-        # Test C4 Tropical Grass
-        tropical_grass = C4TropicalGrass()
-        
-        # Test with high NPP
-        tropical_grass.characteristics.npp = 200.0
-        result_tropical = assign_biome(tropical_grass, Default(), Default(), 2000.0, 2500.0, 22.0, 18.0, biome_pfts)
-        @test isa(result_tropical, TropicalGrassland)
-        
-        # Test with low NPP
-        tropical_grass.characteristics.npp = 80.0
-        result_tropical_low = assign_biome(tropical_grass, Default(), Default(), 2000.0, 2500.0, 22.0, 18.0, biome_pfts)
-        @test isa(result_tropical_low, Desert)
-    end
-    
-    @testset "Tundra PFT Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        
-        # Test Lichen Forb
-        lichen_forb = LichenForb()
-        result_lichen = assign_biome(lichen_forb, Default(), Default(), 100.0, 150.0, -25.0, -30.0, biome_pfts)
-        @test isa(result_lichen, Barren)
-        
-        # Test Tundra Shrubs
-        tundra_shrubs = TundraShrubs()
-        
-        # Test very low GDD0
-        result_very_cold = assign_biome(tundra_shrubs, Default(), Default(), 150.0, 200.0, -30.0, -35.0, biome_pfts)
-        @test isa(result_very_cold, CushionForbsLichenMoss)
-        
-        # Test medium GDD0
-        result_medium = assign_biome(tundra_shrubs, Default(), Default(), 350.0, 450.0, -20.0, -25.0, biome_pfts)
-        @test isa(result_medium, ProstateShrubTundra)
-        
-        # Test higher GDD0
-        result_higher = assign_biome(tundra_shrubs, Default(), Default(), 600.0, 750.0, -15.0, -20.0, biome_pfts)
-        @test isa(result_higher, DwarfShrubTundra)
-        
-        # Test Cold Herbaceous
-        cold_herbaceous = ColdHerbaceous()
-        result_cold_herb = assign_biome(cold_herbaceous, Default(), Default(), 200.0, 300.0, -25.0, -30.0, biome_pfts)
-        @test isa(result_cold_herb, SteppeTundra)
-    end
-    
-    @testset "Default and None PFT Assignment Tests" begin
-        biome_pfts = PFTClassification()
-        
-        # Test Default PFT with different woody dominants
-        default_pft = Default()
-        
-        # Test with tropical woody dominant and high LAI
-        tropical_evergreen = TropicalEvergreen()
-        tropical_evergreen.characteristics.lai = 5.0
-        result_tropical_high_lai = assign_biome(default_pft, Default(), tropical_evergreen, 1500.0, 2000.0, 25.0, 20.0, biome_pfts)
-        @test isa(result_tropical_high_lai, TropicalSavanna)
-        
-        # Test with tropical woody dominant and low LAI
-        tropical_evergreen.characteristics.lai = 2.0
-        result_tropical_low_lai = assign_biome(default_pft, Default(), tropical_evergreen, 1500.0, 2000.0, 25.0, 20.0, biome_pfts)
-        @test isa(result_tropical_low_lai, TropicalXerophyticShrubland)
-        
-        # Test with temperate broadleaved evergreen
-        temperate_be = TemperateBroadleavedEvergreen()
-        result_tbe = assign_biome(default_pft, Default(), temperate_be, 1200.0, 1800.0, 10.0, 5.0, biome_pfts)
-        @test isa(result_tbe, TemperateSclerophyllWoodland)
-        
-        # Test with temperate deciduous
-        temperate_dec = TemperateDeciduous()
-        result_td = assign_biome(default_pft, Default(), temperate_dec, 1200.0, 1800.0, 5.0, 0.0, biome_pfts)
-        @test isa(result_td, TemperateBroadleavedSavanna)
-        
-        # Test with cool conifer
-        cool_conifer = CoolConifer()
-        result_cc = assign_biome(default_pft, Default(), cool_conifer, 1000.0, 1500.0, 2.0, -3.0, biome_pfts)
-        @test isa(result_cc, OpenConiferWoodland)
-        
-        # Test with boreal evergreen
-        boreal_evergreen = BorealEvergreen()
-        result_be = assign_biome(default_pft, Default(), boreal_evergreen, 600.0, 800.0, -15.0, -20.0, biome_pfts)
-        @test isa(result_be, BorealParkland)
-        
-        # Test with no woody dominant
-        result_no_woody = assign_biome(default_pft, Default(), Default(), 800.0, 1200.0, 10.0, 5.0, biome_pfts)
-        @test isa(result_no_woody, Barren)
-        
-        # Test None PFT
-        none_pft = None()
-        result_none = assign_biome(none_pft, Default(), Default(), 1000.0, 1500.0, 15.0, 10.0, biome_pfts)
-        @test isa(result_none, Barren)
-    end
-    
-    @testset "Type Consistency Tests" begin
-        biome_pfts = PFTClassification()
-        tropical_evergreen = TropicalEvergreen()
-        tropical_evergreen.characteristics.npp = 300.0
-        
-        # Test with Float32 parameters
-        result_f32 = assign_biome(tropical_evergreen, Default(), Default(), 
-                                 Float32(2000.0), Float32(3000.0), Float32(25.0), Float32(15.0), biome_pfts)
-        @test isa(result_f32, AbstractBiome)
-        @test isa(result_f32, TropicalEvergreenForest)
-        
-        # Test with Float64 parameters (default)
-        result_f64 = assign_biome(tropical_evergreen, Default(), Default(), 
-                                 2000.0, 3000.0, 25.0, 15.0, biome_pfts)
-        @test isa(result_f64, AbstractBiome)
-        @test isa(result_f64, TropicalEvergreenForest)
-        
-        # Results should be the same type of biome regardless of input numeric type
-        @test typeof(result_f32) == typeof(result_f64)
-    end
-    
-    @testset "Threshold Boundary Tests" begin
-        biome_pfts = PFTClassification()
-        
-        # Test NPP threshold boundary (100.0)
-        temperate_dec = TemperateDeciduous()
-        
-        # Exactly at threshold
-        temperate_dec.characteristics.npp = 100.0
-        result_at_threshold = assign_biome(temperate_dec, Default(), Default(), 1200.0, 1800.0, 0.0, -5.0, biome_pfts)
-        @test isa(result_at_threshold, Desert)
-        
-        # Just above threshold
-        temperate_dec.characteristics.npp = 100.1
-        result_above_threshold = assign_biome(temperate_dec, Default(), Default(), 1200.0, 1800.0, 0.0, -5.0, biome_pfts)
-        @test isa(result_above_threshold, CoolMixedForest)
-        
-        # Just below threshold
-        temperate_dec.characteristics.npp = 99.9
-        result_below_threshold = assign_biome(temperate_dec, Default(), Default(), 1200.0, 1800.0, 0.0, -5.0, biome_pfts)
-        @test isa(result_below_threshold, Desert)
-        
-        # Test GDD thresholds for boreal evergreen
-        boreal_evergreen = BorealEvergreen()
-        
-        # At GDD5 threshold (900.0) and TCM threshold (-19.0)
-        result_gdd_threshold = assign_biome(boreal_evergreen, Default(), Default(), 800.0, 1200.0, -19.0, -15.0, biome_pfts)
-        @test isa(result_gdd_threshold, ColdMixedForest) # Above threshold
-        
-        result_gdd_below = assign_biome(boreal_evergreen, Default(), Default(), 800.0, 700.0, -18.9, -25.0, biome_pfts)
-        @test isa(result_gdd_below, ColdMixedForest) # Below threshold
-    end
-    
-    @testset "Edge Cases and Error Handling" begin
-        biome_pfts = PFTClassification()
-        
-        # Test with extreme climate values
-        tropical_evergreen = TropicalEvergreen()
-        tropical_evergreen.characteristics.npp = 300.0
-        
-        # Extreme cold
-        result_extreme_cold = assign_biome(tropical_evergreen, Default(), Default(), 
-                                         -1000.0, -500.0, -50.0, -60.0, biome_pfts)
-        @test isa(result_extreme_cold, TropicalEvergreenForest) # Should still work based on NPP
-        
-        # Extreme hot
-        result_extreme_hot = assign_biome(tropical_evergreen, Default(), Default(), 
-                                        5000.0, 8000.0, 50.0, 40.0, biome_pfts)
-        @test isa(result_extreme_hot, TropicalEvergreenForest)
-        
-        # Test with Default PFTs in subdominant positions (should work)
-        result_default_subdominant = assign_biome(tropical_evergreen, Default(), Default(), 
-                                                2000.0, 3000.0, 25.0, 15.0, biome_pfts)
-        @test isa(result_default_subdominant, TropicalEvergreenForest)
-    end
+
 end

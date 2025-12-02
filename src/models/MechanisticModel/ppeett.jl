@@ -2,18 +2,20 @@
 using Printf
 
 """
-    ppeett(lat, dtemp, dclou, temp)
+    ppeett(lat, dtemp, dclou, temp, env=nothing)
 
 Calculate insolation and potential evapotranspiration (PET) for each month.
 
 This function computes daily potential evapotranspiration, day length, solar 
 radiation, and annual radiation based on latitude, temperature, and cloud cover.
+If environment data is provided, it will be used to override the calculated values.
 
 # Arguments
 - `lat`: Latitude in degrees
 - `dtemp`: Daily temperature array (365 elements, °C)
 - `dclou`: Daily cloud cover array (365 elements, %)
 - `temp`: Monthly temperature array (12 elements, °C)
+- `env`: Optional NamedTuple with pre-calculated values (:dpet, :dayl, :sun, :rad0, :ddayl)
 
 # Returns
 A tuple containing:
@@ -22,13 +24,16 @@ A tuple containing:
 - `sun`: Monthly solar radiation (12 elements, MJ/m²/day)
 - `rad0`: Annual radiation sum (MJ/m²/year)
 - `ddayl`: Daily day length (365 elements, hours)
+
+# Notes
+- If env data is provided, those values take precedence over calculated ones
 """
 function ppeett(
     lat::T,
     dtemp::AbstractArray{T},
     dclou::AbstractArray{T},
     temp::AbstractArray{T},
-    env::NamedTuple
+    env::Union{NamedTuple,Nothing}=nothing
 )::Tuple{AbstractArray{T},AbstractArray{T},AbstractArray{T},T,AbstractArray{T}} where {T<:Real}
     midday = Int[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
     daysinmonth = Int[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -133,11 +138,16 @@ function ppeett(
         end
     end
 
-    return (
-        get(env, :dpet, dpet),
-        get(env, :dayl, dayl),
-        get(env, :sun, sun),
-        get(env, :rad0, rad0),
-        get(env, :ddayl, ddayl)
-    )
+    # Use env data if available, otherwise use calculated values
+    if env !== nothing
+        return (
+            get(env, :dpet, dpet),
+            get(env, :dayl, dayl),
+            get(env, :sun, sun),
+            get(env, :rad0, rad0),
+            get(env, :ddayl, ddayl)
+        )
+    else
+        return (dpet, dayl, sun, rad0, ddayl)
+    end
 end
