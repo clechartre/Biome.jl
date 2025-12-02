@@ -13,19 +13,32 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
         with:
-          version: '1'
-          arch: x64
-      - uses: julia-actions/cache@v2
+          version: '1.10.5'
 
-      # Instantiate all dependencies for the BIOME project
-      - name: Instantiate dependencies
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+      - name: Clean Julia compiled & artifacts caches
+        run: |
+          rm -rf ~/.julia/compiled
+          rm -rf ~/.julia/artifacts
+          # optionally remove registries if you suspect corruption:
+          # rm -rf ~/.julia/registries
 
+      - name: Diagnostics - Julia and environment
+        run: |
+          julia -e 'println("Julia: ", VERSION)'
+          julia -e 'using Pkg; Pkg.status()'
+
+      - name: Install dependencies & precompile
+        run: |
+          julia -e 'using Pkg; Pkg.instantiate()'
+          julia -e 'using Pkg; Pkg.precompile()'
+
+      - name: Develop local package
+        run: julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()))'
 
       # Run tests (with coverage if you like)
       - name: Run tests
