@@ -53,21 +53,21 @@ To run Biome.jl using Julia, you need to set up the required environment by inst
 
 ## Model Types
 
-### 1. Climate Envelope Models (BaseModel)
+### 1. Climate Envelope Models
 Simpler models requiring only basic climate data:
 - **Temperature**: Monthly mean temperature (°C) 
 - **Precipitation**: Monthly total precipitation (mm)
 
-### 2. Mechanistic Models (BIOME4Model)
+### 2. Mechanistic Models
 More complex models that simulate plant physiology and require:
-- **Temperature**: Monthly mean temperature (°C)
-- **Precipitation**: Monthly total precipitation (mm) 
-- **Cloud cover**: Monthly mean cloud cover (%)
-- **Soil properties**: Water holding capacity (mm/mm) and hydraulic conductivity (mm/h)
-- **CO₂ concentration**: Atmospheric CO₂ (ppm)
+- **Temperature**: Monthly mean temperature (°C) -- Climatology
+- **Precipitation**: Monthly total precipitation (mm) -- Climatology
+- **Cloud cover**: Monthly mean cloud cover (%) -- Climatology
+- **Soil properties**: Water holding capacity (mm/mm) and hydraulic conductivity (mm/h) -- For multiple soil depths
+- **CO₂ concentration**: Atmospheric CO₂ (ppm) -- Single value
 
 ## Input Data Format
-All spatial data should be provided as NetCDF files with:
+All spatial data should be provided as rasters to the `ModelSetup` class intentiation with:
 - Monthly time dimension (12 months)
 - Spatial dimensions (longitude/latitude)
 - Consistent spatial resolution and projection
@@ -75,15 +75,13 @@ All spatial data should be provided as NetCDF files with:
 ## Data Sources
 
 ### Climate Data
-- **Recommended**: [CHELSA database](https://chelsa-climate.org/bioclim/) for high-resolution climate data
+- **Recommended**: [CHELSA database](https://www.chelsa-climate.org//) for high-resolution climate data
 - **Alternative**: ERA5, WorldClim, or other gridded climate datasets
 
 ### Soil Data  
 - Use the [makesoil](https://github.com/ARVE-Research/makesoil) tool to generate soil hydraulic properties
 - Generates water holding capacity (whc) and hydraulic conductivity (Ksat) from soil texture data
 
-### Data Preparation Scripts
-The `utils/data_generation/` directory contains scripts for downloading and processing input data from various sources.
 
 ## Examples
 
@@ -97,11 +95,9 @@ using Biome, Rasters
 temp = Raster("temperature_1981-2010.nc", name="temp")
 prec = Raster("precipitation_1981-2010.nc", name="prec")
 
-# Define vegetation types
-pfts = PFTClassification([TropicalPFT(), TemperatePFT(), BorealPFT(), GrassPFT()])
 
 # Run model
-setup = ModelSetup(BaseModel; temp=temp, prec=prec, pftlist=pfts)
+setup = ModelSetup(KoppenModel(); temp=temp, prec=prec)
 run!(setup; outfile="climate_biomes.nc")
 ```
 
@@ -123,26 +119,16 @@ pfts = BIOME4.PFTClassification()
 
 # Run mechanistic model
 setup = ModelSetup(BIOME4Model(); 
-    temp=temp, prec=prec, clt=clt, ksat=ksat, whc=whc, 
-    co2=373.8, PFTList=pfts)
-run!(setup; outfile="biome4_output.nc")
+    temp=temp,
+    prec=prec,
+    clt=clt,
+    ksat=ksat,
+    whc=whc, 
+    co2=373.8,
+    PFTList=pfts)
+run!(setup; coordstring = "alldata", outfile="biome4_output.nc")
 ```
 
-
-### Command Line Interface
-
-For batch processing or HPC environments:
-
-```bash
-julia --project=. src/biomedriver.jl \
-  --tempfile "temperature.nc" \
-  --precfile "precipitation.nc" \
-  --sunfile "cloudcover.nc" \
-  --soilfile "soils.nc" \
-  --co2 373.8 \
-  --model "biome4" \
-  --outfile "results.nc"
-```
 
 ### Coordinate Specification
 - `"alldata"`: Process entire input domain
@@ -156,12 +142,14 @@ You can define your own PFTs with specific climate tolerances:
 
 ```julia
 # Create custom PFT with specific temperature/precipitation limits
-custom_pft = CustomPFT("Mediterranean", 
-    gdd5=(1000, Inf),     # Growing degree days > 5°C
-    tcm=(5, 20),          # Coldest month temperature range
-    gsp=(200, 800)        # Growing season precipitation
+custom_pft = BroadleafEvergreenPFT(
+    name = "Mediterranean", 
+    phenological_type = 1,
+    constraints = (
+      gdd5=[1000, Inf],     # Growing degree days > 5°C
+      tcm=[5, 20]        # Coldest month temperature range
+    )
 )
-
 pftlist = PFTClassification([custom_pft, ...])
 ```
 
@@ -178,7 +166,7 @@ set_characteristic!(pfts, "BorealDeciduous", :tcm, [-40.0, 18.0])
 
 - **Memory issues**: Use coordinate strings to process smaller regions
 - **Missing data**: Ensure all input files have consistent spatial grids
-- **Slow performance**: Consider using fewer PFTs or lower resolution data
+- **Slow performance**: Consider using fewer PFTs, lower resolution data, or parallelize your work
 
 ## More Information
 
