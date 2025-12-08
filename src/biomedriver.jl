@@ -10,6 +10,7 @@ using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, Wissmann
 # Standard library
 using Statistics
 using Missings
+using Base.Threads
 
 # Third-party
 using ArgParse
@@ -174,8 +175,15 @@ function _execute!(
         output_stack = create_output_rasterstack(model, lon, lat, cntx, cnty, numofpfts)
     end
 
+    # Create a lock for thread-safe file I/O
+    file_lock = ReentrantLock()
+
+    # Preallocate env_chunks outside loops to avoid repeated allocations
+    # Each thread gets its own copy to avoid race conditions
+    env_chunks_template = Dict{Symbol, Any}()
+    
     # Loop over all grid cells
-    for y in 1:cnty
+    Threads.@threads for y in 1:cnty
         println("Processing y index $y")
         lat_chunk = lat[y]
 
@@ -186,23 +194,42 @@ function _execute!(
             continue
         end
 
+        # Create thread-local env_chunks to avoid allocations in inner loop
+        env_chunks = Dict{Symbol, Any}()
+
         for x in 1:cntx
             lon_val = lon[x]
 
-            # Prepare environmental variables for this cell
-            env_chunks = Dict{Symbol,Array}()
+            # Reuse env_chunks
+            empty!(env_chunks)
+            
             for (var, raster) in pairs(env_raster)
                 if ndims(raster) == 2
+                    # 2D raster: store scalar directly, not wrapped in array
                     chunk = raster[x, y]
-                    env_chunks[var] = [chunk]
+                    env_chunks[var] = chunk
                 else
-                    chunk = raster[x, y, :]
-                    env_chunks[var] = uniform_fill_value(Array(chunk))
+                    # 3D raster: extract data and convert to Array (Raster indexing returns views)
+                    chunk = Array(raster[x, y, :])
+                    env_chunks[var] = uniform_fill_value(chunk)
                 end
             end
 
             # Skip cell if all environmental variables are missing
-            if any(chunk -> all(v -> v == -9999.0, chunk), values(env_chunks))
+            skip_cell = false
+            for val in values(env_chunks)
+                if val isa AbstractArray
+                    if all(v -> v == -9999.0, val)
+                        skip_cell = true
+                        break
+                    end
+                elseif val == -9999.0
+                    skip_cell = true
+                    break
+                end
+            end
+            
+            if skip_cell
                 continue
             end
 
@@ -221,15 +248,19 @@ function _execute!(
             )
         end
 
-        # Sync to NetCDF every 10 rows
+        # Sync to NetCDF every 10 rows with thread-safe locking
         if y % 10 == 0
-            sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+            lock(file_lock) do
+                sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+            end
         end
     end
 
-    # Final sync before closing
-    sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-    close(output_dataset)
+    # Final sync before closing (lock ensures thread-safe access)
+    lock(file_lock) do
+        sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+        close(output_dataset)
+    end
 end
 
 """
@@ -345,10 +376,20 @@ function process_cell(
     input = zeros(T, 50)
     # input - (lat-lat, co2^cpde)
 
-    input_variables = merge(
-        (; lat = lat_chunk[y], co2 = co2, p = p, dz = dz, lon = lon_chunk[x]),
-        (; (k => (ndims(env_chunks[k]) == 1 ? env_chunks[k] : ndims(env_chunks[k]) == 2 ? env_chunks[k][x, y] : env_chunks[k][x, y, :]) for k in keys(env_chunks))...)
-    )
+    # Build input_variables: env_chunks now stores scalars directly or arrays
+    # No need for complex generator expression - directly use env_chunks values
+    input_dict = Dict{Symbol, Any}()
+    input_dict[:lat] = lat_chunk[y]
+    input_dict[:co2] = co2
+    input_dict[:p] = p
+    input_dict[:dz] = dz
+    input_dict[:lon] = lon_chunk[x]
+    
+    # Add environmental variables from env_chunks
+    # They're already in the right format (scalars or arrays)
+    merge!(input_dict, env_chunks)
+    
+    input_variables = (; input_dict...)
 
     # Run the model 
     output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)

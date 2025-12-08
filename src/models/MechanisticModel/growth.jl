@@ -83,19 +83,19 @@ function growth(
 
         # Initialize set values
         midday, days = initialize_arrays(T, U)
-        optratioa = get_characteristic(pft, :optratioa)
-        kk = get_characteristic(pft, :kk)
+        optratioa = T(get_characteristic(pft, :optratioa))
+        kk = T(get_characteristic(pft, :kk))
         ca = co2 * T(1e-6)
         rainscalar = T(1000.0)
         wst = annp / rainscalar
         wst = min(wst, T(1.0))
 
-        phentype = get_characteristic(pft, :phenological_type)
-        mgmin = get_characteristic(pft, :max_min_canopy_conductance)
-        root = get_characteristic(pft, :root_fraction_top_soil)
-        age = get_characteristic(pft, :leaf_longevity)
-        sapwood = get_characteristic(pft, :sapwood_respiration)
-        emax = get_characteristic(pft, :Emax)
+        phentype = U(get_characteristic(pft, :phenological_type))
+        mgmin = T(get_characteristic(pft, :max_min_canopy_conductance))
+        root = T(get_characteristic(pft, :root_fraction_top_soil))
+        age = T(get_characteristic(pft, :leaf_longevity))
+        sapwood = U(get_characteristic(pft, :sapwood_respiration))
+        emax = T(get_characteristic(pft, :Emax))
         maxfvc = one(T) - T(exp(-kk * maxlai))
 
         # Initialize values 
