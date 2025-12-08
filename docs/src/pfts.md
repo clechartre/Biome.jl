@@ -37,25 +37,25 @@ The model is based on a series traits used to compute the growth of each PFT thr
 
 | Parameter                    | Category           | Description                                                        | Min  | Max  | Source                                        |
 | ---------------------------- | ------------------ | ------------------------------------------------------------------ | ---- | ---- | --------------------------------------------- |
-| `kk`                         | Photosynthesis     | Light extinction coefficient                                       | 0.3  | 0.7  | Larcher (1995)                                |
+| `kk`                         | Photosynthesis     | Light extinction coefficient                                       | 0.3  | 0.8  | Larcher (1995)(1995)                                |
 | `c4`                         | Photosynthesis     | C4 photosynthesis flag (true = C4, false = C3)                     | Bool | Bool | -                                             |
-| `optratioa` (C3)             | Photosynthesis     | Optimal Ci/Ca ratio for C3                                         | 0.5  | 0.6  | Haxeltine et al. (1996)                       |
-| `optratioa` (C4)             | Photosynthesis     | Optimal Ci/Ca ratio for C4                                         | 0.31 | 0.4  | Wong et al. (1979), Collatz et al. (1992)     |
-| `sw_drop`                    | Photosynthesis     | Soil water content at which stomata start to close                 | -    | -    | Not specified                                 |
-| `sw_appear`                  | Photosynthesis     | Soil water content at which stomata start to open                  | -    | -    | Not specified                                 |
-| `max_min_canopy_conductance` | Evapotranspiration | Min/max canopy conductance (mm s⁻¹), related to photosynthesis     | 2.5  | 20   | Monteith (1995)                               |
-| `Emax`                       | Evapotranspiration | Maximum daily transpiration under well-watered conditions (mm s⁻¹) | 2.4  | 6.4  | Whitehead et al. (1993); Stewart & Gay (1989) |
+| `optratioa` (C3)             | Photosynthesis     | Optimal Ci/Ca ratio for C3                                         | 0.5  | 0.95  | Haxeltine et al.(1996)                       |
+| `optratioa` (C4)             | Photosynthesis     | Optimal Ci/Ca ratio for C4                                         | 0.31 | 0.7  | Wong et al. (1979), Collatz et al. (1992)     |
+| `sw_drop`                    | Photosynthesis     | Soil water content at which stomata start to close                 | -    | -    |specified                                 |
+| `sw_appear`                  | Photosynthesis     | Soil water content at which stomata start to open                  | -    | -    |specified                                 |
+| `max_min_canopy_conductance` | Evapotranspiration | Min/max canopy conductance (mm s⁻¹), related to photosynthesis     | 2.5  | 30   | Monteith(1995)                               |
+| `Emax`                       | Evapotranspiration | Maximum daily transpiration under well-watered conditions (mm s⁻¹) | 4.5  | 12.0  | Whitehead et al. (1993); Stewart & Gay (1989) |
 | `sapwood_respiration`        | Respiration        | Sapwood respiration type (1 = woody, 2 = grass)                    | 1    | 2    | -                                             |
 | `respfact`                   | Respiration        | Sapwood maintenance respiration (g C kg⁻¹ month⁻¹)                 | 1.3  | 2.0  | -                                             |
 | `phenological_type`          | General            | Phenology type: 1 = Evergreen; 2 = Deciduous; 3 = Grass            | 1    | 3    | -                                             |
-| `root_fraction_top_soil`     | General            | Fraction of roots in topsoil layer                                 | -    | -    | Haxeltine et al. (1996)                       |
-| `leaf_longevity`             | General            | Leaf longevity (years)                                             | 0.5  | 7    | Hallgren & Pitman (2001)                      |
+| `root_fraction_top_soil`     | General            | Fraction of roots in topsoil layer                                 | 0    | 1    | Haxeltine et al. (1996)                       |
+| `leaf_longevity`             | General            | Leaf longevity (years)                                             | 0.5  | 0.95    | Hallgren & Pitman (2001)                      |
 | `GDD5_full_leaf_out`         | General            | Growing degree days above 5 °C for full leaf-out                   | 50   | 200  | Haxeltine & Prentice (1996)                   |
 | `GDD0_full_leaf_out`         | General            | Growing degree days above 0 °C for full leaf-out                   | -    | -    | -                                             |
-| `threshold`                  | General            | LAI\:sapwood-area threshold                                        | 0.01 | 0.2  | Hallgren & Pitman (2001)                      |
-| `t0`                         | General            | Reference temperature for growth initiation (°C)                   | -    | -    | -                                             |
-| `tcurve`                     | General            | Temperature response curve                                         | -    | -    | -                                             |
-| `allocfact`                  | General            | Allocation factor for leaf vs litter mass                          | -    | -    | Raich & Nadelhoffer (1989)                    |
+| `threshold`                  | General            | LAI\:sapwood-area threshold                                        | 0.25 | 0.95  | Hallgren & Pitman (2001)                      |
+| `t0`                         | General            | Reference temperature for growth initiation (°C)                   | -12.0    | 10.0    | -                                             |
+| `tcurve`                     | General            | Temperature response curve                                         | 0.5    | 1.0    | -                                             |
+| `allocfact`                  | General            | Allocation factor for leaf vs litter mass                          | 0.5    | 1.6    | Raich & Nadelhoffer (1989)                    |
 | `grass`                      | General            | Grass flag (true = grass functional type)                          | Bool | Bool | -                                             |
 | `dominance_factor`           | General            | Capacity to dominate in harsh conditions                           | 1    | 10   | Prentice et al. (1992)                        |
 
@@ -63,11 +63,11 @@ The model is based on a series traits used to compute the growth of each PFT thr
 
 | Parameter | Description                                         | Min | Max  | Source                               |
 | --------- | --------------------------------------------------- | --- | ---- | ------------------------------------ |
-| `tcm`     | Min/max temperature of coldest month (°C)           | -65 | +15  | Hallgren & Pitman (2001), Table 2    |
+| `tcm`     | Min/max temperature of coldest month (°C)           | -65 | +15  | Hallgren & Pitman (2001)  |
 | `min`     | Minimum temperature for growth (°C)                 | -45 | +5   | Haxeltine et al. (1996)              |
-| `gdd`     | GDD for growth initiation (base unspecified)        | 300 | 1800 | Hallgren & Pitman (2001)             |
-| `gdd0`    | GDD for growth initiation above 0 °C                | 500 | 2000 | Hallgren & Pitman (2001)             |
-| `twm`     | Temperature for water limitation growth cutoff (°C) | 0   | 15   | Hallgren & Pitman (2001)             |
+| `gdd`     | GDD for growth initiation (base unspecified)        | 300 | 10000 | Hallgren & Pitman (2001)             |
+| `gdd0`    | GDD for growth initiation above 0 °C                | 500 | 10000 | Hallgren & Pitman (2001)             |
+| `twm`     | Temperature for water limitation growth cutoff (°C) | 0   | +Inf   | Hallgren & Pitman (2001)             |
 | `snow`    | Snow depth required for growth (cm)                 | 0   | 100  | Hallgren & Pitman (2001)             |
 | `swb`     | Soil water balance (mm)                             | 0   | 2000 | Added in this iteration of the model |
 
