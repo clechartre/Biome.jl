@@ -101,9 +101,7 @@ function growth(
         emax      = T(get_characteristic(pft, :Emax))
         maxfvc    = one(T) - T(exp(-kk * maxlai))
 
-        # -----------------------------
-        # Monthly photosynthesis
-        # -----------------------------
+
         c4, optratio = determine_c4_and_optratio(pft, optratioa, c4_override)
 
         maxgc = T(0)
@@ -214,9 +212,7 @@ function growth(
             end
         end
 
-        # -----------------------------
         # Respiration and annual NPP
-        # -----------------------------
         npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp =
             respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft)
 
@@ -254,10 +250,8 @@ function growth(
                 CCratio, isoresp, c4fpar, c4parr, c4apar,
                 c4ccratio, c4leafresp, nppsum, c4
             )
-
-        # -----------------------------
+-
         # C3/C4 reprocess rule
-        # -----------------------------
         if get_characteristic(pft, :name) == "C3C4WoodyDesert" && c4
             c4_override = false
             reprocess   = true
