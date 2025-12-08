@@ -11,7 +11,7 @@ module Constants
 const T = Real 
 
 # Export all constants for use in other modules
-export P0, CP, T0, G, M, R0,
+export MIDDAY_365, P0, CP, T0, G, M, R0,
        QEFFC3, DRESPC3, DRESPC4, ABS1, TETA, SLO2, JTOE, OPTRATIO,
        KO25, KC25, TAO25, CMASS, KCQ10, KOQ10, TAOQ10,
        TWIGLOSS, TUNE, LEAFRESP,
@@ -19,6 +19,12 @@ export P0, CP, T0, G, M, R0,
        LN, Y0, M10, P1, STEMCARBON,
        E0, TREF, TEMP0,
        A, ES, A1, B3, B
+
+# Daily interpolations
+const MIDDAY_365 =  [
+    16, 44, 75, 105, 136, 166,
+    197, 228, 258, 289, 319, 350
+]
 
 # Atmospheric and physical constants
 const P0 = T(101325.0)      # Sea level standard atmospheric pressure (Pa)

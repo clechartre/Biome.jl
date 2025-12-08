@@ -67,10 +67,9 @@ end
 PFTState{T,U}() where {T<:Real,U<:Int} = PFTState{T,U}(false, T(0.0), U(0), T(0.0), zeros(T, 12), T(0.0), T(0.0))
 
 # Convenience constructor for Float64,Int defaults
-PFTState() = PFTState{Float64,Int}()
-
 PFTState(c::PFTCharacteristics{T,U}) where {T,U} = PFTState{T,U}()
 PFTState(pft::AbstractPFT) = PFTState(pft.characteristics)
+PFTState() = PFTState()
 
 const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
     AbstractNeedleleafEvergreenPFT => (

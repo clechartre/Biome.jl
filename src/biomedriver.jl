@@ -1,7 +1,7 @@
 module BiomeDriver
 
 using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel,
-        BIOME4, ClimateModel, MechanisticModel,
+        BIOME4, ClimateModel, MechanisticModel, GrowthWorkspace,
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
         AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
         P0, G, CP, T0, M, R0, 
@@ -177,10 +177,6 @@ function _execute!(
 
     # Create a lock for thread-safe file I/O
     file_lock = ReentrantLock()
-
-    # Preallocate env_chunks outside loops to avoid repeated allocations
-    # Each thread gets its own copy to avoid race conditions
-    env_chunks_template = Dict{Symbol, Any}()
     
     # Loop over all grid cells
     Threads.@threads for y in 1:cnty
