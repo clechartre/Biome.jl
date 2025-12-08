@@ -11,14 +11,8 @@ and carbon cycling processes.
 # Third-party
 using Statistics: mean
 
-"""
-    growth(maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft, dayl, dtemp, dphen,
-           co2, p, tsoil, mnpp, c4mnpp, pftstates, ws)
-
-Calculate net primary productivity and carbon fluxes for a plant functional type.
-
-Uses a GrowthWorkspace `ws` to reuse temporary arrays and avoid repeated allocations.
-"""
+# Calculate net primary productivity and carbon fluxes for a plant functional type.
+# Uses a GrowthWorkspace `ws` to reuse temporary arrays and avoid repeated allocations.
 function growth(
     maxlai::T,
     annp::T,
@@ -302,19 +296,6 @@ function growth(
 end
 
 
-"""
-    initialize_arrays(T, U)
-
-Initialize day-of-year arrays for monthly calculations.
-
-# Arguments
-- `T`: Real number type
-- `U`: Integer type
-
-# Returns
-- `midday`: Vector of mid-month day numbers
-- `days`: Vector of days per month
-"""
 function initialize_arrays(
     ::Type{T},
     ::Type{U}
@@ -324,11 +305,6 @@ function initialize_arrays(
     return midday, days
 end
 
-"""
-    determine_c4_and_optratio(pft, optratioa, c4_override)
-
-Determine C4 photosynthesis type and optimal ratio for a PFT.
-"""
 function determine_c4_and_optratio(
     pft::AbstractPFT,
     optratioa::T,
@@ -344,11 +320,6 @@ function determine_c4_and_optratio(
     return c4, optratio
 end
 
-"""
-    compare_c3_c4_npp(...)
-
-Compare C3 and C4 NPP values and determine optimal photosynthetic pathway.
-"""
 function compare_c3_c4_npp(
     pft::AbstractPFT,
     mnpp::AbstractArray{T},

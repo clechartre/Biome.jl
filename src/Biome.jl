@@ -11,6 +11,8 @@ relationships.
 
 module Biome
 
+__precompile__(false)
+
 # Core abstract types
 include("pfts.jl")
 include("biomes.jl")
@@ -51,7 +53,7 @@ include("models/MechanisticModel/growth_subroutines/respiration.jl")
 # Main BIOME4 model (after all dependencies)
 include("models/MechanisticModel/mechanisticmodel.jl")
 include("models/MechanisticModel/BIOME4/pfts.jl")
-using .BIOME4
+import .BIOME4
 
 # Climatic envelope models
 include("models/ClimaticEnvelope/koppenbiomes.jl")
@@ -107,10 +109,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
        compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, unpack_namedtuple_climate,
-       growth,
-       
-       # BIOME4 assign_biome function
-       assign_biome,
+       growth, assign_biome,
        
        # Main functions
        run,

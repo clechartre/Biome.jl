@@ -5,7 +5,8 @@ using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, Wissmann
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
         AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
         P0, G, CP, T0, M, R0, 
-        run, assign_biome, change_type
+        run, change_type, assign_biome as base_assign_biome
+using ..Biome.BIOME4: assign_biome as biome4_assign_biome
 
 # Standard library
 using Statistics
@@ -92,9 +93,9 @@ function ModelSetup(Model::BiomeModel;
 
     if biome_assignment === nothing
         if Model isa BIOME4Model || Model isa BIOMEDominanceModel
-            biome_assignment = BIOME4.assign_biome
+            biome_assignment = biome4_assign_biome
         else
-            biome_assignment = assign_biome
+            biome_assignment = base_assign_biome
         end
     end
 
@@ -123,8 +124,16 @@ function _execute!(
         env_raster::NamedTuple;
         coordstring::String, 
         outfile::String,
-        biome_assignment::Function = Biome.assign_biome
+        biome_assignment::Union{Function, Nothing} = nothing
         ) where {T<:Real}
+
+    if biome_assignment === nothing
+        if model isa BIOME4Model || model isa BIOMEDominanceModel
+            biome_assignment = biome4_assign_biome
+        else
+            biome_assignment = base_assign_biome
+        end
+    end
 
     if  pftlist === nothing
         @warn "No pftlist provided, using default PFT classification."

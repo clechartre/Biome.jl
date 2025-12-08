@@ -302,7 +302,9 @@ end
     characteristics :: PFTCharacteristics{T,U}
 end
 
-NeedleleafEvergreenPFT(c::PFTCharacteristics{T,U}) where {T,U} = NeedleleafEvergreenPFT{T,U}(c)
+function NeedleleafEvergreenPFT(c::PFTCharacteristics{T,U}) where {T,U}
+    NeedleleafEvergreenPFT{T,U}(c)
+end
 function NeedleleafEvergreenPFT(; kwargs...)
     c = base_pft(AbstractNeedleleafEvergreenPFT; kwargs...)
     NeedleleafEvergreenPFT(c)
@@ -312,7 +314,9 @@ end
     characteristics :: PFTCharacteristics{T,U}
 end
 
-BroadleafEvergreenPFT(c::PFTCharacteristics{T,U}) where {T,U} = BroadleafEvergreenPFT{T,U}(c)
+function BroadleafEvergreenPFT(c::PFTCharacteristics{T,U}) where {T,U}
+    BroadleafEvergreenPFT{T,U}(c)
+end
 function BroadleafEvergreenPFT(; kwargs...)
     c = base_pft(AbstractBroadleafEvergreenPFT; kwargs...)
     BroadleafEvergreenPFT(c)
@@ -322,7 +326,9 @@ end
     characteristics :: PFTCharacteristics{T,U}
 end
 
-BroadleafDeciduousPFT(c::PFTCharacteristics{T,U}) where {T,U} = BroadleafDeciduousPFT{T,U}(c)
+function BroadleafDeciduousPFT(c::PFTCharacteristics{T,U}) where {T,U}
+    BroadleafDeciduousPFT{T,U}(c)
+end
 function BroadleafDeciduousPFT(; kwargs...)
     c = base_pft(AbstractBroadleafDeciduousPFT; kwargs...)
     BroadleafDeciduousPFT(c)
@@ -332,7 +338,9 @@ end
     characteristics :: PFTCharacteristics{T,U}
 end
 
-NeedleleafDeciduousPFT(c::PFTCharacteristics{T,U}) where {T,U} = NeedleleafDeciduousPFT{T,U}(c)
+function NeedleleafDeciduousPFT(c::PFTCharacteristics{T,U}) where {T,U}
+    NeedleleafDeciduousPFT{T,U}(c)
+end
 function NeedleleafDeciduousPFT(; kwargs...)
     c = base_pft(AbstractNeedleleafDeciduousPFT; kwargs...)
     NeedleleafDeciduousPFT(c)
@@ -343,7 +351,9 @@ end
     characteristics :: PFTCharacteristics{T,U}
 end
 
-C3GrassPFT(c::PFTCharacteristics{T,U}) where {T,U} = C3GrassPFT{T,U}(c)
+function C3GrassPFT(c::PFTCharacteristics{T,U}) where {T,U}
+    C3GrassPFT{T,U}(c)
+end
 function C3GrassPFT(; kwargs...)
     c = base_pft(AbstractC3GrassPFT; kwargs...)
     C3GrassPFT(c)
@@ -353,7 +363,9 @@ end
     characteristics :: PFTCharacteristics{T,U}
 end
 
-C4GrassPFT(c::PFTCharacteristics{T,U}) where {T,U} = C4GrassPFT{T,U}(c)
+function C4GrassPFT(c::PFTCharacteristics{T,U}) where {T,U}
+    C4GrassPFT{T,U}(c)
+end
 function C4GrassPFT(; kwargs...)
     c = base_pft(AbstractC4GrassPFT; kwargs...)
     C4GrassPFT(c)
@@ -364,7 +376,9 @@ struct Default{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
 end
 
-Default(c::PFTCharacteristics{T,U}) where {T,U} = Default{T,U}(c)
+function Default(c::PFTCharacteristics{T,U}) where {T,U}
+    Default{T,U}(c)
+end
 function Default(; kwargs...)
     c = PFTCharacteristics(; kwargs...)
     Default(c)
@@ -374,7 +388,9 @@ struct None{T<:Real,U<:Int} <: AbstractPFT
     characteristics::PFTCharacteristics{T,U}
 end
 
-None(c::PFTCharacteristics{T,U}) where {T,U} = None{T,U}(c)
+function None(c::PFTCharacteristics{T,U}) where {T,U}
+    None{T,U}(c)
+end
 function None(; kwargs...)
     c = PFTCharacteristics(; kwargs...)
     None(c)
