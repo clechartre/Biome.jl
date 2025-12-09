@@ -11,8 +11,42 @@ and carbon cycling processes.
 # Third-party
 using Statistics: mean
 
-# Calculate net primary productivity and carbon fluxes for a plant functional type.
-# Uses a GrowthWorkspace `ws` to reuse temporary arrays and avoid repeated allocations.
+"""
+    growth(maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft, dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp)
+Calculate net primary productivity and carbon fluxes for a plant functional type.
+This is the main growth function that integrates photosynthesis, respiration,
+hydrology, and carbon cycling to determine NPP and related carbon fluxes.
+The function handles both C3 and C4 photosynthesis pathways and includes
+iterative optimization for photosynthesis-conductance coupling.
+# Arguments
+- `maxlai`: Maximum leaf area index
+- `annp`: Annual precipitation (mm)
+- `sun`: Monthly solar radiation (12 elements, MJ/m²/day)
+- `temp`: Monthly temperature (12 elements, °C)
+- `dprec`: Daily precipitation (365 elements, mm)
+- `dmelt`: Daily snowmelt (365 elements, mm)
+- `dpet`: Daily potential evapotranspiration (365 elements, mm)
+- `k`: Soil and canopy parameter array
+- `pft`: Plant functional type
+- `dayl`: Monthly day length (12 elements, hours)
+- `dtemp`: Daily temperature (365 elements, °C)
+- `dphen`: Daily phenology array (365x2 matrix)
+- `co2`: Atmospheric CO2 concentration (ppm)
+- `p`: Atmospheric pressure (kPa)
+- `tsoil`: Monthly soil temperature (12 elements, °C)
+- `mnpp`: Monthly NPP array to be filled (12 elements)
+- `c4mnpp`: Monthly C4 NPP array to be filled (12 elements)
+# Returns
+A tuple containing:
+- `npp`: Annual net primary productivity (gC/m²/year)
+- `mnpp`: Monthly NPP values (12 elements, gC/m²/month)
+- `c4mnpp`: Monthly C4 NPP values (12 elements, gC/m²/month)
+# Notes
+- Includes iterative bisection method for photosynthesis-conductance coupling
+- Handles mixed C3/C4 photosynthesis for certain PFTs
+- Integrates fire disturbance effects
+- Calculates isotopic signatures for carbon cycling
+"""
 function growth(
     maxlai::T,
     annp::T,

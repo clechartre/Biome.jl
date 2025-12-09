@@ -8,10 +8,6 @@ functional types through iterative optimization of leaf area index.
 # Third-party
 using LinearAlgebra
 
-# First-party
-include("growth.jl")
-export growth
-
 """
     findnpp(pft, annp, dtemp, sun, temp, dprec, dmelt, dpet, dayl, k, dphen, co2, p, tsoil)
 

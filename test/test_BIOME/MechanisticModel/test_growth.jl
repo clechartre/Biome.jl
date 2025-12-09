@@ -117,9 +117,10 @@ using Test
         pft_states = PFTState{Float64, Int}()
         
         # Run growth function
+        ws = GrowthWorkspace(Float64)
         npp, monthly_npp, monthly_c4npp, updated_states = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         # Test basic outputs
@@ -181,10 +182,11 @@ using Test
         c4mnpp = zeros(Float64, 12)
         
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_c4, monthly_npp_c4, monthly_c4npp_c4, updated_states_c4 = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         @test all(isfinite.([npp_c4]))
@@ -229,10 +231,11 @@ using Test
         c4mnpp = zeros(Float64, 12)
         
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_cold, monthly_npp_cold, monthly_c4npp_cold, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         @test all(isfinite.([npp_cold]))
@@ -271,10 +274,11 @@ using Test
         c4mnpp = zeros(Float64, 12)
         
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_dry, monthly_npp_dry, monthly_c4npp_dry, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         # In extreme drought, NPP might be negative (wilting)
@@ -315,10 +319,11 @@ using Test
         c4mnpp = zeros(Float64, 12)
         
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_zero_lai, monthly_npp_zero, monthly_c4npp_zero, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         @test all(isfinite.([npp_zero_lai]) .|| isnan.([npp_zero_lai]))
@@ -358,10 +363,11 @@ using Test
         c4mnpp = zeros(Float32, 12)
         
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float32)
         
         npp_f32, monthly_npp_f32, monthly_c4npp_f32, _ = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         # Check type preservation
@@ -402,12 +408,13 @@ using Test
         c4mnpp = zeros(Float64, 12)
         
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         # This should work
         npp, monthly_npp, monthly_c4npp, _ = growth(
             maxlai, annp, sun_correct, temp_correct, dprec_correct, dmelt_correct, 
             dpet_correct, k_correct, pft, dayl_correct, dtemp_correct, dphen_correct, 
-            co2, p, tsoil_correct, mnpp, c4mnpp, pft_states
+            co2, p, tsoil_correct, mnpp, c4mnpp, pft_states, ws
         )
         
         @test typeof(npp) == Float64
@@ -419,14 +426,14 @@ using Test
         @test_throws BoundsError growth(
             maxlai, annp, sun_wrong, temp_correct, dprec_correct, dmelt_correct, 
             dpet_correct, k_correct, pft, dayl_correct, dtemp_correct, dphen_correct, 
-            co2, p, tsoil_correct, mnpp, c4mnpp, pft_states
+            co2, p, tsoil_correct, mnpp, c4mnpp, pft_states, ws
         )
         
         dprec_wrong = fill(2.0, 300)  # Wrong size
         @test_throws BoundsError growth(
             maxlai, annp, sun_correct, temp_correct, dprec_wrong, dmelt_correct, 
             dpet_correct, k_correct, pft, dayl_correct, dtemp_correct, dphen_correct, 
-            co2, p, tsoil_correct, mnpp, c4mnpp, pft_states
+            co2, p, tsoil_correct, mnpp, c4mnpp, pft_states, ws
         )
     end
     
@@ -519,10 +526,11 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_boreal, monthly_npp_boreal, monthly_c4npp_boreal, states_boreal = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         @test all(isfinite.([npp_boreal]))
@@ -585,10 +593,11 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_med, monthly_npp_med, monthly_c4npp_med, states_med = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         @test all(isfinite.([npp_med]))
@@ -681,10 +690,11 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         pft_states = PFTState(pft)
+        ws = GrowthWorkspace(Float64)
         
         npp_alpine, monthly_npp_alpine, monthly_c4npp_alpine, states_alpine = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         @test all(isfinite.([npp_alpine]))
@@ -736,9 +746,10 @@ using Test
         initial_states.firedays = 0
         initial_states.lai = 0.0
         
+        ws = GrowthWorkspace(Float64)
         npp, monthly_npp, monthly_c4npp, final_states = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, initial_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, initial_states, ws
         )
         
         # Test that states are updated
@@ -755,10 +766,11 @@ using Test
         @test final_states.firedays >= 0
         
         # Test state consistency across runs
+        ws2 = GrowthWorkspace(Float64)
         npp2, monthly_npp2, monthly_c4npp2, final_states2 = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
             dayl, dtemp, dphen, co2, p, tsoil, zeros(Float64, 12), zeros(Float64, 12), 
-            PFTState{Float64, Int}()
+            PFTState{Float64, Int}(), ws2
         )
         
         # Results should be deterministic (same inputs -> same outputs)
@@ -792,10 +804,11 @@ using Test
         mnpp = zeros(Float64, 12)
         c4mnpp = zeros(Float64, 12)
         pft_states = PFTState{Float64, Int}()
+        ws = GrowthWorkspace(Float64)
         
         npp_extreme, monthly_npp_extreme, monthly_c4npp_extreme, states_extreme = growth(
             maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
         
         # Should handle extreme conditions gracefully
@@ -809,11 +822,11 @@ using Test
             @test npp_extreme == -9999.0  # Wilting condition
         end
         
-        # Test with NaN inputs (should be handled gracefully)
+        # Test with NaN inputs
         sun_nan = fill(NaN, 9)
         @test_throws BoundsError growth(
             maxlai, annp, sun_nan, temp, dprec, dmelt, dpet, k, pft,
-            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states
+            dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp, pft_states, ws
         )
     end
 end
