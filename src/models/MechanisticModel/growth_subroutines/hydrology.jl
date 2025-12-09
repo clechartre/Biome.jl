@@ -66,9 +66,7 @@ function hydrology(
     Bool
 } where {T<:Real,U<:Int}
 
-    # Use plain Ints for days; division by Int is fine and avoids T[...] alloc
     days = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-
     alfam = T(1.4)
     gm    = T(5.0)
     onnw  = get_characteristic(pft, :sw_drop)
@@ -78,7 +76,7 @@ function hydrology(
     runoffmonth = zeros(T, 12)
     meanfvc     = zeros(T, 12)
     meangc      = zeros(T, 12)
-    meanwr      = [zeros(T, 3) for _ in 1:12]   # keep same type as before
+    meanwr      = [zeros(T, 3) for _ in 1:12]
     meanaet     = zeros(T, 12)
 
     # Daily state
@@ -102,15 +100,14 @@ function hydrology(
     w[1] = wst
     w[2] = wst
 
-    # Two passes (as in original)
-    for _pass in 1:2
+    for _ in 1:2
         d       = 0
         annaet  = T(0.0)
         sumoff  = T(0.0)
         greendays = U(0)
         wilt    = false
 
-        @inbounds for month in 1:12
+        for month in 1:12
             meanfvc[month]     = T(0.0)
             meangc[month]      = T(0.0)
             meanwr[month][1]   = T(0.0)
@@ -119,7 +116,7 @@ function hydrology(
             meanaet[month]     = T(0.0)
             runoffmonth[month] = T(0.0)
 
-            for _day in 1:days[month]
+            for _ in 1:days[month]
                 d += 1
                 wr = root * w[1] + (T(1.0) - root) * w[2]
 

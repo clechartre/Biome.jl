@@ -99,7 +99,9 @@ function growth(
         c4, optratio = determine_c4_and_optratio(pft, optratioa, c4_override)
 
         maxgc = T(0)
-        @inbounds for m in 1:12
+        for m in 1:12
+
+
             tsecs = T(3600) * dayl[m]
             fpar  = T(1) - exp(-kk * maxlai)
 
@@ -139,7 +141,7 @@ function growth(
 
         alresp      = T(0)
         gpp         = T(0)
-        leaftime    = T(0)  # kept for compatibility, even if unused
+        leaftime    = T(0)
         annualparr  = T(0)
         annualapar  = T(0)
 

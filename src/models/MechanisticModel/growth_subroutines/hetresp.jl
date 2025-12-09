@@ -79,7 +79,7 @@ function hetresp(
     Kslosum = zero(T)
     Rten = one(T)
 
-    @inbounds for m in 1:12
+    for m in 1:12
         mfact = T(0.25) + T(0.75) * moist[m]
 
         # Litter decay coefficient
@@ -104,7 +104,7 @@ function hetresp(
 
     Rmean = zero(T)
 
-    @inbounds for m in 1:12
+    for m in 1:12
         Rlit[m] = Plit * (Rlit[m] / Klitsum)
         Rfst[m] = Pfst * (Rfst[m] / Kfstsum)
         Rslo[m] = Pslo * (Rslo[m] / Kslosum)
@@ -116,8 +116,7 @@ function hetresp(
     isolit = isoveg - T(0.75)
     isofst = isoveg - T(1.5)
     isoslo = isoveg - T(2.25)
-
-    @inbounds for m in 1:12
+    for m in 1:12
         isoR[m] = (Plit/nppann)*isolit +
                   (Pfst/nppann)*isofst +
                   (Pslo/nppann)*isoslo
