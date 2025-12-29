@@ -8,10 +8,6 @@ functional types through iterative optimization of leaf area index.
 # Third-party
 using LinearAlgebra
 
-# First-party
-include("growth.jl")
-export growth
-
 """
     findnpp(pft, annp, dtemp, sun, temp, dprec, dmelt, dpet, dayl, k, dphen, co2, p, tsoil)
 
@@ -42,9 +38,10 @@ A tuple containing:
 - `pft`: The input plant functional type (potentially modified)
 - `optlai`: Optimal leaf area index that maximizes NPP
 - `optnpp`: Maximum net primary productivity achieved (gC/m²/year)
+- `pftstates`: Updated PFT state
 
 # Notes
-- Returns (pft, 0.0, 0.0) if the PFT is not present in the current conditions
+- Returns (pft, 0.0, 0.0, pftstates) if the PFT is not present in the current conditions
 - Uses 8 iterations of binary search to converge on optimal LAI
 - Tests LAI values between 0.01 and 8.0
 - Calls the growth() function to calculate NPP for each LAI value
@@ -69,17 +66,21 @@ function findnpp(
     # Initialize variables
     optnpp = T(0.0)
     optlai = T(0.0)
-    mnpp = zeros(T, 12)
+    mnpp   = zeros(T, 12)
     c4mnpp = zeros(T, 12)
 
-    # Calculate NPP at a range of different leaf areas by iteration
-    lowbound = T(0.01)
-    range_val = T(8.0)
-    alai = zeros(T, 2)
+    # Workspace for all growth calls for this PFT
+    ws = GrowthWorkspace(T)
 
+    # If PFT is not present, skip optimization
     if pftstates.present == false
-        return pft, T(0.0), T(0.0)
+        return pft, T(0.0), T(0.0), pftstates
     end
+
+    # Calculate NPP at a range of different leaf areas by iteration
+    lowbound  = T(0.01)
+    range_val = T(8.0)
+    alai      = zeros(T, 2)
 
     # Binary search optimization over 8 iterations
     for _ in 1:8
@@ -87,7 +88,7 @@ function findnpp(
         alai[1] = lowbound + T(0.25) * range_val
         alai[2] = lowbound + T(0.75) * range_val
 
-        # Test first LAI value
+
         npp, mnpp, c4mnpp, pftstates = growth(
             alai[1],
             annp,
@@ -106,7 +107,8 @@ function findnpp(
             tsoil,
             mnpp,
             c4mnpp,
-            pftstates
+            pftstates,
+            ws
         )
 
         if npp >= optnpp
@@ -114,7 +116,6 @@ function findnpp(
             optnpp = npp
         end
 
-        # Test second LAI value
         npp, mnpp, c4mnpp, pftstates = growth(
             alai[2],
             annp,
@@ -133,7 +134,8 @@ function findnpp(
             tsoil,
             mnpp,
             c4mnpp,
-            pftstates
+            pftstates,
+            ws
         )
 
         if npp >= optnpp

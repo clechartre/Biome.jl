@@ -54,71 +54,75 @@ function hetresp(
     meanKsoil::T
 )::Tuple{Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},Vector{T},T,T,T} where {T<:Real}
 
-    # Constants and initializations
-    isoatm = T(-8.0)
-    Plit, Pfst, Pslo = T(0.0), T(0.0), T(0.0)
-    Rten = T(1.0)
-    Klit = zeros(T, 12)
-    Kfst = zeros(T, 12)
-    Kslo = zeros(T, 12)
-    isolit = zeros(T, 12)
-    isofst = zeros(T, 12)
-    isoslo = zeros(T, 12)
-
-    if nppann <= T(0.0)
-        # If NPP is zero or less, all respiration values should be zero
-        return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
-    else
-        # Partition annual NPP into pools according to Foley strategy
-        if isa(pft, BIOME4.TropicalEvergreen) || isa(pft, BIOME4.TropicalDroughtDeciduous)
-            Plit = T(0.650) * nppann
-            Pfst = T(0.980) * T(0.350) * nppann
-            Pslo = T(0.020) * T(0.350) * nppann
-        else
-            Plit = T(0.700) * nppann
-            Pfst = T(0.985) * T(0.300) * nppann
-            Pslo = T(0.015) * T(0.300) * nppann
-        end
-
-        Klitsum, Kfstsum, Kslosum = T(0.0), T(0.0), T(0.0)
-
-        for m in 1:12
-            # Moisture factor
-            mfact = T(0.25) + T(0.75) * moist[m]
-
-            # Litter decay
-            Klit[m] = T(10.0)^(-T(1.4553) + T(0.0014175) * aet[m])
-            Klitsum += Klit[m]
-
-            # Fast and slow soil pool decay
-            Kfst[m] = mfact * Rten * exp(T(308.56) * ((T(1.0) / T(56.02)) - (T(1.0) / (tsoil[m] + T(273.0) - T(227.13)))))
-            Kfstsum += Kfst[m]
-
-            Kslo[m] = mfact * Rten * exp(T(308.56) * ((T(1.0) / T(56.02)) - (T(1.0) / (tsoil[m] + T(273.0) - T(227.13)))))
-            Kslosum += Kslo[m]
-        end
-
-        meanKlit = Klitsum / T(12.0)
-        meanKsoil = Kfstsum / T(12.0)
-
-        Rmean = T(0.0)
-
-        for m in 1:12
-            Rlit[m] = Plit * (Klit[m] / Klitsum)
-            Rfst[m] = Pfst * (Kfst[m] / Kfstsum)
-            Rslo[m] = Pslo * (Kslo[m] / Kslosum)
-            Rtot[m] = Rlit[m] + Rfst[m] + Rslo[m]
-            Rmean += Rtot[m] / T(12.0)
-        end
-
-        for m in 1:12
-            isolit[m] = isoveg - T(0.75)
-            isofst[m] = isoveg - T(1.5)
-            isoslo[m] = isoveg - T(2.25)
-            isoR[m] = ((Plit / nppann) * isolit[m]) + ((Pfst / nppann) * isofst[m]) + ((Pslo / nppann) * isoslo[m])
-            isoflux[m] = (isoatm - isoR[m]) * Rtot[m]
-        end
-
+    isoatm = T(-8)
+    if nppann <= T(0)
         return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
     end
+
+    Plit = zero(T)
+    Pfst = zero(T)
+    Pslo = zero(T)
+
+    # PFT-dependent partitioning (Foley strategy)
+    if isa(pft, BIOME4.TropicalEvergreen) || isa(pft, BIOME4.TropicalDroughtDeciduous)
+        Plit = T(0.650) * nppann
+        Pfst = T(0.980) * T(0.350) * nppann
+        Pslo = T(0.020) * T(0.350) * nppann
+    else
+        Plit = T(0.700) * nppann
+        Pfst = T(0.985) * T(0.300) * nppann
+        Pslo = T(0.015) * T(0.300) * nppann
+    end
+
+    Klitsum = zero(T)
+    Kfstsum = zero(T)
+    Kslosum = zero(T)
+    Rten = one(T)
+
+    for m in 1:12
+        mfact = T(0.25) + T(0.75) * moist[m]
+
+        # Litter decay coefficient
+        kl = T(10)^(-T(1.4553) + T(0.0014175) * aet[m])
+        Rlit[m] = kl
+        Klitsum += kl
+
+        # Soil decay coefficient
+        ksoil = mfact * Rten *
+            exp(T(308.56) * ( (T(1)/T(56.02)) -
+                              (T(1)/(tsoil[m] + T(273) - T(227.13))) ))
+
+        Rfst[m] = ksoil
+        Rslo[m] = ksoil
+
+        Kfstsum += ksoil
+        Kslosum += ksoil
+    end
+
+    meanKlit  = Klitsum / T(12)
+    meanKsoil = Kfstsum / T(12)
+
+    Rmean = zero(T)
+
+    for m in 1:12
+        Rlit[m] = Plit * (Rlit[m] / Klitsum)
+        Rfst[m] = Pfst * (Rfst[m] / Kfstsum)
+        Rslo[m] = Pslo * (Rslo[m] / Kslosum)
+
+        Rtot[m] = Rlit[m] + Rfst[m] + Rslo[m]
+        Rmean  += Rtot[m] / T(12)
+    end
+
+    isolit = isoveg - T(0.75)
+    isofst = isoveg - T(1.5)
+    isoslo = isoveg - T(2.25)
+    for m in 1:12
+        isoR[m] = (Plit/nppann)*isolit +
+                  (Pfst/nppann)*isofst +
+                  (Pslo/nppann)*isoslo
+
+        isoflux[m] = (isoatm - isoR[m]) * Rtot[m]
+    end
+
+    return Rlit, Rfst, Rslo, Rtot, isoR, isoflux, Rmean, meanKlit, meanKsoil
 end

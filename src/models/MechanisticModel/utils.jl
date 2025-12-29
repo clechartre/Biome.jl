@@ -93,3 +93,43 @@ macro unpack_namedtuple_climate(arg)
     end |> esc
 end
 
+struct GrowthWorkspace{T}
+    lresp::Vector{T}
+    Rlit::Vector{T}
+    Rfst::Vector{T}
+    Rslo::Vector{T}
+    Rtot::Vector{T}
+    isoflux::Vector{T}
+    isoR::Vector{T}
+    maintresp::Vector{T}
+    mgrowresp::Vector{T}
+    mstemresp::Vector{T}
+    mrootresp::Vector{T}
+    mgpp::Vector{T}
+    CCratio::Vector{T}
+    isoresp::Vector{T}
+    c4gpp::Vector{T}
+    c4fpar::Vector{T}
+    c4parr::Vector{T}
+    c4apar::Vector{T}
+    c4ccratio::Vector{T}
+    c4leafresp::Vector{T}
+    monthlyfpar::Vector{T}
+    monthlyparr::Vector{T}
+    monthlyapar::Vector{T}
+    mlresp::Vector{T}
+    optgc::Vector{T}
+    doptgc::Vector{T}      # 365-element buffer for daily_interp!
+end
+
+function GrowthWorkspace(T::Type)
+    return GrowthWorkspace(
+        zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12),
+        zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12),
+        zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12),
+        zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12),
+        zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12), zeros(T,12),
+        zeros(T,365)
+    )
+end
+

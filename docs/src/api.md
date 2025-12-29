@@ -17,7 +17,7 @@ Biome.c4photo
 Biome.calcphi
 Biome.constraints
 Biome.competition
-Biome.daily_interp
+Biome.daily_interp!
 Biome.findnpp
 Biome.fire
 Biome.growth

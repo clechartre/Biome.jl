@@ -59,7 +59,7 @@ function run(
             if get_characteristic(pft, :phenological_type) >= 2
                 dphen = phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
             end
-
+            
             # Optimize NPP and LAI for this PFT
             pftlist.pft_list[iv], optlai, optnpp, pftstates[pft] = findnpp(
                 pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
@@ -98,6 +98,7 @@ Clean and complete a NamedTuple of input variables, replacing missing or invalid
 and filling in defaults for essential variables if they are missing.
 """
 function unpack_namedtuple_with_defaults(nt::NamedTuple)
+    # Determine numeric type based on temp if present
     if haskey(nt, :temp)
         T = nonmissingtype(eltype(nt.temp))
     else 
@@ -106,44 +107,134 @@ function unpack_namedtuple_with_defaults(nt::NamedTuple)
 
     missval = T(-9999.0)
 
-    defaults = Dict(
-        :whc  => fill(T(-9999.0), 6),
-        :ksat => fill(T(-9999.0), 6),
-        :temp => fill(T(-9999.0), 12),
-        :prec => fill(T(-9999.0), 12),
-        :clt  => fill(T(-9999.0), 12),
-        :co2  => T(378.0),
-        :lat  => T(0.0),
-        :lon  => T(0.0),
-        :p    => T(101.3),
-        :dz   => fill(T(0.0), 6)
-    )
-
+    # Clean all existing entries from nt into `cleaned`
     cleaned = Dict{Symbol, Any}()
+    sizehint!(cleaned, length(nt) + 4)
 
     for (k, v) in pairs(nt)
-        cleaned[k] = if v isa AbstractArray
-            Array{T}(coalesce.(v, missval))
+        if v isa AbstractArray
+            # Clean array elementwise without using coalesce/broadcast (avoids extra temporaries)
+            arr = v
+            out = Vector{T}(undef, length(arr))
+            @inbounds @simd for i in eachindex(arr)
+                x = arr[i]
+                if ismissing(x)
+                    out[i] = missval
+                else
+                    out[i] = T(x)
+                end
+            end
+            cleaned[k] = out
         elseif ismissing(v)
-            missval
+            cleaned[k] = missval
         else
-            T(v)
+            cleaned[k] = T(v)
         end
     end
 
-    for (k, default) in defaults
-        if !haskey(cleaned, k)
-            @warn "Missing key '$k'. Using default: $default"
-            cleaned[k] = default
-        elseif cleaned[k] isa AbstractArray && any(ismissing, cleaned[k])
-            @warn "Key '$k' contains missing values. Using default: $default"
-            cleaned[k] = default
-        elseif cleaned[k] === missval
-            @warn "Key '$k' has missing scalar. Using default: $default"
-            cleaned[k] = default
-        end
+    @inline _default_array(::Type{T}, len::Int, value::T) where {T} = fill(value, len)
+
+    # Apply defaults for essential fields if missing or invalid
+    # :whc  => length 6, default missval
+    if !haskey(cleaned, :whc)
+        @warn "Missing key 'whc'. Using default."
+        cleaned[:whc] = _default_array(T, 6, missval)
+
+    elseif cleaned[:whc] isa AbstractArray && any(ismissing, cleaned[:whc])
+        @warn "Key 'whc' contains missing values. Using default."
+        cleaned[:whc] = _default_array(T, 6, missval)
+
+    elseif cleaned[:whc] === missval
+        @warn "Key 'whc' has missing scalar. Using default."
+        cleaned[:whc] = _default_array(T, 6, missval)
+
     end
 
+    # :ksat => length 6, default missval
+    if !haskey(cleaned, :ksat)
+        @warn "Missing key 'ksat'. Using default."
+        cleaned[:ksat] = _default_array(T, 6, missval)
+
+    elseif cleaned[:ksat] isa AbstractArray && any(ismissing, cleaned[:ksat])
+        @warn "Key 'ksat' contains missing values. Using default."
+        cleaned[:ksat] = _default_array(T, 6, missval)
+
+    elseif cleaned[:ksat] === missval
+        @warn "Key 'ksat' has missing scalar. Using default."
+        cleaned[:ksat] = _default_array(T, 6, missval)
+
+    end
+
+    # :temp => length 12, default missval
+    if !haskey(cleaned, :temp)
+        @warn "Missing key 'temp'. Using default."
+        cleaned[:temp] = _default_array(T, 12, missval)
+    elseif cleaned[:temp] isa AbstractArray && any(ismissing, cleaned[:temp])
+        @warn "Key 'temp' contains missing values. Using default."
+        cleaned[:temp] = _default_array(T, 12, missval)
+    elseif cleaned[:temp] === missval
+        @warn "Key 'temp' has missing scalar. Using default."
+        cleaned[:temp] = _default_array(T, 12, missval)
+    end
+
+    # :prec => length 12, default missval
+    if !haskey(cleaned, :prec)
+        @warn "Missing key 'prec'. Using default."
+        cleaned[:prec] = _default_array(T, 12, missval)
+    elseif cleaned[:prec] isa AbstractArray && any(ismissing, cleaned[:prec])
+        @warn "Key 'prec' contains missing values. Using default."
+        cleaned[:prec] = _default_array(T, 12, missval)
+    elseif cleaned[:prec] === missval
+        @warn "Key 'prec' has missing scalar. Using default."
+        cleaned[:prec] = _default_array(T, 12, missval)
+    end
+
+    # :clt => length 12, default missval
+    if !haskey(cleaned, :clt)
+        @warn "Missing key 'clt'. Using default."
+        cleaned[:clt] = _default_array(T, 12, missval)
+    elseif cleaned[:clt] isa AbstractArray && any(ismissing, cleaned[:clt])
+        @warn "Key 'clt' contains missing values. Using default."
+        cleaned[:clt] = _default_array(T, 12, missval)
+    elseif cleaned[:clt] === missval
+        @warn "Key 'clt' has missing scalar. Using default."
+        cleaned[:clt] = _default_array(T, 12, missval)
+    end
+
+    # Scalar defaults: co2, lat, lon, p
+    if !haskey(cleaned, :co2) || cleaned[:co2] === missval
+        @warn "Missing or invalid key 'co2'. Using default 378.0."
+        cleaned[:co2] = T(378.0)
+    end
+
+    if !haskey(cleaned, :lat) || cleaned[:lat] === missval
+        @warn "Missing or invalid key 'lat'. Using default 0.0."
+        cleaned[:lat] = T(0.0)
+    end
+
+    if !haskey(cleaned, :lon) || cleaned[:lon] === missval
+        @warn "Missing or invalid key 'lon'. Using default 0.0."
+        cleaned[:lon] = T(0.0)
+    end
+
+    if !haskey(cleaned, :p) || cleaned[:p] === missval
+        @warn "Missing or invalid key 'p'. Using default 101.3."
+        cleaned[:p] = T(101.3)
+    end
+
+    # :dz => length 6, default 0.0
+    if !haskey(cleaned, :dz)
+        @warn "Missing key 'dz'. Using default 0.0."
+        cleaned[:dz] = _default_array(T, 6, T(0.0))
+    elseif cleaned[:dz] isa AbstractArray && any(ismissing, cleaned[:dz])
+        @warn "Key 'dz' contains missing values. Using default 0.0."
+        cleaned[:dz] = _default_array(T, 6, T(0.0))
+    elseif cleaned[:dz] === missval
+        @warn "Key 'dz' has missing scalar. Using default 0.0."
+        cleaned[:dz] = _default_array(T, 6, T(0.0))
+    end
+
+    # Return as NamedTuple with all keys from `cleaned`
     return (; cleaned...)
 end
 
@@ -175,15 +266,19 @@ function initialize_environmental_variables(input_variables::NamedTuple)
 
     # Derived climate means and interpolations
     mtemp = mean(temp)
-    dtemp = daily_interp(temp)
     tsoil = soiltemp(temp)
-
-    mprec = mean(prec)
-    tprec = sum(prec)
-    dprecin = daily_interp(prec)
-
+    mprec   = mean(prec)
+    tprec   = sum(prec)
     mclou = mean(clt)
-    dclou = daily_interp(clt)
+
+    dtemp   = similar(temp, T, 365)
+    dprecin = similar(temp, T, 365)
+    dclou   = similar(temp, T, 365)
+
+    daily_interp!(dtemp, temp)
+    daily_interp!(dprecin, prec)
+    daily_interp!(dclou, clt)
+
 
     missval = T(-9999.0)
     tcm = isempty(temp) ? missval : minimum(temp)
@@ -198,10 +293,12 @@ function initialize_environmental_variables(input_variables::NamedTuple)
 
     # Soil calculations
     k = zeros(T, 12)
-    k[1] = sum(ksat[1:3] .* dz[1:3]) / sum(dz[1:3])
-    k[2] = sum(ksat[4:6] .* dz[4:6]) / sum(dz[4:6])
-    k[5] = sum(whc[1:3] .* dz[1:3])
-    k[6] = sum(whc[4:6] .* dz[4:6])
+    @inbounds begin
+        k[1] = sum(ksat[1:3] .* dz[1:3]) / sum(dz[1:3])
+        k[2] = sum(ksat[4:6] .* dz[4:6]) / sum(dz[4:6])
+        k[5] = sum(whc[1:3] .* dz[1:3])
+        k[6] = sum(whc[4:6] .* dz[4:6])
+    end
 
     # Evergreen phenology by default
     dphen = ones(T, 365, 2)
@@ -228,13 +325,16 @@ including default and placeholder types.
 
 Returns a dictionary of PFT states and the number of PFTs.
 """
-function initialize_pftstates(pftlist::AbstractPFTList, mclou::T, mprec::T, mtemp::T)::Tuple{ Dict{AbstractPFT, PFTState} , Int} where {T<:Real}
+function initialize_pftstates(
+    pftlist::AbstractPFTList, mclou::T, mprec::T, mtemp::T
+)::Tuple{Dict{AbstractPFT, PFTState}, Int} where {T<:Real}
     numofpfts = length(pftlist.pft_list)
 
     # Create the Dict that holds the PFT dynamic states
     # Specify the abstract types so that we match the rest of the data
     PFTStateobj() = PFTState(PFTCharacteristics{T, Int}())
     pftstates = Dict{AbstractPFT,PFTState}()
+    sizehint!(pftstates, numofpfts + 2)
 
     for pft in pftlist.pft_list
         pftstates[pft] = PFTState(pft)
@@ -274,10 +374,12 @@ function create_output_vector(
 
     # Collect NPP values for all PFTs
     nppindex = Vector{T}(undef, numofpfts + 1)
-    for (i, pft) in enumerate(pftlist.pft_list)
-        nppindex[i] = pftstates[pft].present ? pftstates[pft].npp : T(0.0)
+    zeroT = zero(T)
+    @inbounds for (i, pft) in enumerate(pftlist.pft_list)
+        state = pftstates[pft]
+        nppindex[i] = state.present ? state.npp : zeroT
     end
-    nppindex[end] = T(0.0)  # Last one as zero if not used (padding)
+    nppindex[end] = zeroT  # Last one as zero if not used (padding)
 
     return (
         biome = biomeindex,
@@ -287,4 +389,3 @@ function create_output_vector(
         lon = lon
     )
 end
-

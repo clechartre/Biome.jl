@@ -11,6 +11,8 @@ relationships.
 
 module Biome
 
+__precompile__(false)
+
 # Core abstract types
 include("pfts.jl")
 include("biomes.jl")
@@ -28,6 +30,7 @@ include("models/MechanisticModel/biomes.jl")
 include("models/MechanisticModel/utils.jl")
 include("models/MechanisticModel/climdata.jl")
 include("models/MechanisticModel/constraints.jl")
+include("models/MechanisticModel/growth.jl")
 include("models/MechanisticModel/findnpp.jl")
 include("models/MechanisticModel/phenology.jl")
 include("models/MechanisticModel/ppeett.jl")
@@ -50,7 +53,7 @@ include("models/MechanisticModel/growth_subroutines/respiration.jl")
 # Main BIOME4 model (after all dependencies)
 include("models/MechanisticModel/mechanisticmodel.jl")
 include("models/MechanisticModel/BIOME4/pfts.jl")
-using .BIOME4
+import .BIOME4
 
 # Climatic envelope models
 include("models/ClimaticEnvelope/koppenbiomes.jl")
@@ -80,6 +83,9 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        LN, Y0, M10, P1, STEMCARBON,
        E0, TREF, TEMP0,
        A, ES, A1, B3, B,
+
+       # Growth subroutines
+       GrowthWorkspace,
        
        # Original PFT types and functions
         PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment_mv,
@@ -99,13 +105,11 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
         C3Grassland, C4Grassland, Desert,
 
        # Functions
-       get_biome_characteristic, add_constraint!, climdata, competition, constraints, daily_interp, findnpp,
+       get_biome_characteristic, add_constraint!, climdata, competition, constraints, daily_interp!, findnpp,
        phenology, ppeett, snow, soiltemp, safe_exp, safe_round_to_int, set_characteristic!, 
        c4photo, calcphi, fire, hetresp, hydrology, isotope, photosynthesis, respiration, table, 
        compare_c3_c4_npp, determine_c4_and_optratio, initialize_arrays, unpack_namedtuple_climate,
-       
-       # BIOME4 assign_biome function
-       assign_biome,
+       growth, assign_biome,
        
        # Main functions
        run,
