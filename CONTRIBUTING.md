@@ -1,8 +1,8 @@
 # Contributing to Biome.jl
 
-🌱 **Thank you for your interest in contributing to Biome.jl!**
+**Thank you for your interest in contributing to Biome.jl!**
 
-Biome.jl is a community-driven project for climate-driven vegetation modeling. We welcome all kinds of contributions, from bug reports and documentation improvements to new features and Plant Functional Type (PFT) definitions.
+We welcome all kinds of contributions, from bug reports and documentation improvements to new features and Plant Functional Type (PFT) definitions.
 
 ## Table of Contents
 
@@ -19,35 +19,34 @@ Biome.jl is a community-driven project for climate-driven vegetation modeling. W
 
 ## Ways to Contribute
 
-### 🐛 Bug Reports
+### Bug Reports
 - Report bugs and unexpected behavior
 - Provide reproducible examples
 - Help improve error messages and diagnostics
 
-### 📚 Documentation  
+### Documentation  
 - Fix typos and improve clarity
 - Add examples and tutorials
 - Improve API documentation
-- Translate documentation
 
-### 🧪 Testing
+### Testing
 - Add test cases for edge conditions
 - Improve test coverage
 - Performance benchmarking
 - Cross-platform testing
 
-### 🌿 Plant Functional Types (PFTs)
+### Plant Functional Types (PFTs)
 - Add new PFT definitions for specific regions or ecosystems
 - Improve existing PFT parameterizations
 - Validate PFT performance against observations
 
-### 🔬 New Features
-- Implement new biome classification schemes  
+### New Features
+- Implement new biome classification schemes
+- Improve or add new physiological modules (CO2 response, nutrient cycling)
 - Add climate data processing utilities
-- Improve visualization capabilities
 - Enhance performance and scalability
 
-### 🎯 Model Validation
+### Model Validation
 - Compare model outputs with observations
 - Improve model accuracy and reliability
 - Add benchmarking datasets
@@ -64,7 +63,7 @@ Biome.jl is a community-driven project for climate-driven vegetation modeling. W
 
 1. **Fork and clone the repository**:
    ```bash
-   git clone https://github.com/YOUR-USERNAME/Biome.jl.git
+   git clone https://github.com/clechartre/Biome.jl.git
    cd Biome.jl
    ```
 
@@ -177,23 +176,17 @@ Plant Functional Types are a key component of Biome.jl. We encourage contributio
 """
 Mediterranean Shrubland PFT
 
-Based on Pignatti et al. (2005) and field observations from...
+Based on XXX et al. (XXXX) and field observations from...
 References:
-- Pignatti, S. et al. (2005). ...
 """
 struct MediterraneanShrubPFT <: AbstractPFT
-    # Climate constraints
-    gdd5_range::Tuple{Float64, Float64}      # Growing degree days
-    tcm_range::Tuple{Float64, Float64}       # Coldest month temperature  
-    gsp_range::Tuple{Float64, Float64}       # Growing season precipitation
-    # Add more parameters as needed
-end
 
 # Default constructor with literature-based parameters
 MediterraneanShrubPFT() = MediterraneanShrubPFT(
-    (800.0, 2500.0),    # GDD5 range
-    (0.0, 18.0),        # TCM range  
-    (200.0, 600.0)      # GSP range
+   constraints = (
+    gdd5 = [800.0, 2500.0],    # GDD5 range
+    tcm = [0.0, 18.0],        # TCM range  
+    gsp = [200.0, 600.0]      # Some new constraint: GSP range
 )
 ```
 
@@ -333,13 +326,6 @@ We are committed to providing a welcoming and inclusive environment:
 - **Be patient**: Remember that contributors have varying experience levels
 - **Be collaborative**: We're all working toward the same goals
 
-### Communication
-
-- **Use public forums**: Prefer GitHub issues/discussions over private messages
-- **Ask for help**: Don't hesitate to ask questions or request guidance
-- **Share knowledge**: Help others learn and grow
-- **Give credit**: Acknowledge contributions and sources
-
 ### Getting Help
 
 - **GitHub Issues**: For bug reports and feature requests
@@ -363,7 +349,5 @@ Contributors are recognized in:
 - [Plant Functional Type Concepts](https://doi.org/10.1111/j.1365-2486.2007.01364.x)
 
 ---
-
-**Happy contributing!** 🌱
 
 Every contribution, no matter how small, helps make Biome.jl better for the entire community. Thank you for taking the time to contribute!
