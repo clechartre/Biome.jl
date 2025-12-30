@@ -1,9 +1,0 @@
-# Project specific # 
-data/
-build/
-
-# Byte-compiled
-__pycache__/
-
-# Distribution / packaging
-*.egg-info/
