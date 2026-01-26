@@ -33,9 +33,9 @@ struct C4Grassland <: AbstractBiome
     C4Grassland() = new(7)
 end
 
-struct Desert <: AbstractBiome
+struct HotandColdDesert <: AbstractBiome
     value::Int
-    Desert() = new(21)
+    HotandColdDesert() = new(8)
 end
  
 function get_biome_characteristic(biome::AbstractBiome, prop::Symbol)

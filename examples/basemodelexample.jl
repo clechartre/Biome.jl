@@ -13,20 +13,22 @@ ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
 # BasePTS
-PFTList = PFTClassification([
-        EvergreenPFT(),
-        DeciduousPFT(),
-        TundraPFT(),
-        GrassPFT(),
-    ]
-)
-setup = ModelSetup(BaseModel;
+pftlist = PFTClassification([
+    NeedleleafEvergreenPFT(),
+    BroadleafEvergreenPFT(),
+    NeedleleafDeciduousPFT(),
+    BroadleafDeciduousPFT(),
+    C3GrassPFT(),
+    C4GrassPFT()
+])
+
+setup = ModelSetup(BaseModel();
                    temp=temp_raster,
                    prec=prec_raster,
-                   sun= clt_raster,
+                   clt= clt_raster,
                    ksat=ksat_raster,
                    whc= whc_raster,
                    co2=373.8,
-                   PFTList = PFTList)
+                   pftlist = pftlist)
 
 run!(setup; coordstring="alldata", outfile="output_BaseModel.nc")

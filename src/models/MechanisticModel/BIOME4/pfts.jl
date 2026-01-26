@@ -1,6 +1,6 @@
 module BIOME4
 using ..Biome: AbstractPFT, PFTCharacteristics, PFTClassification,
-  AbstractBiome, AbstractPFTList, PFTState, Default, None, Desert, get_characteristic
+  AbstractBiome, AbstractPFTList, PFTState, Default, None, get_characteristic
 
 abstract type AbstractBIOME4PFT <: AbstractPFT end
 
@@ -742,10 +742,10 @@ struct TemperateGrassland <: AbstractBiome
     TemperateGrassland() = new(20)
 end
 
-# struct Desert <: AbstractBiome
-#     value::Int
-#     Desert() = new(21)
-# end
+struct Desert <: AbstractBiome
+    value::Int
+    Desert() = new(21)
+end
 
 struct SteppeTundra <: AbstractBiome
     value::Int
