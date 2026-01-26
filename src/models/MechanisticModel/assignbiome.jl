@@ -101,7 +101,7 @@ function assign_biome(
     if pftstates[gdom].npp > 400
         return C3Grassland()
     else
-        return Desert()
+        return HotandColdDesert()
     end
 end
 
@@ -122,7 +122,7 @@ function assign_biome(
     if pftstates[gdom].npp > 400
         return C4Grassland()
     else
-        return Desert()
+        return HotandColdDesert()
     end
 end
 
@@ -138,6 +138,6 @@ function assign_biome(
     optpft::None;
     kwargs...
 )::AbstractBiome
-    return Desert()
+    return HotandColdDesert()
 end
 

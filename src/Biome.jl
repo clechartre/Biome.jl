@@ -102,7 +102,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
         # Biomes
         NeedleleafEvergreenForest, BroadleafEvergreenForest,
         MixedForest, NeedleleafDeciduousForest, BroadleafDeciduousForest,
-        C3Grassland, C4Grassland, Desert,
+        C3Grassland, C4Grassland, HotandColdDesert,
 
        # Functions
        get_biome_characteristic, add_constraint!, climdata, competition, constraints, daily_interp!, findnpp,

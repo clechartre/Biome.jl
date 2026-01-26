@@ -170,8 +170,8 @@ function _execute!(
     println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
     println("Bounding box counts: cntx=$cntx, cnty=$cnty")
 
-    lon = lon_full[strx:endx]
-    lat = lat_full[stry:endy]
+    lon = vec(Array(lon_full[strx:endx]))
+    lat = vec(Array(lat_full[stry:endy]))
 
     if isfile(outfile)
         println("File $outfile already exists. Resuming from last processed row.")
@@ -283,7 +283,6 @@ function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty, numo
 
     # Create rasters for each variable
     rasters = []
-
     for (var_name, var_info) in schema
         if var_info.dims == ("lon", "lat")
             raster = Raster(
@@ -414,6 +413,17 @@ function get_pft_list(m::Union{BIOME4Model, BIOMEDominanceModel})
     return BIOME4.PFTClassification()
 end
 
+function get_pft_list(m::Union{BaseModel})
+    return PFTClassification([
+                NeedleleafEvergreenPFT(),
+                BroadleafEvergreenPFT(),
+                NeedleleafDeciduousPFT(),
+                BroadleafDeciduousPFT(),
+                C3GrassPFT(),
+                C4GrassPFT()
+            ])
+end
+
 function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel})
     return PFTClassification()
 end
@@ -450,6 +460,7 @@ process_cell_output(model, x, y, output, output_stack)
 Write model output to the RasterStack based on model type.
 """
 function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output::NamedTuple, output_stack::RasterStack; numofpfts)
+
     output_stack[:biome][x, y] = output.biome
     output_stack[:optpft][x, y] = output.optpft
     output_stack[:npp][x, y, :] = output.npp
@@ -566,9 +577,9 @@ function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector
     lon_var = defVar(dataset, "lon", T, ("lon",), attrib=Dict("units" => "degrees_east"))
     lat_var = defVar(dataset, "lat", T, ("lat",), attrib=Dict("units" => "degrees_north"))
 
-    # Fill coordinate variables
-    lon_var[:] = lon
-    lat_var[:] = lat
+    # Fill coordinate variables (convert to plain arrays if needed)
+    lon_var[:] = Array(lon)
+    lat_var[:] = Array(lat)
 
     # Define model-specific variables
     schema = get_output_schema(model)

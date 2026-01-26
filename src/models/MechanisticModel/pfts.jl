@@ -88,9 +88,9 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             respfact                = 2.0,
             allocfact               = 1.2,
             constraints = (
-                tcm   = [-32.5, +Inf],
+                tcm   = [-45, +Inf],
                 tmin   = [-Inf, +Inf],
-                gdd5   = [-Inf, +Inf],
+                gdd5   = [750, 6000],
                 gdd0  = [-Inf, +Inf],
                 twm   = [-Inf, +Inf],
                 maxdepth  = [-Inf, +Inf],
@@ -124,8 +124,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             respfact                = 1.1,
             allocfact               = 1.1,
             constraints = (
-                tcm   = [-Inf, +Inf],
-                tmin   = [-8.0, +Inf],
+                tcm   = [-5, +Inf],
+                tmin   = [-25.0, +Inf],
                 gdd5   = [1200, +Inf],
                 gdd0  = [-Inf, +Inf],
                 twm   = [10.0, +Inf],
@@ -166,9 +166,9 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             allocfact               = 1.2,
             grass                   = false,
             constraints = (
-                tcm  = [-25.0, +Inf],
-                tmin  = [-Inf, -10.0],
-                gdd5  = [900.0, +Inf],
+                tcm  = [-Inf, +Inf],
+                tmin  = [-Inf, -15.0],
+                gdd5  = [300.0, 1600],
                 gdd0 = [-Inf, +Inf],
                 twm  = [-Inf, +Inf],
                 maxdepth = [-Inf, +Inf],
@@ -205,7 +205,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
         constraints = (
             tcm   = [-Inf, +Inf],
             tmin   = [-Inf, +Inf],
-            gdd5   = [-Inf, +Inf],
+            gdd5   = [1000, 8000],
             gdd0  = [-Inf,+Inf],
             twm   = [-Inf,+Inf],
             maxdepth  = [-Inf,+Inf],
@@ -334,7 +334,7 @@ function BroadleafDeciduousPFT(; kwargs...)
     BroadleafDeciduousPFT(c)
 end
 
-@kwdef mutable struct NeedleleafDeciduousPFT{T<:Real,U<:Int} <: AbstractBroadleafDeciduousPFT
+@kwdef mutable struct NeedleleafDeciduousPFT{T<:Real,U<:Int} <: AbstractNeedleleafDeciduousPFT
     characteristics :: PFTCharacteristics{T,U}
 end
 
@@ -414,7 +414,7 @@ end
 
 function PFTClassification{T,U}() where {T<:Real,U<:Int}
     PFTClassification{T,U}([
-        NeedleafEvergreenPFT{T,U}(),
+        NeedleleafEvergreenPFT{T,U}(),
         BroadleafEvergreenPFT{T,U}(),
         NeedleleafDeciduousPFT{T,U}(),
         BroadleafDeciduousPFT{T,U}(),
