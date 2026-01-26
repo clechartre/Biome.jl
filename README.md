@@ -11,6 +11,8 @@
 
 **Biome.jl** is a Julia package for simulating climate-driven biome classification and vegetation patterns. It provides implementations of both mechanistic models (including the well-established BIOME4 model) and empirical climate envelope approaches for predicting global vegetation distributions.
 
+If you are looking for an R package with the same functionalities, please check out our [R wrapper](https://github.com/clechartre/biomeR.git)
+
 ## What is Biome.jl?
 
 This package offers:
@@ -39,7 +41,7 @@ To run Biome.jl using Julia, you need to set up the required environment by inst
 2. **Clone the Repository**:  
    Clone this repository to your local machine:
    ```bash
-   git clone https://github.com/yourusername/Biome.jl.git
+   git clone https://github.com/clechartre/Biome.jl.git
    cd Biome.jl
    ```
 
