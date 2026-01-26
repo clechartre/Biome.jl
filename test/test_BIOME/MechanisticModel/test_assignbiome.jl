@@ -7,9 +7,8 @@ using Biome.BIOME4: TropicalEvergreenForest, TropicalSemiDeciduousForest, Tropic
                      TropicalSavanna, TropicalXerophyticShrubland, TemperateXerophyticShrubland, 
                      TemperateSclerophyllWoodland, TemperateBroadleavedSavanna, OpenConiferWoodland,
                      BorealParkland, TropicalGrassland, TemperateGrassland, SteppeTundra, ShrubTundra,
-                     DwarfShrubTundra, ProstateShrubTundra, CushionForbsLichenMoss, Barren, LandIce
-using Biome: AbstractPFT, PFTState, AbstractBiome, Default, None, Desert, get_characteristic
-using Biome: AbstractPFT, PFTState, AbstractBiome, Default, None, Desert, get_characteristic
+                     DwarfShrubTundra, ProstateShrubTundra, CushionForbsLichenMoss, Barren, LandIce, Desert
+using Biome: AbstractPFT, PFTState, AbstractBiome, Default, None, get_characteristic
 
 @testset "New Assign Biome Tests" begin
     
