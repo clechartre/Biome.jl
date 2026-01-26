@@ -7,7 +7,7 @@ abstract type MechanisticModel <: BiomeModel end
 # Specific Types
 struct KoppenModel <: ClimateModel end
 struct ThornthwaiteModel <: ClimateModel end
-struct TrollPfaffenModel <: ClimateModel end
+struct TrollPaffenModel <: ClimateModel end
 struct WissmannModel <: ClimateModel end
 
 # Define child types

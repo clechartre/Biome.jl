@@ -58,7 +58,7 @@ import .BIOME4
 # Climatic envelope models
 include("models/ClimaticEnvelope/koppenbiomes.jl")
 include("models/ClimaticEnvelope/thornthwaitebiomes.jl")
-include("models/ClimaticEnvelope/trollpfaffenbiomes.jl")
+include("models/ClimaticEnvelope/trollpaffenbiomes.jl")
 include("models/ClimaticEnvelope/wissmannbiomes.jl")
 
 include("biomedriver.jl")
@@ -72,7 +72,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        # Model Types
        ClimateModel, MechanisticModel, 
        BaseModel, BiomeModel, BIOMEDominanceModel, WissmannModel, BIOME4Model, 
-       ThornthwaiteModel, KoppenModel, TrollPfaffenModel,
+       ThornthwaiteModel, KoppenModel, TrollPaffenModel,
        BIOME4,
        
        # Constants

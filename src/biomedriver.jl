@@ -1,6 +1,6 @@
 module BiomeDriver
 
-using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel,
+using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPaffenModel,
         BIOME4, ClimateModel, MechanisticModel, GrowthWorkspace,
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
         AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
@@ -424,7 +424,7 @@ function get_pft_list(m::Union{BaseModel})
             ])
 end
 
-function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel})
+function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPaffenModel})
     return PFTClassification()
 end
 
@@ -449,7 +449,7 @@ function get_primary_variable(model::ThornthwaiteModel)
     return :temperature_zone
 end
 
-function get_primary_variable(model::TrollPfaffenModel)
+function get_primary_variable(model::TrollPaffenModel)
     return :troll_zone
 end
 
@@ -479,7 +479,7 @@ function process_cell_output(model::ThornthwaiteModel, x, y, output, output_stac
     output_stack[:moisture_zone][x, y] = output.moisture_zone
 end
 
-function process_cell_output(model::TrollPfaffenModel, x, y, output, output_stack::RasterStack; numofpfts)
+function process_cell_output(model::TrollPaffenModel, x, y, output, output_stack::RasterStack; numofpfts)
     output_stack[:troll_zone][x, y] = output.troll_zone
 end
 
@@ -535,9 +535,9 @@ function get_output_schema(model::ThornthwaiteModel; int_type::Type{<:Integer} =
     )
 end
 
-function get_output_schema(model::TrollPfaffenModel; int_type::Type{<:Integer} = Int)
+function get_output_schema(model::TrollPaffenModel; int_type::Type{<:Integer} = Int)
     return Dict(
-    "troll_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Troll-Pfaffen climate zone"))
+    "troll_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Troll-Paffen climate zone"))
     )
 end
 
@@ -554,7 +554,7 @@ function get_required_dimensions(model::Union{BIOME4Model, BIOMEDominanceModel, 
     )
 end
 
-function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPfaffenModel}, cntx, cnty; kwargs...)
+function get_required_dimensions(model::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPaffenModel}, cntx, cnty; kwargs...)
     return Dict(
         "lon" => cntx,
         "lat" => cnty
