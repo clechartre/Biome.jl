@@ -2,7 +2,7 @@ using Rasters, Plots, Colors, NCDatasets
 
 include("../../src/abstractmodel.jl")
 
-function plot_biomes(m::TrollPfaffenModel, filename::String, output_file::String)
+function plot_biomes(m::TrollfaffenModel, filename::String, output_file::String)
     # Define Troll-Paffen biome names and their corresponding indices
     biome_names = [
         "Polar ice-deserts", "Polar frost-debris belt", "Tundra", 
@@ -105,4 +105,4 @@ end
 # Example usage
 filename = ""
 output_file = ""
-plot_biomes(TrollPfaffenModel(), filename, output_file)
+plot_biomes(TrollPaffenModel(), filename, output_file)
