@@ -29,7 +29,7 @@ function assign_biome(
 )::AbstractBiome
     # If the Difference in NPP between the dominant and subdominant PFT is very small 
     if subpft isa AbstractDeciduousPFT &&
-        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.10
+        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.07
         return MixedForest()
     else
         return BroadleafEvergreenForest()
@@ -65,7 +65,7 @@ function assign_biome(
     kwargs...
 )::AbstractBiome
     if subpft isa AbstractEvergreenPFT &&
-        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.10
+        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.07
         return MixedForest()
     else
         return BroadleafDeciduousForest()
