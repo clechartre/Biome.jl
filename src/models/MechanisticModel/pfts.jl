@@ -445,18 +445,52 @@ function get_characteristic(pft::AbstractPFT, prop::Symbol)
     end
 end
 
-function dominance_environment_mv(pft::AbstractPFT, clt::Real, prec::Real, temp::Real)
-    mean_tuple = get_characteristic(pft, :mean_val)
-    sd_tuple   = get_characteristic(pft, :sd_val)
+@inline function dist_to_interval(x::T, lo::T, hi::T) where {T<:Real}
+    if x < lo
+        return lo - x
+    elseif x > hi
+        return x - hi
+    else
+        return 0.0
+    end
+end
 
-    μ = [mean_tuple.clt, mean_tuple.prec, mean_tuple.temp]
-    σ = [sd_tuple.clt, sd_tuple.prec, sd_tuple.temp]
-    point = [clt, prec, temp]
+function choose_softness(var::Symbol, lo::T, hi::T,
+    fallback = (tcm=T(4.0), tmin=T(4.0), gdd5=T(800.0), gdd0=T(800.0), twm=T(2.5), maxdepth=T(7.5)),
+    mins     = (tcm=T(1.0), tmin=T(1.0), gdd5=T(300.0), gdd0=T(300.0), twm=T(1.0), maxdepth=T(2.0)),
+    maxs     = (tcm=T(10.0), tmin=T(10.0), gdd5=T(2000.0), gdd0=T(2000.0), twm=T(8.0), maxdepth=T(20.0)),
+    frac::T = T(0.25)
+) where {T<:Real}
+    if isfinite(lo) && isfinite(hi) && hi > lo
+        s = frac * (hi - lo)
+        return clamp(s, mins[var], maxs[var])
+    else
+        return fallback[var]
+    end
+end
 
-    d² = sum(((point .- μ) ./ σ).^2)
-    value = exp(-0.5 * d²)
+function dominance_environment_mv(pft::AbstractPFT;
+    tcm::T, tmin::T, gdd5::T, gdd0::T, twm::T, maxdepth::T,
+    minval::Union{T,Nothing} = nothing) where {T<:Real}
+    cons = get_characteristic(pft, :constraints)
+    
+    minval = isnothing(minval) ? T(0.01) : minval
+    d2 = T(0.0)
+    for (var, x) in (
+        (:tcm, tcm), (:tmin, tmin), (:gdd5, gdd5), (:gdd0, gdd0),
+        (:twm, twm), (:maxdepth, maxdepth)
+    )
+        lo = T(cons[var][1])
+        hi = T(cons[var][2])
 
-    return max(value, 0.01)  # Ensure a small positive minimum
+        d  = dist_to_interval(x, lo, hi)
+        s  = choose_softness(var, lo, hi)
+
+        d2 += (d / s)^2
+    end
+
+    value = exp(-T(0.5) * d2)
+    return max(value, T(minval))
 end
 
 """
@@ -466,6 +500,9 @@ Recursively convert all numeric fields and nested structs within `x` to use
 the new numeric type `Tnew`, preserving structure and field names.
 If the structure is parametric (e.g. `PFTClassification{T,U}`), it returns
 a new instance of the same type but with `{Tnew, Unew}`.
+
+This is useful in initialization to make sure that the PFTList has the same 
+datatype as the input Rasters
 """
 function change_type(x, Tnew::Type; Unew::Type=Int)
     if x isa Number

@@ -7,8 +7,6 @@ Returns NeedleleafEvergreenForest.
 """
 function assign_biome(
     optpft::AbstractNeedleleafEvergreenPFT;
-    subpft::AbstractPFT,
-    pftstates::Dict{AbstractPFT, PFTState},
     kwargs...
 )::AbstractBiome
     return NeedleleafEvergreenForest()
@@ -82,7 +80,6 @@ Returns C3Grassland.
 function assign_biome(
     optpft::AbstractC3GrassPFT;
     pftstates::Dict{AbstractPFT, PFTState},
-    wdom::AbstractPFT,
     gdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
@@ -103,7 +100,6 @@ Returns C4Grassland.
 function assign_biome(
     optpft::Union{AbstractC4GrassPFT, Default};
     pftstates::Dict{AbstractPFT, PFTState},
-    wdom::AbstractPFT,
     gdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
