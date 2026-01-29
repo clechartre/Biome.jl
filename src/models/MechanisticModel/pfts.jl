@@ -43,12 +43,6 @@ abstract type AbstractC4GrassPFT   <: AbstractGrassPFT end
         maxdepth  = [-Inf, +Inf],
         swb   = [-Inf, +Inf]
     )
-    mean_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (
-        clt   = 30.6, prec  = 72.0, temp  = 24.5
-    )
-    sd_val::NamedTuple{(:clt, :prec, :temp),NTuple{3,T}} = (
-        clt   = 9.7, prec  = 39.0, temp  = 3.2
-    )
     dominance_factor::U = 5
     minimum_lai::T = 0.0
 end
@@ -96,16 +90,6 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [400.0, +Inf]
             ),
-            mean_val = (
-                clt  = 37.6,
-                prec = 54.5,
-                temp = 5.3,
-            ),
-            sd_val = (
-                clt  = 9.1,
-                prec = 25.0,
-                temp = 6.0,
-            ),
             dominance_factor = 3
         ),
     AbstractBroadleafEvergreenPFT => (
@@ -124,7 +108,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             respfact                = 1.1,
             allocfact               = 1.1,
             constraints = (
-                tcm   = [-5, +Inf],
+                tcm   = [-32.5, +Inf],
                 tmin   = [-25.0, +Inf],
                 gdd5   = [1200, +Inf],
                 gdd0  = [-Inf, +Inf],
@@ -132,57 +116,37 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [400.0, +Inf]
             ),
-            mean_val = (
-                clt  = 37.6,
-                prec = 117.1,
-                temp = 20.7,
-            ),
-            sd_val = (
-                clt  = 8.75,
-                prec = 47.2,
-                temp = 2.6,
-            ),
             dominance_factor = 2
         ),
     AbstractNeedleleafDeciduousPFT => (
             name                    = "NeedleleafDeciduousBase",
             phenological_type       = 2,                   # deciduous
-            max_min_canopy_conductance = 0.4,        # average of 0.2–0.8
+            max_min_canopy_conductance = 0.8,        # average of 0.2–0.8
             Emax                    = 6.5,                               # typical value for needleleaf
-            sw_drop                 = 0.5,                            # as used in deciduous
-            sw_appear               = 0.6,
-            root_fraction_top_soil  = 0.7,            # moderate rooting
-            leaf_longevity          = 12.0,                   # in months (1 year)
+            sw_drop                 = -99.9,                            # as used in deciduous
+            sw_appear               = -99.9,
+            root_fraction_top_soil  = 0.83,            # moderate rooting
+            leaf_longevity          = 24.0,                   # in months (1 year)
             GDD5_full_leaf_out      = 200.0,              # earlier onset than evergreen
-            GDD0_full_leaf_out      = 1.0,                # default
+            GDD0_full_leaf_out      = -99.9,                # default
             sapwood_respiration     = 1,                 
-            optratioa               = 0.85,                         # moderate photosynthetic efficiency
-            kk                      = 0.5,                                 # light extinction coefficient
+            optratioa               = 0.9,                         # moderate photosynthetic efficiency
+            kk                      = 0.4,                                 # light extinction coefficient
             c4                      = false,
             threshold               = 0.33,
-            t0                      = 3.0,                                 # same as other trees
-            tcurve                  = 0.9,
-            respfact                = 1.2,
+            t0                      = 0.0,                                 # same as other trees
+            tcurve                  = 0.8,
+            respfact                = 4.0,
             allocfact               = 1.2,
             grass                   = false,
             constraints = (
-                tcm  = [-Inf, +Inf],
+                tcm  = [-Inf, 5.0],
                 tmin  = [-Inf, -15.0],
-                gdd5  = [300.0, 1600],
+                gdd5  = [300, 1600],
                 gdd0 = [-Inf, +Inf],
-                twm  = [-Inf, +Inf],
+                twm  = [-Inf, 21.0],
                 maxdepth = [-Inf, +Inf],
                 swb  = [400.0, +Inf]
-            ),
-            mean_val = (
-                clt = 37.9, 
-                prec = 55.7, 
-                temp = 4.8
-            ),
-            sd_val = (
-                clt = 7.5, 
-                prec = 40.0, 
-                temp = 3.5
             ),
             dominance_factor = 3
     ),
@@ -210,16 +174,6 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             twm   = [-Inf,+Inf],
             maxdepth  = [-Inf,+Inf],
             swb   = [400.0,+Inf]
-        ),
-        mean_val = (
-            clt  = 38.6,
-            prec = 70.9,
-            temp = 7.9,
-        ),
-        sd_val = (
-            clt  = 7.4,
-            prec = 58.2,
-            temp = 7.3,
         ),
         dominance_factor = 3
     ),
@@ -250,8 +204,6 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             maxdepth = [-Inf, Inf],
             swb  = [100.0, Inf]
         ),
-        mean_val = (clt=16.6, prec=12.2, temp=21.3), 
-        sd_val = (clt=6.9, prec=13.4, temp=6.2),
         dominance_factor = 5
     ),
     AbstractC4GrassPFT => (
@@ -282,8 +234,6 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             maxdepth = [-Inf, Inf],
             swb  = [100.0, Inf]
         ),
-        mean_val = (clt=9.4, prec=1.7, temp=23.2), 
-        sd_val = (clt=1.4, prec=2.1, temp=2.2),
         dominance_factor = 5
     )
 )
