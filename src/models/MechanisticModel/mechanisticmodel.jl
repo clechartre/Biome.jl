@@ -46,14 +46,17 @@ function run(
              dmelt, maxdepth, co2, lat, lon, p = env_variables
 
     # Unpack the PFT list and initialize PFT states
-    pftstates, numofpfts = initialize_pftstates(pftlist, mclou, mprec, mtemp)
+    pftstates, numofpfts = initialize_pftstates(pftlist, tcm, tmin, gdd5, gdd0, twm, maxdepth)
 
     # Apply environmental constraints to determine PFT presence
     pftstates = constraints(pftlist, pftstates, env_variables)
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(pftlist.pft_list)
-        pftstates[pft].fitness = dominance_environment_mv(pft, mclou, mprec, mtemp)
+        pftstates[pft].fitness = dominance_environment_mv(pft; tcm = tcm, 
+                                                          tmin = tmin, gdd5 = gdd5, gdd0 = gdd0,
+                                                          twm = twm, maxdepth = maxdepth
+                                                        )
         if pftstates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
@@ -326,8 +329,9 @@ including default and placeholder types.
 Returns a dictionary of PFT states and the number of PFTs.
 """
 function initialize_pftstates(
-    pftlist::AbstractPFTList, mclou::T, mprec::T, mtemp::T
+    pftlist::AbstractPFTList, tcm::T, tmin::T, gdd5::T, gdd0::T, twm::T, maxdepth::T
 )::Tuple{Dict{AbstractPFT, PFTState}, Int} where {T<:Real}
+
     numofpfts = length(pftlist.pft_list)
 
     # Create the Dict that holds the PFT dynamic states
@@ -339,15 +343,19 @@ function initialize_pftstates(
     for pft in pftlist.pft_list
         pftstates[pft] = PFTState(pft)
     end
-    
+
     # Add None and Default abstract PFT types
     # zero-arg constructor uses default characteristic types
     pftstates[NONE_INSTANCE] = PFTStateobj()
     pftstates[DEFAULT_INSTANCE] = PFTStateobj()
-    pftstates[DEFAULT_INSTANCE].fitness = dominance_environment_mv(DEFAULT_INSTANCE, mclou, mprec, mtemp)
-    
+    pftstates[DEFAULT_INSTANCE].fitness = dominance_environment_mv(DEFAULT_INSTANCE,tcm = tcm, 
+                                                          tmin = tmin, gdd5 = gdd5, gdd0 = gdd0,
+                                                          twm = twm, maxdepth = maxdepth
+                                                        )
+
     return pftstates, numofpfts
 end
+
 
 """
     create_output_vector(biome, optpft, pftstates, pftlist, numofpfts, lat, lon)

@@ -7,17 +7,9 @@ Returns NeedleleafEvergreenForest.
 """
 function assign_biome(
     optpft::AbstractNeedleleafEvergreenPFT;
-    subpft::AbstractPFT,
-    pftstates::Dict{AbstractPFT, PFTState},
     kwargs...
 )::AbstractBiome
-    if subpft isa AbstractDeciduousPFT && abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.15
-        return MixedForest()
-         
-        return MixedForest()
-    else
-        return NeedleleafEvergreenForest()
-    end
+    return NeedleleafEvergreenForest()
 end
 
 """
@@ -33,8 +25,9 @@ function assign_biome(
     pftstates::Dict{AbstractPFT, PFTState},
     kwargs...
 )::AbstractBiome
+    # If the Difference in NPP between the dominant and subdominant PFT is very small 
     if subpft isa AbstractDeciduousPFT &&
-        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.15
+        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.07
         return MixedForest()
     else
         return BroadleafEvergreenForest()
@@ -50,16 +43,9 @@ Returns NeedleleafDeciduousForest.
 """
 function assign_biome(
     optpft::AbstractNeedleleafDeciduousPFT;
-    subpft::AbstractPFT,
-    pftstates::Dict{AbstractPFT, PFTState},
     kwargs...
 )::AbstractBiome
-    if subpft isa AbstractEvergreenPFT &&
-        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.15
-        return MixedForest()
-    else
-        return NeedleleafDeciduousForest()
-    end
+    return NeedleleafDeciduousForest()
 end
 
 
@@ -77,7 +63,7 @@ function assign_biome(
     kwargs...
 )::AbstractBiome
     if subpft isa AbstractEvergreenPFT &&
-        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.15
+        abs(pftstates[subpft].npp - pftstates[optpft].npp) / pftstates[optpft].npp ≤ 0.07
         return MixedForest()
     else
         return BroadleafDeciduousForest()
@@ -94,7 +80,6 @@ Returns C3Grassland.
 function assign_biome(
     optpft::AbstractC3GrassPFT;
     pftstates::Dict{AbstractPFT, PFTState},
-    wdom::AbstractPFT,
     gdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
@@ -115,7 +100,6 @@ Returns C4Grassland.
 function assign_biome(
     optpft::Union{AbstractC4GrassPFT, Default};
     pftstates::Dict{AbstractPFT, PFTState},
-    wdom::AbstractPFT,
     gdom::AbstractPFT,
     kwargs...
 )::AbstractBiome
