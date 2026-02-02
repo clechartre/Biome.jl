@@ -1,3 +1,10 @@
+"""
+Example of fitting the customizable base. 
+
+Values are not ecologically relevant but only serve illustration.
+
+"""
+
 using Biome
 using Rasters
 
@@ -36,8 +43,6 @@ TropicalEvergreen = BroadleafEvergreenPFT(
         maxdepth  = [-Inf, +Inf],
         swb = [700.0, +Inf]
     ),
-    mean_val = (clt=50.2, prec=169.6, temp=24.7),
-    sd_val = (clt=4.9,  prec=41.9,  temp=1.2),
     dominance_factor = 1
 )
 
@@ -52,8 +57,6 @@ TemperateDeciduous = BroadleafDeciduousPFT(
         maxdepth =[-Inf, +Inf],
         swb=[400,+Inf]
     ),
-    mean_val = (clt=33.4, prec=106.3, temp=18.7),
-    sd_val = (clt=13.3, prec=83.6,  temp=3.2),
     dominance_factor = 1
 )
 
@@ -81,7 +84,8 @@ function my_biome_assign(pft::AbstractPFT;
     tmin,
     pftlist,
     pftstates,
-    gdom)
+    gdom,
+    env_variables)
     if get_characteristic(pft, :c4)
         return Savanna()
     elseif  get_characteristic(pft, :name) == "TropicalEvergreen"
@@ -89,21 +93,24 @@ function my_biome_assign(pft::AbstractPFT;
     elseif get_characteristic(pft, :name) == "TemperateDeciduous"
         return TemperateDeciduousForest()
     else
-    # FIXME could we make this fallback silent
         return Biome.assign_biome(pft;
-                subpft=subpft, wdom=wdom,
-                gdd0=gdd0, gdd5=gdd5,
-                tcm=tcm, tmin=tmin,
+                subpft=subpft,
+                wdom=wdom,
+                gdd0=gdd0,
+                gdd5=gdd5,
+                tcm=tcm,
+                tmin=tmin,
                 pftlist=pftlist,
-                pftstates=pftstates, gdom=gdom)
+                pftstates=pftstates,
+                gdom=gdom,
+                env_variables=env_variables)
     end
 end
-
 
 PFTList = PFTClassification([
         BroadleafDeciduousPFT(),
         C3GrassPFT(),
-        C4Grass,
+        C4GrassPFT(),
         TropicalEvergreen,
         TemperateDeciduous
     ]
@@ -119,4 +126,4 @@ setup = ModelSetup(BaseModel();
                    pftlist = PFTList,
                    biome_assignment = my_biome_assign)
 
-run!(setup; coordstring="alldata", outfile="output_CustomModel.nc")
+run!(setup; coordstring="alldata", outfile="output_CustomModel3.nc")

@@ -4,74 +4,92 @@ using Rasters, Plots, Colors
 
 include("../../src/abstractmodel.jl")
 
+gr(fmt = :svg)    #svg
+
 function plot_biomes(m::BaseModel, filename::String, output_file::String)
-    # 1. Define your class names (we’ll ignore index 0, which is "no data")
     class_names = [
         "No data",
-        "Evergreen forest",
-        "Deciduous forest",
-        "Mixed forest",
-        "Grassland",
-        "Tundra",
-        "Desert",
+        "Needleleaf Evergreen forest",
+        "Broadleaf Evergreen forest",
+        "Needleleaf Deciduous forest",
+        "Broadleaf Deciduous forest",
+        "Mixed Forest",
+        "C3 Grassland",
+        "C4 Grassland",
+        "Hot and Cold Desert"
     ]
 
-    # 2. Define one color per index 0–6
     cmap = [
-        RGBA(0,0,0,0),                              # 0 → transparent
-        RGB(0.1059, 0.3961, 0.0667),                # 1 → Evergreen
-        RGB(0.3216, 0.4980, 0.0157),                # 2 → Deciduous
-        RGB(0.5765, 0.3961, 0.0275),                # 3 → Mixed
-        RGB(0.2431, 0.7804, 0.0),                   # 4 → Grassland
-        RGB(0.8941, 0.9020, 0.0),                   # 5 → Tundra
-        RGB(1.0, 1.0, 0.8980),                      # 6 → Desert
+        RGBA(0, 0, 0, 0),                              # 0 → No data (transparent)
+        RGB(0.0, 0.27, 0.13),                          # 1 → Needleleaf Evergreen (deep forest green)
+        RGB(0.35, 0.2, 0.5),                           # 2 → Broadleaf Evergreen (muted purple)
+        RGB(0.54, 0.37, 0.26),                         # 3 → Needleleaf Deciduous (wood brown)
+        RGB(0.8, 0.0, 0.0),                            # 4 → Broadleaf Deciduous (earthy red)
+        RGB(0.6, 0.6, 0.2),                            # 5 → Mixed Forest (olive green)
+        RGB(0.4, 0.6, 0.8),                            # 6 → C3 Grassland (cool bluegrass)
+        RGB(0.8, 0.85, 0.2),                           # 7 → C4 Grassland (sunny yellow-green)
+        RGB(0.87, 0.76, 0.53),                         # 8 → Desert (pale sand)
     ]
-
+    
+    
     # 3. Load the raster
     A = Raster(filename, name="biome", lazy=true)
-    data = Int.(A[:, :])                         # grab the raw integer codes
+    data = Int.(A[:, :]) 
 
-    # 4. First, turn any netCDF nodata (–9999) into 0
     data[data .== -9999] .= 0
 
-    # 5. Now remap the “21” desert code into our slot 6
-    data[data .== 21] .= 6
-
-    # 6. (All your other values 1–5 remain as-is.)
-
-    # 7. Build a new Raster with the cleaned-up indices
     R = Raster(data, dims(A); name="biome")
 
-    # 8. Plot the main map
     p1 = plot(R;
         color = cmap,
-        clims = (0,6),               # so each integer picks its color
-        legend = false,
+        clims = (0,8),              
+        legend = false,              
         title = "Biome distribution",
-        xlabel = first(dims(A)),     # longitude axis
-        ylabel = last(dims(A)),      # latitude axis
-        size = (1200,1000),
+        xlabel = first(dims(A)),
+        ylabel = last(dims(A)),
+        size = (1800, 1200),
         max_res = 3000,
+        right_margin=0Plots.mm
     )
 
-    # 9. Build a separate legend panel
-    p2 = plot(legend = :outerright, framestyle = :none,
-              xlims = (0,1), ylims = (0,1), xticks = [], yticks = [])
-    for idx in 1:6
-        scatter!(p2, [0], [0];
-            label = class_names[idx+1],   # +1 because names[1] is “No data”
-            color = cmap[idx+1],
-            markersize = 8,
+    n_biomes = 8 
+    optimal_columns = 2
+    
+    p_leg = plot(
+        xlim=(0,1), ylim=(0,1),
+        framestyle=:none,
+        xticks=false, yticks=false,
+        legend=:left,     # legend inside this panel
+        legendfontsize=7,
+        legendtitle="Base Model Classes",
+        legendtitlefontsize=9,
+        legend_background_color=:white,
+        legend_columns=optimal_columns,
+        legend_column_width=-1,  # Reduce column spacing
+        legend_row_gap=0.02,     # Reduce row spacing
+        legend_title_gap=0.01,   # Reduce gap after title
+        left_margin=0Plots.mm
+    )
+
+    # Fill legend with square patches (exclude "No data" class)
+    for idx in 1:8
+        scatter!(
+            p_leg,
+            [0.0], [0.0],
+            label=class_names[idx+1],   # +1 because names[1] is "No data"
+            color=cmap[idx+1],
+            shape=:rect,
+            markersize=6,
+            markerstrokewidth=0
         )
     end
 
-    # 10. Compose and save
-    l = @layout [a{0.75w} b{0.25w}]
-    final = plot(p1, p2, layout = l)
-    savefig(final, output_file)
+    layout = @layout [a{0.60w} b{0.40w}]
+    final_plot = plot(p1, p_leg, layout=layout, size=(1800, 1000))
+    
+    savefig(final_plot, output_file)
 end
 
-# Example usage:
 filename = ""
 output_file = ""
 plot_biomes(BaseModel(), filename, output_file)
