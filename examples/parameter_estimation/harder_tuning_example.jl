@@ -167,7 +167,7 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
 
     # Run the model.
     # coordstring="alldata" likely controls metadata naming for the output.
-    output = run!(setup; coordstring="alldata", outfile=outfile)
+    output = execute(setup; coordstring="alldata", outfile=outfile)
 
     # Extract the biome field from output.
     # NOTE: biome_val may be an array/raster-like object; downstream you compare `pred == 1`.

@@ -4,7 +4,7 @@
 ## Climate Models 
 
 ```@docs
-Biome.run
+Biome.runmodel
 ```
 
 ## Mechanistic Model
@@ -12,6 +12,7 @@ Biome.run
 ### Base functions
 
 ```@docs
+Biome.PFTClassification
 Biome.assign_biome
 Biome.c4photo
 Biome.calcphi

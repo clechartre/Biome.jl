@@ -346,6 +346,12 @@ function None(; kwargs...)
     None(c)
 end
 
+
+"""
+Structure that holds the PFTs passed together to the model.  
+The PFTs will be evaluated by the mechanistic model and put into competition
+to determine the dominant biome.
+"""
 struct PFTClassification{T<:Real,U<:Int} <: AbstractPFTList
     pft_list::Vector{AbstractPFT}
 end

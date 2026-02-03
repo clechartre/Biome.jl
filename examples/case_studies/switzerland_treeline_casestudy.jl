@@ -35,4 +35,4 @@ setup = ModelSetup(BIOME4Model();
                    pftlist = PFTList)
 
 # Run the model 
-run!(setup; coordstring="alldata", outfile="output_switzerland.nc")
+execute(setup; coordstring="alldata", outfile="output_switzerland.nc")
