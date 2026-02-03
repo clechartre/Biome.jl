@@ -36,4 +36,4 @@ setup = ModelSetup(BaseModel();
                    co2=373.8,
                    pftlist = pftlist)
 
-run!(setup; coordstring="alldata", outfile="output_base.nc")
+execute(setup; coordstring="alldata", outfile="output_base.nc")

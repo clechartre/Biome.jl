@@ -2,7 +2,7 @@
 using Statistics
 
 """
-    run(m::TrollPaffenModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
+    runmodel(m::TrollPaffenModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
 
 Quickly classify the climate according to the Troll‑Paffen scheme using 12 months of temperature and precipitation.
 
@@ -26,7 +26,7 @@ Quickly classify the climate according to the Troll‑Paffen scheme using 12 mon
 - Zones range from polar ice‑deserts through tropical rain‑forest, with `38` = Not Classified.
 """
 
-function run(m::TrollPaffenModel, input_variables::NamedTuple, args...; kwargs...)
+function runmodel(m::TrollPaffenModel, input_variables::NamedTuple, args...; kwargs...)
 
     # Define Troll-Paffen climate zones with numerical values and descriptions
     TROLL = Dict(

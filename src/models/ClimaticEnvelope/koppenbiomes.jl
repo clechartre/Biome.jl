@@ -2,7 +2,7 @@
 using Statistics
 
 """
-    run(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+    runmodel(m::KoppenModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
 
 Classify climate data using the Köppen-Geiger climate classification system.
 
@@ -22,7 +22,7 @@ The function classifies climate into the following categories:
 - **Temperate (C)**: Cfa (9), Cfb (10), Cfc (11), Csa (12), Csb (13), Csc (14), Cwa (15), Cwb (16)
 """
 # Define the Köppen-Geiger classification function
-function run(m::KoppenModel, input_variables::NamedTuple, args...; kwargs...)
+function runmodel(m::KoppenModel, input_variables::NamedTuple, args...; kwargs...)
     # Define Köppen-Geiger classes
     KG = Dict(
         :Af => 1,  # Equatorial, fully humid

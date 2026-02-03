@@ -1,7 +1,7 @@
 using Statistics
 
 """
-    run(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
+    runmodel(m::ThornthwaiteModel, vars_in::Vector{Union{T, U}}, args...; kwargs...) where {T <: Real, U <: Int}
 
 Compute Thornthwaite climate classification zones from monthly temperature and precipitation data.
 
@@ -32,7 +32,7 @@ Compute Thornthwaite climate classification zones from monthly temperature and p
     5. Arid  
   - All other entries remain zero.
 """
-function run(m::ThornthwaiteModel, input_variables::NamedTuple, args...; kwargs...)
+function runmodel(m::ThornthwaiteModel, input_variables::NamedTuple, args...; kwargs...)
     # Define Thornthwaite climate zones with numerical values
     THORN = Dict(
         :Wet        => 1,

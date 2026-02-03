@@ -126,4 +126,4 @@ setup = ModelSetup(BaseModel();
                    pftlist = PFTList,
                    biome_assignment = my_biome_assign)
 
-run!(setup; coordstring="alldata", outfile="output_CustomModel3.nc")
+execute(setup; coordstring="alldata", outfile="output_CustomModel3.nc")

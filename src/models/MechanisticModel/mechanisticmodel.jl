@@ -22,7 +22,7 @@ const DEFAULT_INSTANCE = Default()
 export NONE_INSTANCE, DEFAULT_INSTANCE
 
 """
-    run(m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, vars_in::NamedTuple; 
+    runmodel(m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, vars_in::NamedTuple; 
     pftlist, biome_assignment) where {T<:Real,U<:Int}
 
 Execute the complete mechanistic model simulation for a single grid cell.
@@ -32,7 +32,7 @@ climate data processing, snow dynamics, soil temperature calculation,
 potential evapotranspiration, phenology, plant functional type constraints,
 NPP optimization, and biome classification.
 """
-function run(
+function runmodel(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, 
     vars_in::NamedTuple;
     pftlist::AbstractPFTList,

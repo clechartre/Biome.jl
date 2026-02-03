@@ -27,4 +27,4 @@ setup = ModelSetup(BIOME4Model();
                    co2=00.00,
                    PFTList = PFTList)
 
-run!(setup; coordstring="alldata", outfile="output_BIOME4.nc")
+execute(setup; coordstring="alldata", outfile="output_BIOME4.nc")

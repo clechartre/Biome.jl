@@ -112,12 +112,12 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        growth, assign_biome,
        
        # Main functions
-       run,
+       runmodel,
        
        # Constants instances
        NONE_INSTANCE, DEFAULT_INSTANCE,
 
        # Driver functions
-       ModelSetup, run!
+       ModelSetup, execute
 
 end # Module

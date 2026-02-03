@@ -5,7 +5,7 @@ using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, Wissmann
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
         AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
         P0, G, CP, T0, M, R0, 
-        run, change_type, assign_biome as base_assign_biome
+        runmodel, change_type, assign_biome as base_assign_biome
 using ..Biome.BIOME4: assign_biome as biome4_assign_biome
 
 # Standard library
@@ -21,7 +21,7 @@ using Rasters
 using DataStructures: OrderedDict
 using DimensionalData
 
-export ModelSetup, run!
+export ModelSetup, execute
 
 mutable struct ModelSetup{M<:BiomeModel, T<:Real}
     model::M
@@ -102,16 +102,21 @@ function ModelSetup(Model::BiomeModel;
     return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, Int64, float_type)
 end
 
-function run!(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
+function execute(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
     BiomeDriver._execute!(
-    M, setup.co2, setup.lon, setup.lat, pftlist, env_raster;
-    coordstring=coordstring,
-    outfile=outfile,
-    biome_assignment=setup.biome_assignment
-  )
+                            M,
+                            setup.co2,
+                            setup.lon, 
+                            setup.lat, 
+                            pftlist, 
+                            env_raster;
+                            coordstring=coordstring,
+                            outfile=outfile,
+                            biome_assignment=setup.biome_assignment
+                        )
 end
 
 
@@ -396,7 +401,7 @@ function process_cell(
     input_variables = (; input_dict...)
 
     # Run the model 
-    output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
+    output = runmodel(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
 
     numofpfts = length(pftlist.pft_list)
 

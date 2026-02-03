@@ -15,4 +15,4 @@ setup = ModelSetup(KoppenModel();
                    temp=temp_raster,
                    prec=prec_raster)
 
-run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
+execute(setup; coordstring="alldata", outfile="output_Koppen.nc")
