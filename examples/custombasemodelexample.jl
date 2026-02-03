@@ -15,7 +15,7 @@ soilfile = ""
 
 temp_raster = Raster(tempfile, name="temp")
 prec_raster = Raster(precfile, name="prec")
-clt_raster = Raster(cltfile, name="sun")
+clt_raster = Raster(cltfile, name="clt")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
@@ -117,13 +117,13 @@ PFTList = PFTClassification([
 )
 
 setup = ModelSetup(BaseModel();
-                   temp=temp_raster,
-                   prec=prec_raster,
-                   clt= clt_raster,
-                   ksat=ksat_raster,
-                   whc= whc_raster,
-                   co2=373.8,
+                   temp = temp_raster,
+                   prec = prec_raster,
+                   clt = clt_raster,
+                   ksat = ksat_raster,
+                   whc = whc_raster,
+                   co2 = 373.8,
                    pftlist = PFTList,
                    biome_assignment = my_biome_assign)
 
-execute(setup; coordstring="alldata", outfile="output_CustomModel3.nc")
+execute(setup; outfile = "output_CustomModel.nc")
