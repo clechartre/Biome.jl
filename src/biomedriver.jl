@@ -99,11 +99,11 @@ function ModelSetup(Model::BiomeModel;
     return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, Int64, float_type)
 end
 
-function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing, outfile::String="out.nc")
+function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing, outfile::Union{String, Nothing}=nothing)
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
-    BiomeDriver._execute!(
+    BiomeDriver._simulate!(
         M,
         setup.co2,
         pftlist,
@@ -114,7 +114,7 @@ function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing
     )
 end
 
-function _execute!(
+function _simulate!(
         model::BiomeModel,
         co2::T,
         pftlist,
@@ -159,15 +159,21 @@ function _execute!(
     x_dim = dims(ref, X)
     y_dim = dims(ref, Y)
 
-    if isfile(outfile)
-        println("File $outfile already exists. Resuming from last processed row.")
-        output_dataset = NCDataset(outfile, "a")
-        output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts)
-    else
-        output_dataset = NCDataset(outfile, "c")
-        println("Creating new output file: $outfile")
-        create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
+    if isnothing(outfile)
+        # We don't make a file
         output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+
+    else
+        if isfile(outfile)
+            println("File $outfile already exists. Resuming from last processed row.")
+            output_dataset = NCDataset(outfile, "a")
+            output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts)
+        else
+            output_dataset = NCDataset(outfile, "c")
+            println("Creating new output file: $outfile")
+            create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
+            output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+        end
     end
 
     # Create a lock for thread-safe file I/O
@@ -237,17 +243,25 @@ function _execute!(
         end
 
         # Sync to NetCDF every 10 rows with thread-safe locking
-        if y % 10 == 0
-            lock(file_lock) do
-                sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+        if isnothing(outfile)
+            continue
+        else
+            if y % 10 == 0
+                lock(file_lock) do
+                    sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+                end
             end
         end
     end
 
     # Final sync before closing (lock ensures thread-safe access)
-    lock(file_lock) do
-        sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-        close(output_dataset)
+    if isnothing(outfile)
+        return output_stack
+    else
+        lock(file_lock) do
+            sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+            close(output_dataset)
+        end
     end
 end
 
