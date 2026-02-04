@@ -36,3 +36,7 @@ setup = ModelSetup(BaseModel();
 nz_bounds = X(165 .. 180), Y(-50 .. -32)
 
 execute(setup; bounds=nz_bounds, outfile="output_BaseModel.nc")
+
+# Optional: return an object and don't write to disk
+
+output = execute(setup; bounds=nz_bounds)
