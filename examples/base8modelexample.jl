@@ -12,7 +12,7 @@ soilfile = ""
 
 temp_raster = Raster(tempfile, name="temp")
 prec_raster = Raster(precfile, name="prec")
-clt_raster = Raster(cltfile, name="sun")
+clt_raster = Raster(cltfile, name="clt")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
 
@@ -36,4 +36,4 @@ setup = ModelSetup(BaseModel();
                    co2=373.8,
                    pftlist = pftlist)
 
-run!(setup; coordstring="alldata", outfile="output_base.nc")
+execute(setup; outfile="output_base.nc")

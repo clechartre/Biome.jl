@@ -95,7 +95,7 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
         co2=373.8, pftlist=PFTList)
 
     outfile = "output_$(uuid4()).nc"
-    output = run!(setup; coordstring="alldata", outfile=outfile)
+    output = execute(setup; coordstring="alldata", outfile=outfile)
     return output[:biome]
 end
 

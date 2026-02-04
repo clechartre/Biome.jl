@@ -4,8 +4,8 @@ using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, Wissmann
         BIOME4, ClimateModel, MechanisticModel, GrowthWorkspace,
         AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
         AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
-        P0, G, CP, T0, M, R0, 
-        run, change_type, assign_biome as base_assign_biome
+        P0, G, CP, T0, M, R0,
+        runmodel, change_type, assign_biome as base_assign_biome
 using ..Biome.BIOME4: assign_biome as biome4_assign_biome
 
 # Standard library
@@ -16,12 +16,12 @@ using Base.Threads
 # Third-party
 using ArgParse
 using NCDatasets
-import ArchGDAL # Dependency to Rasters
+import ArchGDAL
 using Rasters
 using DataStructures: OrderedDict
 using DimensionalData
 
-export ModelSetup, run!
+export ModelSetup, execute
 
 mutable struct ModelSetup{M<:BiomeModel, T<:Real}
     model::M
@@ -63,22 +63,18 @@ function ModelSetup(Model::BiomeModel;
     type_mismatch = any(r -> Missings.nonmissingtype(eltype(r)) != float_type, values(raster_dict))
 
     if type_mismatch
-
         # Convert Rasters
         @warn "Raster element types do not match $(float_type). Converting all rasters to $float_type and replacing missing with $fill_value."
         for (k, r) in pairs(raster_dict)
             data = Array(r)
-            # Replace missing values with the fill value (converted) and convert to float_type
             fillv = convert(float_type, fill_value)
             dataf = convert.(float_type, coalesce.(data, fillv))
-            # Preserve dims and recreate Raster with float_type data
             raster_dict[k] = Raster(dataf, dims=dims(r), name=k)
         end
 
         # Convert PFTList
         @warn "Converting PFT list to match raster data types."
         pftlist = change_type(pftlist, float_type)
-
     end
 
     # Convert CO2 to the raster non-missing element type
@@ -87,9 +83,10 @@ function ModelSetup(Model::BiomeModel;
     # Convert Dict to NamedTuple (keeps keys as symbols)
     rasters = (; (Symbol(k) => v for (k, v) in raster_dict)...)
 
-    # Extract longitude and latitude from the temp raster
-    lon = collect(dims(rasters[:temp], X))
-    lat = collect(dims(rasters[:temp], Y))
+    # Extract longitude and latitude from the temp raster (which is mandatory for all models)
+    # so ok to refer to
+    lon = collect(lookup(rasters[:temp], X))
+    lat = collect(lookup(rasters[:temp], Y))
 
     if biome_assignment === nothing
         if Model isa BIOME4Model || Model isa BIOMEDominanceModel
@@ -102,30 +99,30 @@ function ModelSetup(Model::BiomeModel;
     return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, Int64, float_type)
 end
 
-function run!(setup::ModelSetup; coordstring::String="alldata", outfile::String="out.nc")
+function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing, outfile::Union{String, Nothing}=nothing)
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
-    BiomeDriver._execute!(
-    M, setup.co2, setup.lon, setup.lat, pftlist, env_raster;
-    coordstring=coordstring,
-    outfile=outfile,
-    biome_assignment=setup.biome_assignment
-  )
+    BiomeDriver._simulate!(
+        M,
+        setup.co2,
+        pftlist,
+        env_raster;
+        bounds=bounds,
+        outfile=outfile,
+        biome_assignment=setup.biome_assignment
+    )
 end
 
-
-function _execute!(
+function _simulate!(
         model::BiomeModel,
-        co2::T, 
-        lon, 
-        lat, 
+        co2::T,
         pftlist,
         env_raster::NamedTuple;
-        coordstring::String, 
-        outfile::String,
+        bounds::Union{Tuple{X,Y}, Nothing} = nothing,
+        outfile::Union{String, Nothing} = nothing,
         biome_assignment::Union{Function, Nothing} = nothing
-        ) where {T<:Real}
+    ) where {T<:Real}
 
     if biome_assignment === nothing
         if model isa BIOME4Model || model isa BIOMEDominanceModel
@@ -135,62 +132,57 @@ function _execute!(
         end
     end
 
-    if  pftlist === nothing
+    if pftlist === nothing
         @warn "No pftlist provided, using default PFT classification."
         pftlist = get_pft_list(model) # FIXME we should specify the type here
     end
 
-    if pftlist !== nothing
-        numofpfts = length(pftlist.pft_list)
-    else
-        numofpfts = 0
-    end
-
-    # Open the first dataset to get dimensions, then close
-    lon_full = lon
-    lat_full = lat
-    xlen = length(lon_full)
-    ylen = length(lat_full)
+    numofpfts = (pftlist !== nothing) ? length(pftlist.pft_list) : 0
     dz = T[5, 10, 15, 30, 40, 100]
 
-    if coordstring == "alldata"
-        strx = 1
-        stry = 1
-        cntx = xlen
-        cnty = ylen
-        endx = strx + cntx - 1
-        endy = stry + cnty - 1
+    # Cut the input rasters to bounds
+    env_raster = isnothing(bounds) ? env_raster :
+    (ref = env_raster[:temp][bounds...];
+     map(r -> crop(r; to=ref, dims=(X, Y)), env_raster))
+
+    # reference grid (after subsetting)
+    ref = env_raster[:temp]
+
+    lon = collect(lookup(ref, X))
+    lat = collect(lookup(ref, Y))
+    cntx = length(lon)
+    cnty = length(lat)
+
+    println("Processing grid: cntx=$cntx, cnty=$cnty")
+    println("Bounds: X $(extrema(lon)), Y $(extrema(lat))")
+
+    x_dim = dims(ref, X)
+    y_dim = dims(ref, Y)
+
+    if isnothing(outfile)
+        # We don't make a file
+        output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+
     else
-        coords = parse_coordinates(coordstring, T)
-        strx, stry, cntx, cnty = get_array_indices(lon_full, lat_full, coords...)
-        endx = strx + cntx - 1
-        endy = stry + cnty - 1
-    end
-
-    println("Bounding box indices: strx=$strx, stry=$stry, endx=$endx, endy=$endy")
-    println("Bounding box counts: cntx=$cntx, cnty=$cnty")
-
-    lon = vec(Array(lon_full[strx:endx]))
-    lat = vec(Array(lat_full[stry:endy]))
-
-    if isfile(outfile)
-        println("File $outfile already exists. Resuming from last processed row.")
-        output_dataset = NCDataset(outfile, "a")
-        output_stack = load_existing_rasterstack(output_dataset, model, lon, lat, numofpfts)
-    else
-        output_dataset = NCDataset(outfile, "c")
-        println("Creating new output file: $outfile")
-        create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
-        output_stack = create_output_rasterstack(model, lon, lat, cntx, cnty, numofpfts)
+        if isfile(outfile)
+            println("File $outfile already exists. Resuming from last processed row.")
+            output_dataset = NCDataset(outfile, "a")
+            output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts)
+        else
+            output_dataset = NCDataset(outfile, "c")
+            println("Creating new output file: $outfile")
+            create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
+            output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+        end
     end
 
     # Create a lock for thread-safe file I/O
     file_lock = ReentrantLock()
-    
+
     # Loop over all grid cells
     Threads.@threads for y in 1:cnty
         println("Processing y index $y")
-        lat_chunk = lat[y]
+        lat_val = lat[y]
 
         # Check if the row is already processed using the primary variable
         primary_var = get_primary_variable(model)
@@ -199,22 +191,19 @@ function _execute!(
             continue
         end
 
-        # Create thread-local env_chunks to avoid allocations in inner loop
         env_chunks = Dict{Symbol, Any}()
 
         for x in 1:cntx
             lon_val = lon[x]
 
-            # Reuse env_chunks
             empty!(env_chunks)
-            
+
             for (var, raster) in pairs(env_raster)
                 if ndims(raster) == 2
-                    # 2D raster: store scalar directly, not wrapped in array
-                    chunk = raster[x, y]
-                    env_chunks[var] = chunk
+                    # 2D raster: store scalar directly
+                    env_chunks[var] = raster[x, y]
                 else
-                    # 3D raster: extract data and convert to Array (Raster indexing returns views)
+                    # 3D raster: extract the full vector at (x,y,:)
                     chunk = Array(raster[x, y, :])
                     env_chunks[var] = uniform_fill_value(chunk)
                 end
@@ -233,170 +222,149 @@ function _execute!(
                     break
                 end
             end
-            
+
             if skip_cell
                 continue
             end
 
             process_cell(
-                x, 
-                y, 
-                strx, 
-                lat, 
+                x,
+                y,
+                lat_val,
+                lon_val,
                 co2,
                 env_chunks,
-                dz, lon,
-                output_stack, 
-                model, 
-                pftlist, 
+                dz,
+                output_stack,
+                model,
+                pftlist,
                 biome_assignment
             )
         end
 
         # Sync to NetCDF every 10 rows with thread-safe locking
-        if y % 10 == 0
-            lock(file_lock) do
-                sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+        if isnothing(outfile)
+            continue
+        else
+            if y % 10 == 0
+                lock(file_lock) do
+                    sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+                end
             end
         end
     end
 
     # Final sync before closing (lock ensures thread-safe access)
-    lock(file_lock) do
-        sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
-        close(output_dataset)
+    if isnothing(outfile)
+        return output_stack
+    else
+        lock(file_lock) do
+            sync_rasterstack_to_netcdf(output_stack, output_dataset, model)
+            close(output_dataset)
+        end
     end
 end
 
 """
-    create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty)
+    create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
 
-Create a RasterStack for output variables based on the model type.
+Create a RasterStack for output variables based on the model type, preserving
+the X/Y dimension objects from the reference Raster.
 """
-function create_output_rasterstack(model::BiomeModel, lon, lat, cntx, cnty, numofpfts)
-    # Create coordinate dimensions
-    lon_dim = X(lon)
-    lat_dim = Y(lat)
-
-    # Get model schema
+function create_output_rasterstack(model::BiomeModel, x_dim, y_dim, cntx, cnty, numofpfts)
     schema = get_output_schema(model)
 
-    # Create rasters for each variable
-    rasters = []
+    rasters = Raster[]
     for (var_name, var_info) in schema
         if var_info.dims == ("lon", "lat")
             raster = Raster(
                 fill(-9999.0, cntx, cnty),
-                dims=(lon_dim, lat_dim),
+                dims=(x_dim, y_dim),
                 name=Symbol(var_name)
             )
         elseif var_info.dims == ("lon", "lat", "pft")
             pft_dim = Dim{:pft}(1:numofpfts+1)
             raster = Raster(
                 fill(-9999.0, cntx, cnty, numofpfts+1),
-                dims=(lon_dim, lat_dim, pft_dim),
+                dims=(x_dim, y_dim, pft_dim),
                 name=Symbol(var_name)
             )
         end
         push!(rasters, raster)
     end
 
-    # Convert to tuple and create RasterStack
     return RasterStack(Tuple(rasters))
 end
 
 """
-    load_existing_rasterstack(dataset, model, lon, lat)
+    load_existing_rasterstack(dataset, model, x_dim, y_dim, numofpfts)
 
-Load existing data from NetCDF into a RasterStack for resume functionality.
+Load existing data from NetCDF into a RasterStack for resume functionality,
+reusing the reference X/Y dimension objects.
 """
-function load_existing_rasterstack(dataset, model::BiomeModel, lon, lat, numofpfts)
-    # Create coordinate dimensions
-    lon_dim = X(lon)
-    lat_dim = Y(lat)
-
-    # Get model schema
+function load_existing_rasterstack(dataset, model::BiomeModel, x_dim, y_dim, numofpfts)
     schema = get_output_schema(model)
-
-    # Load existing rasters
-    rasters = []
+    rasters = Raster[]
 
     for (var_name, var_info) in schema
         if haskey(dataset, var_name)
             if var_info.dims == ("lon", "lat")
                 data = Array(dataset[var_name][:, :])
-                raster = Raster(
-                    data,
-                    dims=(lon_dim, lat_dim),
-                    name=Symbol(var_name)
-                )
+                raster = Raster(data, dims=(x_dim, y_dim), name=Symbol(var_name))
             elseif var_info.dims == ("lon", "lat", "pft")
                 pft_dim = Dim{:pft}(1:numofpfts+1)
                 data = Array(dataset[var_name][:, :, :])
-                raster = Raster(
-                    data,
-                    dims=(lon_dim, lat_dim, pft_dim),
-                    name=Symbol(var_name)
-                )
+                raster = Raster(data, dims=(x_dim, y_dim, pft_dim), name=Symbol(var_name))
             end
             push!(rasters, raster)
         end
     end
 
-    # Convert to tuple and create RasterStack
     return RasterStack(Tuple(rasters))
 end
 
-
 """
-    process_cell(x, y, strx, temp_chunk, lat_chunk, co2, prec_chunk, cldp_chunk, ksat_chunk, whc_chunk, dz, lon_chunk, output_stack, model, PFTS)
+    process_cell(...)
 
 Process a single grid cell for biome classification using RasterStack.
 """
 function process_cell(
-    x, 
-    y, 
-    strx,
-    lat_chunk,
+    x,
+    y,
+    lat_val,
+    lon_val,
     co2::T,
-    env_chunks, 
-    dz, 
-    lon_chunk, 
-    output_stack::RasterStack, 
-    model::BiomeModel, 
+    env_chunks,
+    dz,
+    output_stack::RasterStack,
+    model::BiomeModel,
     pftlist::AbstractPFTList,
     biome_assignment::Function
-    ) where {T<:Real}
-    # Check if already processed
+) where {T<:Real}
+
     primary_var = get_primary_variable(model)
     if output_stack[primary_var][x, y] != -9999.0
         println("Cell ($x, $y) already processed, skipping.")
         return
     end
 
-    # Calculate atmospheric pressure from elevation
+    # Calculate atmospheric pressure from elevation (NOTE: your original formula had no elevation input;
+    # left unchanged structurally, but verify this is what you intend.)
     p = P0 * (1.0 - (G) / (CP * T0))^(CP * M / R0)
 
-    input = zeros(T, 50)
-    # input - (lat-lat, co2^cpde)
-
-    # Build input_variables: env_chunks now stores scalars directly or arrays
-    # No need for complex generator expression - directly use env_chunks values
     input_dict = Dict{Symbol, Any}()
-    input_dict[:lat] = lat_chunk[y]
+    input_dict[:lat] = lat_val
+    input_dict[:lon] = lon_val
     input_dict[:co2] = co2
     input_dict[:p] = p
     input_dict[:dz] = dz
-    input_dict[:lon] = lon_chunk[x]
-    
-    # Add environmental variables from env_chunks
-    # They're already in the right format (scalars or arrays)
+
     merge!(input_dict, env_chunks)
-    
+
     input_variables = (; input_dict...)
 
     # Run the model 
-    output = run(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
+    output = runmodel(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
 
     numofpfts = length(pftlist.pft_list)
 
@@ -415,13 +383,13 @@ end
 
 function get_pft_list(m::Union{BaseModel})
     return PFTClassification([
-                NeedleleafEvergreenPFT(),
-                BroadleafEvergreenPFT(),
-                NeedleleafDeciduousPFT(),
-                BroadleafDeciduousPFT(),
-                C3GrassPFT(),
-                C4GrassPFT()
-            ])
+        NeedleleafEvergreenPFT(),
+        BroadleafEvergreenPFT(),
+        NeedleleafDeciduousPFT(),
+        BroadleafDeciduousPFT(),
+        C3GrassPFT(),
+        C4GrassPFT()
+    ])
 end
 
 function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, TrollPaffenModel})
@@ -453,14 +421,12 @@ function get_primary_variable(model::TrollPaffenModel)
     return :troll_zone
 end
 
-
 """
 process_cell_output(model, x, y, output, output_stack)
 
 Write model output to the RasterStack based on model type.
 """
 function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output::NamedTuple, output_stack::RasterStack; numofpfts)
-
     output_stack[:biome][x, y] = output.biome
     output_stack[:optpft][x, y] = output.optpft
     output_stack[:npp][x, y, :] = output.npp
@@ -495,10 +461,10 @@ function sync_rasterstack_to_netcdf(output_stack::RasterStack, dataset, model::B
         if haskey(dataset, var_name)
             dataset[var_name][:] = output_stack[Symbol(var_name)][:]
         end
-end
+    end
 
-# Force write to disk
-sync(dataset)
+    # Force write to disk
+    sync(dataset)
 end
 
 """
@@ -506,8 +472,8 @@ get_output_schema(model::BiomeModel)
 
 Define the output variables and their properties for different biome models.
 """
-function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}; 
-                            int_type::Type{<:Integer} = Int, 
+function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel};
+                            int_type::Type{<:Integer} = Int,
                             float_type::Type{<:AbstractFloat} = Float64)
     return Dict(
         "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
@@ -568,7 +534,7 @@ Create output variables in NetCDF dataset based on the model type.
 """
 function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector{T}, lat::AbstractVector{T}, cntx, cnty, numofpfts::U) where {T<:Real, U<:Int}
     # Define dimensions
-    dims = get_required_dimensions(model, cntx, cnty; numofpfts = numofpfts)
+    dims = get_required_dimensions(model, cntx, cnty; numofpfts=numofpfts)
     for (name, size) in dims
         defDim(dataset, name, size)
     end
@@ -577,16 +543,16 @@ function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector
     lon_var = defVar(dataset, "lon", T, ("lon",), attrib=Dict("units" => "degrees_east"))
     lat_var = defVar(dataset, "lat", T, ("lat",), attrib=Dict("units" => "degrees_north"))
 
-    # Fill coordinate variables (convert to plain arrays if needed)
-    lon_var[:] = Array(lon)
-    lat_var[:] = Array(lat)
+    # Fill coordinate variables (already plain vectors from Rasters.lookup)
+    lon_var[:] = lon
+    lat_var[:] = lat
 
     # Define model-specific variables
     schema = get_output_schema(model)
 
     for (var_name, var_info) in schema
         var = defVar(dataset, var_name, var_info.type, var_info.dims, attrib=var_info.attrs)
-        
+
         # Initialize with fill values
         if var_info.dims == ("lon", "lat")
             var[:, :] = fill(-9999, cntx, cnty)
@@ -600,51 +566,6 @@ function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector
     dataset.attrib["institution"] = "WSL"
     dataset.attrib["source"] = "BIOME Model Suite"
     dataset.attrib["model"] = string(typeof(model))
-end
-
-"""
-    parse_coordinates(coordstring, ::Type{T}) where T<:Real
-
-Parse a coordinate string into numeric bounds using the specified type.
-"""
-function parse_coordinates(coordstring::String, ::Type{T}) where {T<:Real}
-    coords = split(coordstring, "/")
-    if length(coords) != 4
-        error("Coordinate string must have format: lon_min/lon_max/lat_min/lat_max")
-    end
-    return parse.(T, coords)
-end
-
-"""
-    get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
-
-Calculate array indices for a geographic bounding box.
-"""
-function get_array_indices(lon_full, lat_full, lon_min, lon_max, lat_min, lat_max)
-    # Find indices for longitude
-    strx = findfirst(x -> x >= lon_min, lon_full)
-    endx = findlast(x -> x <= lon_max, lon_full)
-
-    # Find indices for latitude
-    if lat_full[1] > lat_full[end]
-        # Latitude array is in descending order
-        stry = findfirst(y -> y <= lat_max, lat_full)
-        endy = findlast(y -> y >= lat_min, lat_full)
-    else
-        # Latitude array is in ascending order
-        stry = findfirst(y -> y >= lat_min, lat_full)
-        endy = findlast(y -> y <= lat_max, lat_full)
-    end
-
-    # Handle cases where indices are not found
-    if isnothing(strx) || isnothing(endx) || isnothing(stry) || isnothing(endy)
-        error("Bounding box coordinates are outside the range of the data")
-    end
-
-    cntx = endx - strx + 1
-    cnty = endy - stry + 1
-
-    return strx, stry, cntx, cnty
 end
 
 """
@@ -666,11 +587,6 @@ Parse command-line arguments for the BIOME model driver.
 function parse_command_line()
     s = ArgParseSettings()
     @add_arg_table! s begin
-        "--coordstring"
-        help = "Coordinate string or 'alldata'"
-        arg_type = String
-        default = "alldata"
-
         "--co2"
         help = "CO2 concentration"
         arg_type = Real
@@ -713,7 +629,6 @@ function main()
     args = parse_command_line()
 
     execute!(
-        args["coordstring"],
         args["co2"],
         args["tempfile"],
         args["precfile"],
@@ -722,10 +637,10 @@ function main()
         args["year"],
         args["model"]
     )
-    end
+end
 
-    # Make sure main is called
-    if abspath(PROGRAM_FILE) == @__FILE__
+# Make sure main is called
+if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
 

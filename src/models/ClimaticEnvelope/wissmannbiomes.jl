@@ -1,7 +1,7 @@
 using Statistics
 
 """
-    run(m::WissmannModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
+    runmodel(m::WissmannModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
 
 Classify climate by the Wissmann scheme using 12 months of temperature and precipitation.
 
@@ -24,7 +24,7 @@ Classify climate by the Wissmann scheme using 12 months of temperature and preci
 - Determines hemisphere to compare winter vs summer precipitation.
 - Applies tiered thresholds for Polar, Boreal, Temperate, and Tropical groups.
 """
-function run(m::WissmannModel, input_variables::NamedTuple, args...; kwargs...)
+function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs...)
     # Define Wissmann climate zones
     WI = Dict(
         :IA  => 1, #("I A", "Rainforest, equatorial"),

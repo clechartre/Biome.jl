@@ -11,17 +11,29 @@
 
 **Biome.jl** is a Julia package for simulating climate-driven biome classification and vegetation patterns. It provides implementations of both mechanistic models (including the well-established BIOME4 model) and empirical climate envelope approaches for predicting global vegetation distributions.
 
-If you are looking for an R package with the same functionalities, please check out our [R wrapper](https://github.com/clechartre/biomeR.git)
+If you are looking for an R package with the same functionalities, please check out our [R wrapper](https://github.com/clechartre/biomeR.git). This will allow running the model from Julia in R, and keep the speed of execution. 
 
 ## What is Biome.jl?
 
 This package offers:
 - **BIOME4 Model**: A Julia translation of the original FORTRAN77 equilibrium vegetation model by Kaplan et al. (2003)
+      - The model is offered in a flexible way and BIOME4 PFTs can be modified for regional applications.
 - **Custom Biome Schemes**: Framework for creating your own climate-vegetation classification systems
 - **Plant Functional Types (PFTs)**: Flexible system for defining and parameterizing vegetation types
 - **Climate Envelope Models**: Simpler approaches based on temperature and precipitation thresholds
 
 The models predict vegetation types and biome distributions based on climate variables, making them useful for studying climate-vegetation relationships, climate change impacts, and paleoclimate reconstructions.
+
+## Background
+
+This project provides a toolbox for biome testing based on climate inputs. 
+
+We are building on the BIOME family of models, which simulate physiological processes of Plant functional types (PFTs) like photosynthesis, respiration, growth, estimate their productivity, dominance and outputs biome classifications. 
+
+With this package, you are expected to be able to flexibly define your own PFTs and biome concepts, or test existing ones. 
+
+Our goal is to make biome modelling **easy**, **reproducible**, **composable**, and **scalable**. Checkout our package documentation for a more thorough overview ☺️
+
 
 ## Model Output Example
 
@@ -38,11 +50,9 @@ To run Biome.jl using Julia, you need to set up the required environment by inst
 1. **Install Julia**:  
    First, ensure that Julia is installed on your system. You can download the latest version from the official Julia website: [https://julialang.org/downloads/](https://julialang.org/downloads/).
 
-2. **Clone the Repository**:  
-   Clone this repository to your local machine:
-   ```bash
-   git clone https://github.com/clechartre/Biome.jl.git
-   cd Biome.jl
+2. **Get the package into Julia**:  
+  ```
+  julia add https://github.com/clechartre/Biome.jl.git
    ```
 
 3. ***Activate the Project**:
@@ -84,7 +94,6 @@ All spatial data should be provided as rasters to the `ModelSetup` class intenti
 - Use the [makesoil](https://github.com/ARVE-Research/makesoil) tool to generate soil hydraulic properties
 - Generates water holding capacity (whc) and hydraulic conductivity (Ksat) from soil texture data
 
-
 ## Examples
 
 ### Climate Envelope Model Example
@@ -97,10 +106,9 @@ using Biome, Rasters
 temp = Raster("temperature_1981-2010.nc", name="temp")
 prec = Raster("precipitation_1981-2010.nc", name="prec")
 
-
 # Run model
-setup = ModelSetup(KoppenModel(); temp=temp, prec=prec)
-run!(setup; outfile="climate_biomes.nc")
+setup = ModelSetup(KoppenModel(); temp = temp, prec = prec)
+execute(setup; outfile="climate_biomes.nc")
 ```
 
 ### BIOME4 Mechanistic Model Example
@@ -128,14 +136,28 @@ setup = ModelSetup(BIOME4Model();
     whc=whc, 
     co2=373.8,
     PFTList=pfts)
-run!(setup; coordstring = "alldata", outfile="biome4_output.nc")
+execute(setup; outfile="biome4_output.nc")
 ```
 
 
 ### Coordinate Specification
-- `"alldata"`: Process entire input domain
-- `"lon1/lon2/lat1/lat2"`: Specify bounding box (e.g., "-10/30/35/70" for Europe)
-- Single coordinates: `"lon/lat"` for point locations
+- The `ModelSetup` object accepts environmental inputs in the forms of [Rasters.jl](https://rafaqz.github.io/Rasters.jl/dev/) objects. 
+In the same way, you can specify a subset of coordinates to cut your input Raster to a desired part of the world. 
+In the example from ``Rasters.jl``: 
+
+```
+using Rasters, RasterDataSources, Plots
+evenness = Raster(EarthEnv{HabitatHeterogeneity}, :evenness)
+rnge = Raster(EarthEnv{HabitatHeterogeneity}, :range)
+
+# Roughly cut out South America
+sa_bounds = X(-88 .. -32), Y(-57 .. 13)
+sa_evenness = evenness[sa_bounds...]
+```
+
+Same here
+- Define your bounds as in Rasters.jl ` SA_bounds = X(xmin .. xmax), Y(ymin .. ymax)`
+- Pass them on to the execute call `execute(setup; bounds = SA_bounds, outfile="biome4_output.nc")`
 
 ## Customization
 
@@ -164,21 +186,11 @@ set_characteristic!(pfts, "BorealEvergreen", :gdd5, [600.0, Inf])
 set_characteristic!(pfts, "BorealDeciduous", :tcm, [-40.0, 18.0])
 ```
 
-## Troubleshooting
-
-- **Memory issues**: Use coordinate strings to process smaller regions
-- **Missing data**: Ensure all input files have consistent spatial grids
-- **Slow performance**: Consider using fewer PFTs, lower resolution data, or parallelize your work
-
 ## More Information
 
 - See `examples/` directory for complete working examples
 - Check `test/` directory for model validation examples
 - Documentation: [Link to docs when available]
-
-## Background
-
-This project translates the original FORTRAN77 BIOME4 model (Kaplan et al. 2003) to modern Julia, making it more accessible and extensible. The original BIOME4 v4.2b2 computational core has been preserved while adding new functionality for custom biome definitions.
 
 ## Credits
 

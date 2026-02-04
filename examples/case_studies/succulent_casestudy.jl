@@ -20,7 +20,7 @@ whc_raster =  Raster(soilfile, name="whc")
 # Add a PFT to the list:
 SucculentPFT = BroadleafDeciduousPFT(           # Some comments about the rationale
     name = "Succulent",
-    phenological_type           = 2,            # Many are deciduous
+    phenological_type           = 2,            # Many are deciduous 1: Evergreen, 2: Deciduous
     max_min_canopy_conductance  = 0.05,         # Took the same value as C3C4WoodyDesert
     Emax                        = 8.0,
     sw_drop                     = -99.9,
@@ -149,5 +149,5 @@ setup = ModelSetup(BIOMEDominanceModel();
                    biome_assignment = my_biome_assign)
  
 # Run the model
-run!(setup; coordstring="alldata", outfile="output_succulent_biome.nc")
+execute(setup; coordstring="alldata", outfile="output_succulent_biome.nc")
  
