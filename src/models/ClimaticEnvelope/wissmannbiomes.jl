@@ -134,5 +134,5 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
         end
     end
 
-    return (climate_zone = -1,)  # fallback if classification fails
+    return (wissmann_climate_zone = -1,)  # fallback if classification fails
 end
