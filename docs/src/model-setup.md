@@ -18,7 +18,7 @@ prec_r = Raster("/path/to/prec.nc", name="prec")
 
 # Minimal example (Köppen model)
 setup = ModelSetup(KoppenModel(); temp=temp_r, prec=prec_r)
-run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
+execute!(setup; outfile="output_Koppen.nc")
 ```
 
 ---
@@ -35,8 +35,8 @@ run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
 * `biome_assignment::Function` — override biome mapping (optional)
 * `int_type`, `float_type` — numeric types (optional)
 
-The driver slices the domain (using `coordstring`), processes in chunks, resumes from an existing NetCDF if found, and writes outputs per model schema.
-* Provide coordstring in a lon/lat system with `lonmin/lonmax/latmin/latmax` between -180/180/-90/90.
+The driver slices the domain (using `boundsg`), processes in chunks, resumes from an existing NetCDF if found, and writes outputs per model schema.
+* Provide coordstring in a Rasters.jl compatible syntax such as ` X(-180 .. 180), Y(-90 .. 90)`
 
 ---
 
@@ -55,7 +55,7 @@ All rasters must share **the same grid, ordering, and resolution**. Missing valu
 
 **Common optional (model- or PFT-dependent):**
 
-* `clt` or `sun` (cloudiness or sunshine)
+* `clt` (cloudiness)
 * `ksat` (saturated hydraulic conductivity)
 * `whc` (water holding capacity)
 * other custom covariates (e.g., `tmin`, `gdd0`, `maxdepth`, …)
@@ -114,14 +114,15 @@ cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9
 
 ---
 
-## 5) Selecting the domain (`coordstring`)
+## 5) Selecting the domain (`bounds`)
 
-* Use `"alldata"` to process the full grid (default).
-* Or pass `"lon_min/lon_max/lat_min/lat_max"` (e.g., `"-180/0/-90/90"`).
+* Do not specify bounds to process the full grid (default).
+* Or pass `X(lon_min .. lon_max), Y(lat_min .. latmax)` (e.g., `"-180/0/-90/90"`).
 * The driver maps those to array indices even if latitude is descending.
 
 ```julia
-run!(setup; coordstring="-180/0/-90/90", outfile="subset.nc")
+alldata = X(-180 .. 180, Y(-90 .. 90))
+run!(setup; bounds = alldata, outfile = "subset.nc")
 ```
 
 ---
@@ -165,6 +166,6 @@ setup = ModelSetup(BaseModel();
     temp=temp_r, prec=prec_r, clt=clt_r, ksat=ksat_r, whc=whc_r,
     test=test_r, co2=373.8, pftlist=pfts, biome_assignment=my_biome_assign)
 
-run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
+run!(setup; outfile="output_BaseModel.nc")
 ```
 
