@@ -3,7 +3,7 @@
 </p>
 
 [![Run tests](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/clechartre/BIOME5/actions/workflows/pre-commit.yml)
-[![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://clechartre/Biome.jl/stable/)
+[![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://github.com/clechartre/Biome.jl/stable/)
   <a href="https://mit-license.org">
     <img alt="MIT license" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square">
   </a>
