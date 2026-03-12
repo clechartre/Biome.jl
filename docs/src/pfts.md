@@ -6,7 +6,7 @@ Plant functional types (PFTs) are the basis of the mechanical schemes. Instead o
 
 The defintion of PFTs often includes information on their climatic range and on their phenology, leaf form, or general energy acquisition strategy. 
 
-For instance, the original PFTs used in BIOME4 are: Tropical Evergreen, Tropical Deciduous, Temperate Broadleaved Evergreen, Temperate Deciduous, Temperate Needleleaf Everegreen, Boreal Evergreen, Boreal Deciduous, Temperate C3 Grass, Tropical/Warm-temperate Grass (C4), Desert Woody (C3 or C4), Tundra Shrub, Cold Herbaceous, Lichen/Forb (Kaplan & Prentice., 2004).
+For instance, the original PFTs used in BIOME4 are: Tropical Evergreen, Tropical Deciduous, Temperate Broadleaved Evergreen, Temperate Deciduous, Temperate Needleleaf Everegreen, Boreal Evergreen, Boreal Deciduous, Temperate C3 Grass, Tropical/Warm-temperate Grass (C4), Desert Woody (C3 or C4), Tundra Shrub, Cold Herbaceous, Lichen/Forb (Kaplan, 2001).
 
 However, this list is not finite and could be extended to for example: Epiphytes, CAM Succulents, C4 Forbs, Mangroves, and so on.
 
@@ -23,7 +23,7 @@ In this package, we provide you with base PFTs based on Phenology:
 We have initialized them with generic parameters.
 You also can manually modify these traits (see [defining your own PFTs](#defining-your-own-pfts)).
 
-When running the BIOME4 model, the default PFTs as defined by Kaplan and Prentice (2001) will be used.
+When running the BIOME4 model, the default PFTs as defined by Kaplan (2001) will be used.
 
 ## PFT traits in the model
 
@@ -69,7 +69,7 @@ The model is based on a series traits used to compute the growth of each PFT thr
 | `gdd0`    | GDD for growth initiation above 0 °C                | 500 | 10000 | Hallgren & Pitman (2001)             |
 | `twm`     | Temperature for water limitation growth cutoff (°C) | 0   | +Inf   | Hallgren & Pitman (2001)             |
 | `snow`    | Snow depth required for growth (cm)                 | 0   | 100  | Hallgren & Pitman (2001)             |
-| `swb`     | Soil water balance (mm)                             | 0   | 2000 | Added in this iteration of the model |
+| `swb`     | Site water balance (mm)                             | 0   | 2000 | Added in this iteration of the model |
 
 ## Defining your own PFTs
 
@@ -129,7 +129,8 @@ function WoodyDesert()
             (clt=9.2, prec=2.5, temp=23.9),
             (clt=2.2, prec=2.8, temp=2.7))
         ).
-        dominance_factor = 5
+        dominance_factor = 5,
+        minimum_lai = 1
     )
 end
 
@@ -154,5 +155,5 @@ set_characteristic!(pftlist, "LichenForb", :tcm, [99999.0, Inf])
 
 * Hallgren, Willow & Pitman, AJ. (2001). The uncertainty in simulations by a Global Biome Model (BIOMES) to alternative parameter values. Global Change Biology. 6. 483 - 495. 10.1046/j.1365-2486.2000.00325.x.
 * Haxeltine, A., & Prentice, I. C. (1996). BIOME3: An equilibrium terrestrial biosphere model based on ecophysiological constraints, resource availability, and competition among plant functional types. Global Biogeochemical Cycles, 10(4), 693–709. [https://doi.org/10.1029/96GB02344](https://doi.org/10.1029/96GB02344)
-* Kaplan, J., & Prentice, I. (2001). Geophysical Applications of Vegetation Modeling.
+* Kaplan, J. O. (2001). Geophysical Applications of Vegetation Modeling. (Ph.D. thesis), Lund University, Lund, Sweden. doi:10.5281/zenodo.1492908
 * Prentice, I. C., Cramer, W., Harrison, S. P., Leemans, R., Monserud, R. A., & Solomon, A. M. (1992). Special Paper: A Global Biome Model Based on Plant Physiology and Dominance, Soil Properties and Climate. Journal of Biogeography, 19(2), 117–134. [https://doi.org/10.2307/2845499](https://doi.org/10.2307/2845499)

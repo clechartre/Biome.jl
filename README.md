@@ -195,10 +195,11 @@ set_characteristic!(pfts, "BorealDeciduous", :tcm, [-40.0, 18.0])
 
 ## Credits
 
-- **Original BIOME4 model**: Jed Kaplan ([Kaplan & Prentice, 2001](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling))
+- **Original BIOME4 model**: Jed Kaplan ([Kaplan, 2001](https://www.researchgate.net/publication/37470169_Geophysical_Applications_of_Vegetation_Modeling))
 - **Julia translation & package development**: Capucine Lechartre (capucine.lechartre@wsl.ch)
 - **Original FORTRAN code**: Available at [github.com/jedokaplan/BIOME4](https://github.com/jedokaplan/BIOME4)
 
 ## References
 
-Kaplan, J.O., Bigelow, N.H., Prentice, I.C., Harrison, S.P., Bartlein, P.J., Christensen, T.R., Cramer, W., Matveyeva, N.V., McGuire, A.D., Murray, D.F. and Razzhivin, V.Y., 2003. Climate change and Arctic ecosystems: 2. Modeling, paleodata‐model comparisons, and future projections. *Journal of Geophysical Research*, 108(D19).
+* Kaplan, J.O., Bigelow, N.H., Prentice, I.C., Harrison, S.P., Bartlein, P.J., Christensen, T.R., Cramer, W., Matveyeva, N.V., McGuire, A.D., Murray, D.F. and Razzhivin, V.Y., 2003. Climate change and Arctic ecosystems: 2. Modeling, paleodata‐model comparisons, and future projections. *Journal of Geophysical Research*, 108(D19).
+* Kaplan, J. O. (2001). Geophysical Applications of Vegetation Modeling. (Ph.D. thesis), Lund University, Lund, Sweden. doi:10.5281/zenodo.1492908
