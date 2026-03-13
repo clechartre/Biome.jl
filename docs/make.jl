@@ -22,7 +22,7 @@ makedocs(
   pages = [
         "Home" => "index.md",
         "User Guide" => Any[
-        "Getting Started" =>  Any["getting-started.md", "model-setup.md",
+        "Getting Started" =>  Any["model-setup.md",
         "data.md"],
         "Plant Functional Types" => "pfts.md",
         "PFT Database" => "pft_database.md",
@@ -30,7 +30,7 @@ makedocs(
         "Climate Models"  => Any[
             "Koppen-Geiger" => "koppen.md",
             "Thornthwaite" => "thornthwaite.md",
-            "Troll-Pfaffen" => "trollpfaffen.md",
+            "Troll-Pfaffen" => "trollpaffen.md",
             "Wissmann" => "wissmann.md",
             ],
         "Mechanistic Model" => Any[
