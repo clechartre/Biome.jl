@@ -18,7 +18,7 @@ setup = ModelSetup(KoppenModel();
                    temp=temp_raster,
                    prec=prec_raster)
 
-run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
+run!(setup; outfile="output_Koppen.nc")
 
 ````
 
@@ -81,7 +81,7 @@ setup = ModelSetup(BIOME4Model();
                    co2=373.8,
                    pftlist = PFTList)
 
-run!(setup; coordstring="alldata", outfile="output_biome4.nc")
+run!(setup; outfile="output_biome4.nc")
 `````
 
 If you want to modify some of the PFT characteristics of you BIOME4 PFTList, you can do so usign the `set_characteristic`function, where we change the GDD5 of the "BorealEvergreen" PFT: 
@@ -128,7 +128,9 @@ setup = ModelSetup(BaseModel;
                    co2=373.8,
                    pftlist = pftlist)
 
-run!(setup; coordstring="-180/0/-90/90", outfile="output_BaseModel.nc")
+north_west = X(-180 .. 0), Y(0 .. 90)
+
+run!(setup; bounds = north_west , outfile="output_BaseModel.nc")
 `````
 
 
@@ -226,7 +228,6 @@ function my_biome_assign(pft::AbstractPFT;
     elseif get_characteristic(pft, :name) == "TemperateDeciduous"
         return TemperateDeciduousForest()
     else
-    # FIXME could we make this fallback silent
         return Biome.assign_biome(pft;
                 subpft=subpft, wdom=wdom,
                 gdd0=gdd0, gdd5=gdd5,
@@ -256,7 +257,7 @@ setup = ModelSetup(BaseModel();
                    pftlist = PFTList,
                    biome_assignment = my_biome_assign)
 
-run!(setup; coordstring="alldata", outfile="output_testCustom.nc")
+run!(setup; outfile="output_testCustom.nc")
 
 `````
 

@@ -42,26 +42,38 @@ This mode keeps the BIOME4 physiology (environmental sieve → LAI & NPP per PFT
 
 ### Rationale (dominance envelope)
 
-For each PFT and each climate variable (cloudiness, precipitation, temperature), we define an optimum and spread (fitted as a Gaussian in the PFT's observed/climatological niche). For a pixel value ``x_v`` and variable ``v ∈ {clt, temp, prec}``, we compute a standardized dominance contribution:
+We define a fundamental niche for each PFT ($p$) as a set of admissible intervals $[l_{p,j}, u_{p,j}]$ for key environmental predictors $j$, such as absolute minimum temperature ($t_{min}$), growing degree days ($gdd5, gdd0$), mean warm-month temperature ($t_{wm}$), and maximum snow depth ($maxdepth$).
+
+For a given grid cell with environmental vector $\mathbf{x}$, the distance $d_{p,j}$ of the current value $x_j$ from the PFT's interval is:
 
 ```math
-\mathrm{dom}_v = \exp\!\left(-\frac{(x_v - \mu_{\mathrm{PFT},v})^2}{2\,\sigma_{\mathrm{PFT},v}^2}\right)
+d_{p,j}(x_j) = \begin{cases}
+  l_{p,j} - x_j & \text{if } x_j < l_{p,j} \\
+  0 & \text{if } l_{p,j} \le x_j \le u_{p,j} \\
+  x_j - u_{p,j} & \text{if } x_j > u_{p,j}
+\end{cases}
 ```
 
-Then sum (or weight/sum) across variables:
+This distance is normalized by a predictor-specific tolerance parameter $s_{p,j}$. We compute a total squared standardized distance $D_{p}^2(\mathbf{x})$ across all predictors:
 
 ```math
-\text{dominance\_environment} = \mathrm{dom}_{\text{clt}} + \mathrm{dom}_{\text{temp}} + \mathrm{dom}_{\text{prec}}
+D_p^2(\mathbf{x}) = \sum_j \left( \frac{ d_{p,j}(x_j) }{ s_{p,j} } \right)^2
 ```
 
-Finally, combine climate dominance with productivity and a PFT-specific ``\text{dominance\_factor}``:
+A fitness index $S_p(\mathbf{x})$ is then derived using a Gaussian-like kernel:
 
 ```math
-\mathrm{score}_{\mathrm{PFT}} = \text{dominance\_environment}\times \mathrm{NPP}_{\mathrm{PFT}} \times \frac{1}{\text{dominance\_factor}_{\mathrm{PFT}}}
+S_p(\mathbf{x}) = \exp \left( -\frac{1}{2} D_p^2(\mathbf{x}) \right)
+```
+
+The final competitive ability $C(\mathbf{x})$ integrates this fitness with the PFT's potential Net Primary Production (NPP) and an inverse dominance class weight ($D$):
+
+```math
+C(\mathbf{x}) = S_p(\mathbf{x}) \cdot \text{NPP} \cdot \frac{1}{D}
 ```
 
 
-The PFT with the highest score is the dominant (**optpft**). Woody and grass subdominants are tracked for mixed cases.
+All PFTs present in the grid cell are ranked by this competitive score $C$, and the highest-scoring PFT is selected as the dominant type (**optpft**). Sub-dominant woody and grass types are also recorded to capture mixed ecosystem states.
 
 ### Outputs
 
@@ -74,14 +86,14 @@ The **biome** is still assigned using the BIOME4 PFT→biome mapping after domin
 
 At a high level, both modes:
 
-1. **Sieve PFTs** by physiological constraints (e.g., `tmin`, `gdd5/gdd0`, `tcm`, `twm`, snow, soil water balance).  
+1. **Sieve PFTs** by physiological constraints (e.g., `tmin`, `gdd5/gdd0`, `tcm`, `twm`, `snow max depth`, `site water balance`).  
 2. Compute **LAI** and **NPP** for all surviving PFTs.
 
 They diverge at step (3):
 
 | Step | Original BIOME4 | Dominance-mode (Biome.jl) |
 |---|---|---|
-| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT’s optima for `clt/temp/prec`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |
+| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT’s optima for `tcm/tmin/gdd5/gdd0/twm/maxdepth`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |
 
 This preserves BIOME4’s physiology and the environmental sieve, while replacing the final “if/else” winner logic with a continuous dominance score—making it easier to extend to custom PFT sets without rewriting many rule branches.
 
@@ -113,13 +125,13 @@ Keep a sidecar legend for **PFT id → name** and **biome id → label** used in
 
 - **Flat/missing output**: check raster alignment/units; inspect the min/max debug prints in the driver.  
 - **Everything “NA”**: verify units and that monthly stacks are on the 3rd dimension.  
-- **Resume quirks**: the driver skips rows where the primary variable (`biome`) already holds non-fill values; remove/rename the outfile to force a clean run.
+- **Resume issues**: the driver skips rows where the primary variable (`biome`) already holds non-fill values; remove/rename the outfile to force a clean run.
 
 ---
 
 ## References
 
-- Haxeltine, A., & Prentice, I. C. (1996). *BIOME3: An equilibrium terrestrial biosphere model based on ecophysiological constraints, resource availability, and competition among plant functional types.* Global Biogeochemical Cycles, 10(4), 693–709.  
-- Kaplan, J., & Prentice, I. (2001). *Geophysical Applications of Vegetation Modeling.*  
+- Haxeltine, A., & Prentice, I. C. (1996). *BIOME3: An equilibrium terrestrial biosphere model based on ecophysiological constraints, resource availability, and competition among plant functional types* Global Biogeochemical Cycles, 10(4), 693–709.
+- Kaplan, J. O. (2001). *Geophysical Applications of Vegetation Modeling*.* (Ph.D. thesis), Lund University, Lund, Sweden. doi:10.5281/zenodo.1492908
 - Prentice, I. C., Cramer, W., Harrison, S. P., Leemans, R., Monserud, R. A., & Solomon, A. M. (1992). *A Global Biome Model Based on Plant Physiology and Dominance, Soil Properties and Climate.* Journal of Biogeography, 19(2), 117–134.  
 - BIOME4 Fortran sources: https://github.com/jedokaplan/BIOME4
