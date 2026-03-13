@@ -7,11 +7,15 @@
     // Prefer an explicit hint on the script tag
     const scriptWithHint = document.querySelector('script[data-pft-base]');
     if (scriptWithHint && scriptWithHint.src) {
-      const hinted = scriptWithHint.getAttribute('data-pft-base') || '.';
-      return new URL(hinted, scriptWithHint.src).href;
+      const hinted = (scriptWithHint.getAttribute('data-pft-base') || '').trim();
+      // Use only absolute hints. Relative hints are fragile on nested pages.
+      if (hinted.startsWith('/') || /^(https?:)?\/\//.test(hinted)) {
+        return new URL(hinted, window.location.origin).href;
+      }
+      return new URL('./', scriptWithHint.src).href;
     }
     // Fallback: find this script by filename
-    const byName = Array.from(document.scripts).find(s => (s.src || '').endsWith('/assets/pfts/pfts.js'));
+    const byName = Array.from(document.scripts).find(s => (s.src || '').includes('/assets/pfts/pfts.js'));
     if (byName && byName.src) {
       return new URL('./', byName.src).href; // folder containing pfts.js
     }
