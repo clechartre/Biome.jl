@@ -26,7 +26,7 @@ This documentation provides a comprehensive guide to:
 
 ---
 
-Start with the [Getting Started](./getting-started.md) guide to install and run your first Biome.jl model, or jump to the [Model Configuration](./model-setup.md) section for a deeper dive into custom simulations.
+Start with the [Getting Started](./model-setup.md) guide to install and run your first Biome.jl model, or jump to the [Model Configuration](./model-setup.md) section for a deeper dive into custom simulations.
 
 ## Credits
 

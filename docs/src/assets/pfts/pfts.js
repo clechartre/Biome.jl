@@ -15,7 +15,7 @@
       return new URL('./', scriptWithHint.src).href;
     }
     // Fallback: find this script by filename
-    const byName = Array.from(document.scripts).find(s => (s.src || '').endsWith('/assets/pfts/pfts.js'));
+    const byName = Array.from(document.scripts).find(s => (s.src || '').includes('/assets/pfts/pfts.js'));
     if (byName && byName.src) {
       return new URL('./', byName.src).href; // folder containing pfts.js
     }
