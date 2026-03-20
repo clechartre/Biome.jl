@@ -71,9 +71,35 @@ function set_characteristic!(
     return pft
 end
 
-function add_constraint!(pft::AbstractPFT, key::Symbol, range::Tuple{T, T}) where {T<:Real}
+"""
+    add_constraint!(pft_list::PFTList, pft_index::Int, constraint::Constraint)
+
+Add a new constraint to the PFT of interest in the PFTList.
+
+# Arguments
+- `pft_list::PFTList`: The plant functional type list to modify
+- `pft_index::Int`: The index of the PFT to add the constraint to
+- `constraint::Constraint`: The constraint object to be added
+
+# Details
+This function modifies the specified PFT in the list by appending a new constraint.
+Constraints are used to define the physiological limits of each PFT.
+"""
+function add_constraint!(pl_mod::AbstractPFTList, name::Union{String,Symbol}, key::Symbol, range::Tuple{T, T}) where {T<:Real}
+    #Normalize the lookup name
+    target = name isa Symbol ? string(name) : name
+
+    # Find the PFT in pl_mod.pft_list
+    list = getfield(pl_mod, :pft_list)
+    idx  = findfirst(pft -> pft.characteristics.name == target, list)
+    idx === nothing && throw(ArgumentError("no PFT named \"$target\" found"))
+
+    pft = list[idx]
+
     c = pft.characteristics
     c.constraints = merge(c.constraints, (; key => collect(range)))
+
+    return pft
 end
 
 
