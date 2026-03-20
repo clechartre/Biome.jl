@@ -106,7 +106,7 @@ function runmodel(m::ThornthwaiteModel, input_variables::NamedTuple, args...; kw
         end
 
     # Store results in output
-    output = (temperature_zone = temperature_zone, moisture_zone = moisture_zone)
+    output = (thornthwaite_temperature_zone = temperature_zone, thornthwaite_moisture_zone = moisture_zone)
 
     return output
 

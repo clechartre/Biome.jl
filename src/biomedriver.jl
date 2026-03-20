@@ -406,7 +406,7 @@ function get_primary_variable(model::Union{BIOME4Model, BIOMEDominanceModel, Bas
 end
 
 function get_primary_variable(model::WissmannModel)
-    return :climate_zone
+    return :wissmann_climate_zone
 end
 
 function get_primary_variable(model::KoppenModel)
@@ -414,7 +414,7 @@ function get_primary_variable(model::KoppenModel)
 end
 
 function get_primary_variable(model::ThornthwaiteModel)
-    return :temperature_zone
+    return :thornthwaite_temperature_zone
 end
 
 function get_primary_variable(model::TrollPaffenModel)
@@ -433,7 +433,7 @@ function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, Base
 end
 
 function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:climate_zone][x, y] = output.climate_zone
+    output_stack[:wissmann_climate_zone][x, y] = output.wissmann_climate_zone
 end
 
 function process_cell_output(model::KoppenModel, x, y, output, output_stack::RasterStack; numofpfts)
@@ -441,8 +441,8 @@ function process_cell_output(model::KoppenModel, x, y, output, output_stack::Ras
 end
 
 function process_cell_output(model::ThornthwaiteModel, x, y, output, output_stack::RasterStack; numofpfts)
-    output_stack[:temperature_zone][x, y] = output.temperature_zone
-    output_stack[:moisture_zone][x, y] = output.moisture_zone
+    output_stack[:thornthwaite_temperature_zone][x, y] = output.thornthwaite_temperature_zone
+    output_stack[:thornthwaite_moisture_zone][x, y] = output.thornthwaite_moisture_zone
 end
 
 function process_cell_output(model::TrollPaffenModel, x, y, output, output_stack::RasterStack; numofpfts)
@@ -484,7 +484,7 @@ end
 
 function get_output_schema(model::WissmannModel)
     return Dict(
-        "climate_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Wissmann climate zone classification")),
+        "wissmann_climate_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Wissmann climate zone classification")),
     )
 end
 
@@ -496,8 +496,8 @@ end
 
 function get_output_schema(model::ThornthwaiteModel; int_type::Type{<:Integer} = Int)
     return Dict(
-    "temperature_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite temperature zone")),
-    "moisture_zone"    => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite moisture zone"))
+    "thornthwaite_temperature_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite temperature zone")),
+    "thornthwaite_moisture_zone"    => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite moisture zone"))
     )
 end
 
