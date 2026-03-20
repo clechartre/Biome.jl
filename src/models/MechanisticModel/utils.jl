@@ -86,7 +86,6 @@ This function modifies the specified PFT in the list by appending a new constrai
 Constraints are used to define the physiological limits of each PFT.
 """
 function add_constraint!(pl_mod::AbstractPFTList, name::Union{String,Symbol}, key::Symbol, range::Tuple{T, T}) where {T<:Real}
-
     #Normalize the lookup name
     target = name isa Symbol ? string(name) : name
 
@@ -99,7 +98,6 @@ function add_constraint!(pl_mod::AbstractPFTList, name::Union{String,Symbol}, ke
 
     c = pft.characteristics
     c.constraints = merge(c.constraints, (; key => collect(range)))
-
 
     return pft
 end

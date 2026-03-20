@@ -151,6 +151,21 @@ set_characteristic!(pftlist, "LichenForb", :Emax, 999999.0)
 set_characteristic!(pftlist, "LichenForb", :tcm, [99999.0, Inf])
 ```
 
+## Adding constraints to existing PFTs 
+
+You can add new constraints to PFTs in your existing PFT list in a very similar way as you would use `set_characteristic!`, just as a tuple.
+Just don't forget to pass the new constraint as an input or to refer to an existing model variable. 
+Below is an example of how you can do so. 
+
+```julia
+pftlist = BIOME4.PFTClassification()
+
+# Customize using set_characteristic!
+add_constraint!(pftlist, "LichenForb", :mynewconstraint, (-12000.0, +Inf))
+
+```
+
+
 ## References
 
 * Hallgren, Willow & Pitman, AJ. (2001). The uncertainty in simulations by a Global Biome Model (BIOMES) to alternative parameter values. Global Change Biology. 6. 483 - 495. 10.1046/j.1365-2486.2000.00325.x.
