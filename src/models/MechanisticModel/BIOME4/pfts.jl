@@ -132,7 +132,7 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(500),+Inf]
+                swb=[T(300),+Inf]
             ),
             U(1),
             T(2.5)
