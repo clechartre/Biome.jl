@@ -90,7 +90,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [400.0, +Inf]
             ),
-            dominance_factor = 3
+            dominance_factor = 3,
+            minimum_lai = 0
         ),
     AbstractBroadleafEvergreenPFT => (
             name                    = "BroadleafEvergreenBase",
@@ -116,7 +117,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [400.0, +Inf]
             ),
-            dominance_factor = 2
+            dominance_factor = 2,
+            minimum_lai = 2.5
         ),
     AbstractNeedleleafDeciduousPFT => (
             name                    = "NeedleleafDeciduousBase",
@@ -148,7 +150,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth = [-Inf, +Inf],
                 swb  = [400.0, +Inf]
             ),
-            dominance_factor = 3
+            dominance_factor = 3,
+            minimum_lai = 0
     ),
     AbstractBroadleafDeciduousPFT => (
         name                    = "BroadleafDeciduousBase",
@@ -175,7 +178,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             maxdepth  = [-Inf,+Inf],
             swb   = [400.0,+Inf]
         ),
-        dominance_factor = 3
+        dominance_factor = 3,
+        minimum_lai = 1.5
     ),
     AbstractC3GrassPFT => (
         name                       = "C3GrassBase",
@@ -204,7 +208,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             maxdepth = [-Inf, Inf],
             swb  = [100.0, Inf]
         ),
-        dominance_factor = 5
+        dominance_factor = 5,
+        minimum_lai = 0.4
     ),
     AbstractC4GrassPFT => (
         name                       = "C4GrassBase",
@@ -234,7 +239,8 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             maxdepth = [-Inf, Inf],
             swb  = [100.0, Inf]
         ),
-        dominance_factor = 5
+        dominance_factor = 5,
+        minimum_lai = 0.4
     )
 )
 
