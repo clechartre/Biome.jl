@@ -23,7 +23,7 @@ export NONE_INSTANCE, DEFAULT_INSTANCE
 
 """
     runmodel(m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, vars_in::NamedTuple; 
-    pftlist, biome_assignment) where {T<:Real,U<:Int}
+    pftlist, biome_assignment, pft_parametrization) where {T<:Real,U<:Int}
 
 Execute the complete mechanistic model simulation for a single grid cell.
 
@@ -31,12 +31,16 @@ This function orchestrates the entire modeling workflow including:
 climate data processing, snow dynamics, soil temperature calculation,
 potential evapotranspiration, phenology, plant functional type constraints,
 NPP optimization, and biome classification.
+
+When `pft_parametrization=true`, returns early after constraints with PFT state data
+for parameter tuning purposes.
 """
 function runmodel(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, 
     vars_in::NamedTuple;
     pftlist::AbstractPFTList,
-    biome_assignment::Function
+    biome_assignment::Function,
+    pft_parametrization::Bool = false
 )
     # Initialize environmental variables from the input
     env_variables = initialize_environmental_variables(vars_in)
@@ -50,6 +54,17 @@ function runmodel(
 
     # Apply environmental constraints to determine PFT presence
     pftstates = constraints(pftlist, pftstates, env_variables)
+
+    # If in parametrization mode, return early with PFT states after constraints
+    if pft_parametrization
+        return create_parametrization_output(
+            pftstates,
+            pftlist,
+            numofpfts,
+            lat,
+            lon
+        )
+    end
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(pftlist.pft_list)
@@ -356,6 +371,33 @@ function initialize_pftstates(
     return pftstates, numofpfts
 end
 
+
+"""
+    create_parametrization_output(pftstates, pftlist, numofpfts, lat, lon)
+
+Construct parametrization mode output containing PFT states right after constraints.
+
+Returns a `NamedTuple` with PFT presence information for each PFT for parameter tuning.
+"""
+function create_parametrization_output(
+    pftstates::Dict{AbstractPFT,PFTState},
+    pftlist::AbstractPFTList,
+    numofpfts::U,
+    lat::T,
+    lon::T
+) where {T<:Real, U<:Int}
+    # Collect presence flags for all PFTs
+    pft_present = Vector{Bool}(undef, numofpfts)
+    @inbounds for (i, pft) in enumerate(pftlist.pft_list)
+        pft_present[i] = pftstates[pft].present
+    end
+
+    return (
+        pft_present = pft_present,
+        lat = lat,
+        lon = lon
+    )
+end
 
 """
     create_output_vector(biome, optpft, pftstates, pftlist, numofpfts, lat, lon)

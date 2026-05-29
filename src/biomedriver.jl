@@ -99,7 +99,7 @@ function ModelSetup(Model::BiomeModel;
     return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, Int64, float_type)
 end
 
-function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing, outfile::Union{String, Nothing}=nothing)
+function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing, outfile::Union{String, Nothing}=nothing, pft_parametrization::Bool = false)
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
@@ -110,7 +110,8 @@ function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing
         env_raster;
         bounds=bounds,
         outfile=outfile,
-        biome_assignment=setup.biome_assignment
+        biome_assignment=setup.biome_assignment,
+        pft_parametrization=pft_parametrization
     )
 end
 
@@ -121,7 +122,8 @@ function _simulate!(
         env_raster::NamedTuple;
         bounds::Union{Tuple{X,Y}, Nothing} = nothing,
         outfile::Union{String, Nothing} = nothing,
-        biome_assignment::Union{Function, Nothing} = nothing
+        biome_assignment::Union{Function, Nothing} = nothing,
+        pft_parametrization::Bool = false
     ) where {T<:Real}
 
     if biome_assignment === nothing
@@ -161,18 +163,18 @@ function _simulate!(
 
     if isnothing(outfile)
         # We don't make a file
-        output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+        output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts, pft_parametrization)
 
     else
         if isfile(outfile)
             println("File $outfile already exists. Resuming from last processed row.")
             output_dataset = NCDataset(outfile, "a")
-            output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts)
+            output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts, pft_parametrization)
         else
             output_dataset = NCDataset(outfile, "c")
             println("Creating new output file: $outfile")
-            create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts)
-            output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+            create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts, pft_parametrization)
+            output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts, pft_parametrization)
         end
     end
 
@@ -238,7 +240,8 @@ function _simulate!(
                 output_stack,
                 model,
                 pftlist,
-                biome_assignment
+                biome_assignment,
+                pft_parametrization
             )
         end
 
@@ -266,13 +269,13 @@ function _simulate!(
 end
 
 """
-    create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts)
+    create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts, pft_parametrization)
 
 Create a RasterStack for output variables based on the model type, preserving
 the X/Y dimension objects from the reference Raster.
 """
-function create_output_rasterstack(model::BiomeModel, x_dim, y_dim, cntx, cnty, numofpfts)
-    schema = get_output_schema(model)
+function create_output_rasterstack(model::BiomeModel, x_dim, y_dim, cntx, cnty, numofpfts, pft_parametrization::Bool=false)
+    schema = get_output_schema(model; pft_parametrization=pft_parametrization)
 
     rasters = Raster[]
     for (var_name, var_info) in schema
@@ -297,13 +300,13 @@ function create_output_rasterstack(model::BiomeModel, x_dim, y_dim, cntx, cnty, 
 end
 
 """
-    load_existing_rasterstack(dataset, model, x_dim, y_dim, numofpfts)
+    load_existing_rasterstack(dataset, model, x_dim, y_dim, numofpfts, pft_parametrization)
 
 Load existing data from NetCDF into a RasterStack for resume functionality,
 reusing the reference X/Y dimension objects.
 """
-function load_existing_rasterstack(dataset, model::BiomeModel, x_dim, y_dim, numofpfts)
-    schema = get_output_schema(model)
+function load_existing_rasterstack(dataset, model::BiomeModel, x_dim, y_dim, numofpfts, pft_parametrization::Bool=false)
+    schema = get_output_schema(model; pft_parametrization=pft_parametrization)
     rasters = Raster[]
 
     for (var_name, var_info) in schema
@@ -339,7 +342,8 @@ function process_cell(
     output_stack::RasterStack,
     model::BiomeModel,
     pftlist::AbstractPFTList,
-    biome_assignment::Function
+    biome_assignment::Function,
+    pft_parametrization::Bool = false
 ) where {T<:Real}
 
     primary_var = get_primary_variable(model)
@@ -364,7 +368,7 @@ function process_cell(
     input_variables = (; input_dict...)
 
     # Run the model 
-    output = runmodel(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment)
+    output = runmodel(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment, pft_parametrization = pft_parametrization)
 
     numofpfts = length(pftlist.pft_list)
 
@@ -427,9 +431,18 @@ process_cell_output(model, x, y, output, output_stack)
 Write model output to the RasterStack based on model type.
 """
 function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, x, y, output::NamedTuple, output_stack::RasterStack; numofpfts)
-    output_stack[:biome][x, y] = output.biome
-    output_stack[:optpft][x, y] = output.optpft
-    output_stack[:npp][x, y, :] = output.npp
+    # Handle parametrization mode output (only has pft_present)
+    if haskey(output, :pft_present)
+        # In parametrization mode, store PFT presence data if available in output_stack
+        if haskey(output_stack, :pft_present)
+            output_stack[:pft_present][x, y, :] = output.pft_present
+        end
+    else
+        # Standard mode: write biome, optpft, and npp data
+        output_stack[:biome][x, y] = output.biome
+        output_stack[:optpft][x, y] = output.optpft
+        output_stack[:npp][x, y, :] = output.npp
+    end
 end
 
 function process_cell_output(model::WissmannModel, x, y, output, output_stack::RasterStack; numofpfts)
@@ -474,34 +487,43 @@ Define the output variables and their properties for different biome models.
 """
 function get_output_schema(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel};
                             int_type::Type{<:Integer} = Int,
-                            float_type::Type{<:AbstractFloat} = Float64)
-    return Dict(
-        "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
-        "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
-        "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "m²/m²", "description" => "Annual Net primary productivity")),
-    )
+                            float_type::Type{<:AbstractFloat} = Float64,
+                            pft_parametrization::Bool = false)
+    if pft_parametrization
+        # Parametrization mode: return PFT presence data
+        return Dict(
+            "pft_present" => (type=Bool, dims=("lon", "lat", "pft"), attrs=Dict("description" => "PFT presence after constraints")),
+        )
+    else
+        # Standard mode: return normal biome output
+        return Dict(
+            "biome" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Biome classification")),
+            "optpft" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Dominant PFT")),
+            "npp" => (type=Float64, dims=("lon", "lat", "pft"), attrs=Dict("units" => "m²/m²", "description" => "Annual Net primary productivity")),
+        )
+    end
 end
 
-function get_output_schema(model::WissmannModel)
+function get_output_schema(model::WissmannModel; pft_parametrization::Bool = false)
     return Dict(
         "wissmann_climate_zone" => (type=Int16, dims=("lon", "lat"), attrs=Dict("description" => "Wissmann climate zone classification")),
     )
 end
 
-function get_output_schema(model::KoppenModel; int_type::Type{<:Integer} = Int)
+function get_output_schema(model::KoppenModel; int_type::Type{<:Integer} = Int, pft_parametrization::Bool = false)
     return Dict(
     "koppen_class" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Köppen-Geiger climate classification"))
     )
 end
 
-function get_output_schema(model::ThornthwaiteModel; int_type::Type{<:Integer} = Int)
+function get_output_schema(model::ThornthwaiteModel; int_type::Type{<:Integer} = Int, pft_parametrization::Bool = false)
     return Dict(
     "thornthwaite_temperature_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite temperature zone")),
     "thornthwaite_moisture_zone"    => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Thornthwaite moisture zone"))
     )
 end
 
-function get_output_schema(model::TrollPaffenModel; int_type::Type{<:Integer} = Int)
+function get_output_schema(model::TrollPaffenModel; int_type::Type{<:Integer} = Int, pft_parametrization::Bool = false)
     return Dict(
     "troll_zone" => (type = int_type, dims = ("lon", "lat"), attrs = Dict("description" => "Troll-Paffen climate zone"))
     )
@@ -532,7 +554,7 @@ end
 
 Create output variables in NetCDF dataset based on the model type.
 """
-function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector{T}, lat::AbstractVector{T}, cntx, cnty, numofpfts::U) where {T<:Real, U<:Int}
+function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector{T}, lat::AbstractVector{T}, cntx, cnty, numofpfts::U, pft_parametrization::Bool=false) where {T<:Real, U<:Int}
     # Define dimensions
     dims = get_required_dimensions(model, cntx, cnty; numofpfts=numofpfts)
     for (name, size) in dims
@@ -548,7 +570,7 @@ function create_output_variables(dataset, model::BiomeModel, lon::AbstractVector
     lat_var[:] = lat
 
     # Define model-specific variables
-    schema = get_output_schema(model)
+    schema = get_output_schema(model; pft_parametrization=pft_parametrization)
 
     for (var_name, var_info) in schema
         var = defVar(dataset, var_name, var_info.type, var_info.dims, attrib=var_info.attrs)
