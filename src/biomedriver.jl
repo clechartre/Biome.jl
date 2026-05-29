@@ -155,8 +155,10 @@ function _simulate!(
     cntx = length(lon)
     cnty = length(lat)
 
-    println("Processing grid: cntx=$cntx, cnty=$cnty")
-    println("Bounds: X $(extrema(lon)), Y $(extrema(lat))")
+    if !pft_parametrization
+        println("Processing grid: cntx=$cntx, cnty=$cnty")
+        println("Bounds: X $(extrema(lon)), Y $(extrema(lat))")
+    end
 
     x_dim = dims(ref, X)
     y_dim = dims(ref, Y)
@@ -167,12 +169,16 @@ function _simulate!(
 
     else
         if isfile(outfile)
-            println("File $outfile already exists. Resuming from last processed row.")
+            if !pft_parametrization
+                println("File $outfile already exists. Resuming from last processed row.")
+            end
             output_dataset = NCDataset(outfile, "a")
             output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts, pft_parametrization)
         else
             output_dataset = NCDataset(outfile, "c")
-            println("Creating new output file: $outfile")
+            if !pft_parametrization
+                println("Creating new output file: $outfile")
+            end
             create_output_variables(output_dataset, model, lon, lat, cntx, cnty, numofpfts, pft_parametrization)
             output_stack = create_output_rasterstack(model, x_dim, y_dim, cntx, cnty, numofpfts, pft_parametrization)
         end
@@ -183,13 +189,17 @@ function _simulate!(
 
     # Loop over all grid cells
     Threads.@threads for y in 1:cnty
-        println("Processing y index $y")
+        if !pft_parametrization
+            println("Processing y index $y")
+        end
         lat_val = lat[y]
 
         # Check if the row is already processed using the primary variable
         primary_var = get_primary_variable(model)
         if all(output_stack[primary_var][:, y] .!= -9999.0)
-            println("Row $y already processed, skipping.")
+            if !pft_parametrization
+                println("Row $y already processed, skipping.")
+            end
             continue
         end
 
@@ -348,7 +358,9 @@ function process_cell(
 
     primary_var = get_primary_variable(model)
     if output_stack[primary_var][x, y] != -9999.0
-        println("Cell ($x, $y) already processed, skipping.")
+        if !pft_parametrization
+            println("Cell ($x, $y) already processed, skipping.")
+        end
         return
     end
 
