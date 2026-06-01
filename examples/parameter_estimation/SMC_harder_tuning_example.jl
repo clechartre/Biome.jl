@@ -21,7 +21,7 @@ on Biome.jl with multiple environmental thresholds
 # =============================================================================
 # I am showing here a tuning framework in which we saved inputs into a structure 
 # to optimize overhead. 
-# We also have a bit more advanced violin plotting as shown in the paper. 
+# We also have a bit more advanced violin plotting.
 # The level of complexity you can will really depend on your use case. 
 # =============================================================================
 

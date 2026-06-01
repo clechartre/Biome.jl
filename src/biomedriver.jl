@@ -195,12 +195,22 @@ function _simulate!(
         lat_val = lat[y]
 
         # Check if the row is already processed using the primary variable
-        primary_var = get_primary_variable(model)
-        if all(output_stack[primary_var][:, y] .!= -9999.0)
-            if !pft_parametrization
-                println("Row $y already processed, skipping.")
+        primary_var = get_primary_variable(model, pft_parametrization)
+        if pft_parametrization
+            # For parametrization mode, check across all PFTs at this row
+            if all(output_stack[primary_var][:, y, :] .!= -9999.0)
+                if !pft_parametrization
+                    println("Row $y already processed, skipping.")
+                end
+                continue
             end
-            continue
+        else
+            if all(output_stack[primary_var][:, y] .!= -9999.0)
+                if !pft_parametrization
+                    println("Row $y already processed, skipping.")
+                end
+                continue
+            end
         end
 
         env_chunks = Dict{Symbol, Any}()
@@ -356,12 +366,22 @@ function process_cell(
     pft_parametrization::Bool = false
 ) where {T<:Real}
 
-    primary_var = get_primary_variable(model)
-    if output_stack[primary_var][x, y] != -9999.0
-        if !pft_parametrization
-            println("Cell ($x, $y) already processed, skipping.")
+    primary_var = get_primary_variable(model, pft_parametrization)
+    if pft_parametrization
+        # For parametrization mode, check if any PFT is already processed at this cell
+        if any(output_stack[primary_var][x, y, :] .!= -9999.0)
+            if !pft_parametrization
+                println("Cell ($x, $y) already processed, skipping.")
+            end
+            return
         end
-        return
+    else
+        if output_stack[primary_var][x, y] != -9999.0
+            if !pft_parametrization
+                println("Cell ($x, $y) already processed, skipping.")
+            end
+            return
+        end
     end
 
     # Calculate atmospheric pressure from elevation (NOTE: your original formula had no elevation input;
@@ -413,27 +433,31 @@ function get_pft_list(::Union{WissmannModel, KoppenModel, ThornthwaiteModel, Tro
 end
 
 """
-get_primary_variable(model::BiomeModel)
+get_primary_variable(model::BiomeModel, pft_parametrization::Bool=false)
 
 Get the primary variable name for each model type (used for checking if processed).
 """
-function get_primary_variable(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel})
-    return :biome
+function get_primary_variable(model::Union{BIOME4Model, BIOMEDominanceModel, BaseModel}, pft_parametrization::Bool=false)
+    if pft_parametrization
+        return :pft_present
+    else
+        return :biome
+    end
 end
 
-function get_primary_variable(model::WissmannModel)
+function get_primary_variable(model::WissmannModel, pft_parametrization::Bool=false)
     return :wissmann_climate_zone
 end
 
-function get_primary_variable(model::KoppenModel)
+function get_primary_variable(model::KoppenModel, pft_parametrization::Bool=false)
     return :koppen_class
 end
 
-function get_primary_variable(model::ThornthwaiteModel)
+function get_primary_variable(model::ThornthwaiteModel, pft_parametrization::Bool=false)
     return :thornthwaite_temperature_zone
 end
 
-function get_primary_variable(model::TrollPaffenModel)
+function get_primary_variable(model::TrollPaffenModel, pft_parametrization::Bool=false)
     return :troll_zone
 end
 
@@ -447,7 +471,13 @@ function process_cell_output(model::Union{BIOME4Model, BIOMEDominanceModel, Base
     if haskey(output, :pft_present)
         # In parametrization mode, store PFT presence data if available in output_stack
         if haskey(output_stack, :pft_present)
-            output_stack[:pft_present][x, y, :] = output.pft_present
+            pft_data = output.pft_present
+            # Handle dimension mismatch: if pft_data is 1D, assign to full slice
+            if ndims(pft_data) == 1 && length(pft_data) == numofpfts
+                output_stack[:pft_present][x, y, 1:numofpfts] = pft_data
+            else
+                output_stack[:pft_present][x, y, :] = pft_data
+            end
         end
     else
         # Standard mode: write biome, optpft, and npp data
