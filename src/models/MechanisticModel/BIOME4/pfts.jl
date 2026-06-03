@@ -42,7 +42,7 @@ function WoodyDesert{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[-Inf,T(500)]
+                swb=[-Inf,T(50)]
             ),
             U(7),
             T(0.0)
@@ -87,7 +87,7 @@ function TropicalEvergreen{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(700),+Inf]
+                swb=[T(70),+Inf]
             ),
             U(1),
             T(2.5)
@@ -132,7 +132,7 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(300),+Inf]
+                swb=[T(30),+Inf]
             ),
             U(1),
             T(2.5)
@@ -177,7 +177,7 @@ function TemperateBroadleavedEvergreen{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(400),+Inf]
+                swb=[T(40),+Inf]
             ),
             U(2),
             T(3.0)
@@ -222,7 +222,7 @@ function TemperateDeciduous{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(300),+Inf]
+                swb=[T(30),+Inf]
             ),
             U(3),
             T(2.5)
@@ -267,7 +267,7 @@ function CoolConifer{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(400),+Inf]
+                swb=[T(40),+Inf]
             ),
             U(3),
             T(2.5) # or 1.5
@@ -447,7 +447,7 @@ function C4TropicalGrass{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(200),+Inf]
+                swb=[T(20),+Inf]
             ),
             U(5),
             T(0.4)
@@ -492,7 +492,7 @@ function TundraShrubs{T,U}() where {T<:Real,U<:Int}
                 gdd0=[T(50.0), +Inf],
                 twm=[-Inf, T(15.0)],
                 maxdepth=[T(15.0), +Inf],
-                swb=[T(150),+Inf]
+                swb=[T(15),+Inf]
             ),
             U(6),
             T(0.0)
@@ -537,7 +537,7 @@ function ColdHerbaceous{T,U}() where {T<:Real,U<:Int}
                 gdd0=[T(50.0), +Inf],
                 twm=[-Inf, T(15.0)],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(150),+Inf]
+                swb=[T(15),+Inf]
             ),
             U(8),
             T(0.4)

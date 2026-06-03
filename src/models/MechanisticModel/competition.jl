@@ -197,8 +197,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
             valid = true
             cons = get_characteristic(pft, :constraints)[:swb]
             lower, upper = cons[1], cons[2]
-            if !((lower == -Inf || wetness[i]*10 ≥ lower) &&
-                (upper == Inf  || wetness[i]*10  < upper) )
+            if !((lower == -Inf || wetness[i] ≥ lower) &&
+                (upper == Inf  || wetness[i]  < upper) )
                 valid = false
             end
             # write into the runtime-state
