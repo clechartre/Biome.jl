@@ -132,7 +132,7 @@ function TropicalDroughtDeciduous{T,U}() where {T<:Real,U<:Int}
                 gdd0=[-Inf, +Inf],
                 twm=[T(10.0), +Inf],
                 maxdepth=[-Inf, +Inf],
-                swb=[T(30),+Inf]
+                swb=[T(50),+Inf]
             ),
             U(1),
             T(2.5)
@@ -352,7 +352,7 @@ function BorealDeciduous{T,U}() where {T<:Real,U<:Int}
             false,
             (
                 tcm=[-Inf, T(5.0)],
-                tmin=[-Inf, T(-10.0)],
+                tmin=[-Inf, T(-10)],
                 gdd5=[-Inf, +Inf],
                 gdd0=[-Inf, +Inf],
                 twm=[-Inf, T(21.0)],
