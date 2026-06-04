@@ -1,5 +1,5 @@
 """
-    phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
+    phenology(dphen, dtas, tas, tcm, tmin, pft, ddayl)
 
 Calculate a generic phenology for any summergreen plant functional type.
 
@@ -11,8 +11,8 @@ to grow a full leaf canopy.
 
 # Arguments
 - `dphen`: Daily phenology array (365x2 matrix) to be modified
-- `dtemp`: Daily temperature array (365 elements, °C)
-- `temp`: Monthly temperature array (12 elements, °C)
+- `dtas`: Daily temperature array (365 elements, °C)
+- `tas`: Monthly temperature array (12 elements, °C)
 - `tcm`: Temperature of the coldest month (°C)
 - `tmin`: Minimum temperature (°C)
 - `pft`: Plant Functional Type
@@ -28,8 +28,8 @@ to grow a full leaf canopy.
 """
 function phenology(
     dphen::AbstractArray{T},
-    dtemp::AbstractArray{T},
-    temp::AbstractArray{T},
+    dtas::AbstractArray{T},
+    tas::AbstractArray{T},
     tcm::T,
     tmin::T,
     pft::AbstractPFT,
@@ -50,11 +50,11 @@ function phenology(
 
     # Find coldest and hottest months
     for m in 1:12
-        if temp[m] == tcm
+        if tas[m] == tcm
             ncm = m
         end
-        if temp[m] > warm
-            warm = temp[m]
+        if tas[m] > warm
+            warm = tas[m]
             hotm = m
         end
     end
@@ -83,9 +83,9 @@ function phenology(
                     day += 1
 
                     # Check temperature threshold
-                    if dtemp[day] > ont
+                    if dtas[day] > ont
                         if m != coldm[1] && m != coldm[2] && m != coldm[3]
-                            today = max(dtemp[day], T(0.0))
+                            today = max(dtas[day], T(0.0))
 
                             gdd += today
                             if gdd == T(0.0)
@@ -111,14 +111,14 @@ function phenology(
                     # Fall leaves removal
                     if phencase == 1
                         if m >= hotm
-                            if dtemp[day] < T(-10.0) || ddayl[day] < T(10.0)
+                            if dtas[day] < T(-10.0) || ddayl[day] < T(10.0)
                                 dphen[day, phencase] = T(0.0)
                             end
                         elseif m == coldm[1]
                             dphen[day, phencase] = T(0.0)
                         end
                     elseif phencase == 2
-                        if dtemp[day] < T(-5.0)
+                        if dtas[day] < T(-5.0)
                             dphen[day, phencase] = T(0.0)
                         end
                     end

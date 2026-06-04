@@ -51,8 +51,8 @@ function ModelSetup(Model::BiomeModel;
     end
 
     # Ensure required keys exist
-    @assert :temp in keys(raster_dict) "A `temp` raster must be provided."
-    @assert :prec in keys(raster_dict) "A `prec` raster must be provided."
+    @assert :tas in keys(raster_dict) "A `tas` raster must be provided."
+    @assert :pr in keys(raster_dict) "A `pr` raster must be provided."
 
     # Use the element type of the first raster as the canonical type,
     # but drop Missing so float_type is the non-missing element type.
@@ -83,10 +83,10 @@ function ModelSetup(Model::BiomeModel;
     # Convert Dict to NamedTuple (keeps keys as symbols)
     rasters = (; (Symbol(k) => v for (k, v) in raster_dict)...)
 
-    # Extract longitude and latitude from the temp raster (which is mandatory for all models)
+    # Extract longitude and latitude from the tas raster (which is mandatory for all models)
     # so ok to refer to
-    lon = collect(lookup(rasters[:temp], X))
-    lat = collect(lookup(rasters[:temp], Y))
+    lon = collect(lookup(rasters[:tas], X))
+    lat = collect(lookup(rasters[:tas], Y))
 
     if biome_assignment === nothing
         if Model isa BIOME4Model || Model isa BIOMEDominanceModel

@@ -15,26 +15,26 @@ prec_raster =  Raster(precfile, name="prec")
 clt_raster =  Raster(cltfile, name="clt")
 ksat_raster =  Raster(soilfile, name="Ksat")
 whc_raster =  Raster(soilfile, name="whc")
-
+ 
 
 # Add a PFT to the list:
-SucculentPFT = BroadleafDeciduousPFT(           # Some comments about the rationale
+SucculentPFT = BroadleafDeciduousPFT(
     name = "Succulent",
-    phenological_type           = 2,            # Many are deciduous 1: Evergreen, 2: Deciduous
-    max_min_canopy_conductance  = 0.05,         # Took the same value as C3C4WoodyDesert
+    phenological_type           = 2,    #  1: evergreen, 2: deciduous, many are deciduous
+    max_min_canopy_conductance  = 0.05, # Took the same value as C3C4WoodyDesert
     Emax                        = 8.0,
     sw_drop                     = -99.9,
     sw_appear                   = -99.9,
-    root_fraction_top_soil      = 0.9,          # Wide, shallow root systems, sometimes with a central taproot
-                                                # The diffuse, shallow roots of storage succulents are extremely well adapted for rapid rehydration  
+    root_fraction_top_soil      = 0.9, # Wide, shallow root systems, sometimes with a central taproot
+    # The diffuse, shallow roots of storage succulents are extremely well adapted for rapid rehydration  
     leaf_longevity              = 30.0,
     GDD5_full_leaf_out          = -99.9,
     GDD0_full_leaf_out          = -99.9,
-    sapwood_respiration         = 2,            # Succulent do CAM photosynthesis, they don't have sapwood bc non woody
+    sapwood_respiration         = 2, # Succulent do CAM photosynthesis, they don't have sapwood bc non woody
     optratioa                   = 0.7,
     kk                          = 0.3,
     c4                          = false,
-    threshold                   = 0.25,         # They are NOT fire resistant
+    threshold                   = 0.25, # They are NOT fire resistant, check what value would fit here
     t0                          = 10.0,
     tcurve                      = 1.0,
     respfact                    = 1.6,
@@ -42,16 +42,16 @@ SucculentPFT = BroadleafDeciduousPFT(           # Some comments about the ration
     grass                       = false,
     constraints = (
             tcm=[10, +Inf],
-            tmin=[-5, +Inf],                    # Very low frost resistance
+            tmin=[-5, +Inf],
             gdd5=[-Inf, +Inf],
             gdd0=[-Inf, 10000],
             twm=[-Inf, +Inf],
             maxdepth=[-Inf, +Inf],
-            swb=[50, 600],                       # Can establish in very dry sites
+            swb=[50, 600],
             tprec = [-Inf, 1200]
     ),
     dominance_factor = 3,
-    minimum_lai = 2.0                           # dominated by small-leaved often spinescent trees
+    minimum_lai = 2.0 # dominated by small-leaved often spinescent trees
 )
  
  
@@ -82,7 +82,7 @@ function my_biome_assign(pft::AbstractPFT;
     )
  
     if get_characteristic(pft, :name) == "Succulent"
-        if pftstates[pft].npp > 100
+        if pftstates[pft].npp > 100 #&& pftstates[wdom].firedays < 150.0
             return SucculentBiome()
         elseif pftstates[pft].npp <= 100 && pftstates[wdom].firedays >= 130.0
             return BIOME4.Desert()
@@ -131,23 +131,20 @@ function my_biome_assign(pft::AbstractPFT;
             tcm=tcm,
             tmin=tmin,
             pftlist=pftlist,
-            pftstates=pftstates,
-            env_variables=env_variables)
+            pftstates=pftstates)
     end
 end
  
-
-# Set up the model to be run with the BIOME4 base and the NPP-mediated competition
 setup = ModelSetup(BIOMEDominanceModel();
                    temp=temp_raster,
                    prec=prec_raster,
                    clt=sun_raster,
                    ksat=ksat_raster,
                    whc=whc_raster,
-                   co2=373.8,
+                   co2=Float64.(373.0),
                    pftlist = PFTList,
                    biome_assignment = my_biome_assign)
  
 # Run the model
-execute(setup; coordstring="alldata", outfile="output_succulent_biome.nc")
+execute(setup; outfile="output_succulent_biome.nc")
  

@@ -55,38 +55,38 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
     @unpack_namedtuple_climate input_variables
 
     # Temperature and precipitation statistics
-    temp_min = minimum(temp)
-    temp_max = maximum(temp)
-    temp_mean = mean(temp)
-    prec_sum = sum(prec)
-    prec_min = minimum(prec)
+    tas_min = minimum(tas)
+    tas_max = maximum(tas)
+    tas_mean = mean(tas)
+    pr_sum = sum(pr)
+    pr_min = minimum(pr)
 
-    winter_prec = sum(prec[10:12]) + sum(prec[1:2])
-    summer_prec = sum(prec[3:9])
+    winter_pr = sum(pr[10:12]) + sum(pr[1:2])
+    summer_pr = sum(pr[3:9])
 
-    is_northern_hemisphere = sum(temp[3:9]) > sum(temp[10:12]) + sum(temp[1:2])
+    is_northern_hemisphere = sum(tas[3:9]) > sum(tas[10:12]) + sum(tas[1:2])
 
     if !is_northern_hemisphere
-        winter_prec, summer_prec = summer_prec, winter_prec
+        winter_pr, summer_pr = summer_pr, winter_pr
     end
 
-    t_threshold = 10 * (winter_prec > summer_prec ? temp_mean : temp_mean + 14.0)
+    t_threshold = 10 * (winter_pr > summer_pr ? tas_mean : tas_mean + 14.0)
 
     # VI - Polar frost
-    if temp_max < 0
+    if tas_max < 0
         return (climate_zone = WI[:VI],)
     # V - Polar tundra
-    elseif temp_max < 10
+    elseif tas_max < 10
         return (climate_zone = WI[:V],)
     end
 
     # IV - Boreal climates
-    if temp_mean < 4
-        if prec_sum > 2.5 * t_threshold
+    if tas_mean < 4
+        if pr_sum > 2.5 * t_threshold
             return (climate_zone = WI[:IV_F],)
-        elseif prec_sum > 2.0 * t_threshold
+        elseif pr_sum > 2.0 * t_threshold
             return (climate_zone = WI[:IV_T],)
-        elseif prec_sum > 1.0 * t_threshold
+        elseif pr_sum > 1.0 * t_threshold
             return (climate_zone = WI[:IV_S],)
         else
             return (climate_zone = WI[:IV_D],)
@@ -94,12 +94,12 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
     end
 
     # III - Cool temperate
-    if temp_min < 2
-        if prec_sum > 2.5 * t_threshold
+    if tas_min < 2
+        if pr_sum > 2.5 * t_threshold
             return (climate_zone = WI[:III_F],)
-        elseif prec_sum > 2.0 * t_threshold
-            return (climate_zone = winter_prec < summer_prec ? WI[:III_Tw] : WI[:III_Ts],)
-        elseif prec_sum > 1.0 * t_threshold
+        elseif pr_sum > 2.0 * t_threshold
+            return (climate_zone = winter_pr < summer_pr ? WI[:III_Tw] : WI[:III_Ts],)
+        elseif pr_sum > 1.0 * t_threshold
             return (climate_zone = WI[:III_S],)
         else
             return (climate_zone = WI[:III_D],)
@@ -107,12 +107,12 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
     end
 
     # II - Warm temperate
-    if temp_min < 13
-        if prec_sum > 2.5 * t_threshold
-            return (climate_zone = temp_max > 23 ? WI[:II_Fa] : WI[:II_Fb],)
-        elseif prec_sum > 2.0 * t_threshold
-            return (climate_zone = winter_prec < summer_prec ? WI[:II_Tw] : WI[:II_Ts],)
-        elseif prec_sum > 1.0 * t_threshold
+    if tas_min < 13
+        if pr_sum > 2.5 * t_threshold
+            return (climate_zone = tas_max > 23 ? WI[:II_Fa] : WI[:II_Fb],)
+        elseif pr_sum > 2.0 * t_threshold
+            return (climate_zone = winter_pr < summer_pr ? WI[:II_Tw] : WI[:II_Ts],)
+        elseif pr_sum > 1.0 * t_threshold
             return (climate_zone = WI[:IS],)
         else
             return (climate_zone = WI[:ID],)
@@ -120,14 +120,14 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
     end
 
     # I - Tropical
-    if temp_min >= 13
-        if prec_min >= 60
+    if tas_min >= 13
+        if pr_min >= 60
             return (climate_zone = WI[:IA],)
-        elseif prec_sum > 2.5 * t_threshold
+        elseif pr_sum > 2.5 * t_threshold
             return (climate_zone = WI[:IF],)
-        elseif prec_sum > 2.0 * t_threshold
+        elseif pr_sum > 2.0 * t_threshold
             return (climate_zone = WI[:IT],)
-        elseif prec_sum > 1.0 * t_threshold
+        elseif pr_sum > 1.0 * t_threshold
             return (climate_zone = WI[:IS],)
         else
             return (climate_zone = WI[:ID],)

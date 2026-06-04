@@ -6,25 +6,25 @@ This program is based upon the model used by Lloyd and Farquhar (1994).
 """
 
 """
-    isoC3(Cratio, Ca, temp, Rd)
+    isoC3(Cratio, Ca, tas, Rd)
 
 Calculate the isotopic fractionation for C3 plants based on the given parameters.
 
 # Arguments
 - `Cratio`: The ratio of intercellular to ambient CO2 concentration.
 - `Ca`: Ambient CO2 concentration (ppm).
-- `temp`: Air temperature (°C).
+- `tas`: Air temperature (°C).
 - `Rd`: Daytime respiration rate (µmol m⁻² s⁻¹).
 
 # Returns
 - `delC3`: The isotopic fractionation value for C3 plants.
 """
-function isoC3(Cratio::T, Ca::T, temp::T, Rd::T)::T where {T<:Real}
+function isoC3(Cratio::T, Ca::T, tas::T, Rd::T)::T where {T<:Real}
     if Rd <= T(0.0)
         Rd = T(0.01)
     end
 
-    leaftemp = T(1.05) * (temp + T(2.5))
+    leaftemp = T(1.05) * (tas + T(2.5))
     gamma = T(1.54) * leaftemp
     Rd = Rd / (T(86400.0) * T(12.0))
     Catm = Ca * T(1.0e6)
@@ -43,20 +43,20 @@ function isoC3(Cratio::T, Ca::T, temp::T, Rd::T)::T where {T<:Real}
 end
 
 """
-    isoC4(Cratio, phi, temp)
+    isoC4(Cratio, phi, tas)
 
 Calculate the isotopic fractionation for C4 plants based on the given parameters.
 
 # Arguments
 - `Cratio`: The ratio of intercellular to ambient CO2 concentration.
 - `phi`: Maximum quantum yield of photosynthesis.
-- `temp`: Air temperature (°C).
+- `tas`: Air temperature (°C).
 
 # Returns
 - `delC4`: The isotopic fractionation value for C4 plants.
 """
-function isoC4(Cratio::T, phi::T, temp::T)::T where {T<:Real}
-    b4 = T(26.19) - (T(9483.0) / (T(273.2) + temp))
+function isoC4(Cratio::T, phi::T, tas::T)::T where {T<:Real}
+    b4 = T(26.19) - (T(9483.0) / (T(273.2) + tas))
 
     DeltaA = (
         A * (T(1.0) - Cratio + T(0.0125))
@@ -70,7 +70,7 @@ function isoC4(Cratio::T, phi::T, temp::T)::T where {T<:Real}
 end
 
 """
-    isotope(Cratio, Ca, temp, Rd, c4month, mgpp, phi, gpp)
+    isotope(Cratio, Ca, tas, Rd, c4month, mgpp, phi, gpp)
 
 Calculate the total fractionation of 13C as it goes from free air (as 13CO2) to 
 fixed carbon in the leaf. For use with the BIOME3 model of A. Haxeltine (1996).
@@ -80,7 +80,7 @@ This program is based upon the model used by Lloyd and Farquhar (1994).
 # Arguments
 - `Cratio`: Monthly ratios of intercellular to ambient CO2 concentration.
 - `Ca`: Ambient CO2 concentration (ppm).
-- `temp`: Monthly air temperatures (°C).
+- `tas`: Monthly air temperatures (°C).
 - `Rd`: Monthly daytime respiration rates (µmol m⁻² s⁻¹).
 - `c4month`: Boolean vector indicating C4 photosynthesis months.
 - `mgpp`: Monthly gross primary productivity values.
@@ -97,7 +97,7 @@ A tuple containing:
 function isotope(
     Cratio::AbstractArray{T},
     Ca::T,
-    temp::AbstractArray{T},
+    tas::AbstractArray{T},
     Rd::AbstractArray{T},
     c4month::Vector{Bool},
     mgpp::AbstractArray{T},
@@ -116,11 +116,11 @@ function isotope(
             end
 
             if c4month[m]
-                delC4 = isoC4(Cratio[m], phi, temp[m])
+                delC4 = isoC4(Cratio[m], phi, tas[m])
                 C4DA[m] = delC4
                 wtC4 += delC4 * mgpp[m]
             else
-                delC3 = isoC3(Cratio[m], Ca, temp[m], Rd[m])
+                delC3 = isoC3(Cratio[m], Ca, tas[m], Rd[m])
                 C3DA[m] = delC3
                 wtC3 += delC3 * mgpp[m]
             end

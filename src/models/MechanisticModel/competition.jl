@@ -12,7 +12,7 @@ using Printf: @sprintf
 function competition(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel},
     tmin::T,
-    tprec::T,
+    tpr::T,
     numofpfts::U,
     gdd0::T,
     gdd5::T,
@@ -84,7 +84,7 @@ function competition(
         tmin=tmin,
         gdd5=gdd5,
         tcm=tcm,
-        tprec=tprec
+        tpr=tpr
     )
 
     # Format values for output

@@ -2,7 +2,7 @@
 using Printf
 
 """
-    ppeett(lat, dtemp, dclou, temp, env=nothing)
+    ppeett(lat, dtas, dclou, tas, env=nothing)
 
 Calculate insolation and potential evapotranspiration (PET) for each month.
 
@@ -12,9 +12,9 @@ If environment data is provided, it will be used to override the calculated valu
 
 # Arguments
 - `lat`: Latitude in degrees
-- `dtemp`: Daily temperature array (365 elements, °C)
+- `dtas`: Daily temperature array (365 elements, °C)
 - `dclou`: Daily cloud cover array (365 elements, %)
-- `temp`: Monthly temperature array (12 elements, °C)
+- `tas`: Monthly temperature array (12 elements, °C)
 - `env`: Optional NamedTuple with pre-calculated values (:dpet, :dayl, :sun, :rad0, :ddayl)
 
 # Returns
@@ -30,9 +30,9 @@ A tuple containing:
 """
 function ppeett(
     lat::T,
-    dtemp::AbstractArray{T},
+    dtas::AbstractArray{T},
     dclou::AbstractArray{T},
-    temp::AbstractArray{T},
+    tas::AbstractArray{T},
     env::Union{NamedTuple,Nothing}=nothing
 )::Tuple{AbstractArray{T},AbstractArray{T},AbstractArray{T},T,AbstractArray{T}} where {T<:Real}
     midday = Int[16, 44, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350]
@@ -60,9 +60,9 @@ function ppeett(
         for _ in 1:daysinmonth[month]
             day += 1
 
-            psi, l = table(dtemp[day])
+            psi, l = table(dtas[day])
 
-            rl = (b + (T(1) - b) * (dclou[day] / T(100.0))) * (radup - dtemp[day])
+            rl = (b + (T(1) - b) * (dclou[day] / T(100.0))) * (radup - dtas[day])
             rl *= 1 # originally radanom but not used in this version
 
             qo = qoo * (T(1.0) + T(2.0) * T(0.01675) * 
@@ -86,7 +86,7 @@ function ppeett(
             end
 
             # Safe exponential calculation
-            exp_arg = (T(17.27) * dtemp[day]) / (T(237.3) + dtemp[day])
+            exp_arg = (T(17.27) * dtas[day]) / (T(237.3) + dtas[day])
             exp_val = try
                 exp(exp_arg)
             catch
@@ -94,7 +94,7 @@ function ppeett(
             end
             
             sat = (T(2.5) * T(10)^T(6) * exp_val) / 
-                  ((T(237.3) + dtemp[day])^T(2.0))
+                  ((T(237.3) + dtas[day])^T(2.0))
             
             if (sat + psi) != T(0.0) && psi != T(0.0)
                 fd = (T(3600.0) / (l * T(1e6))) * (sat / (sat + psi))
@@ -131,7 +131,7 @@ function ppeett(
                     sun[month] = T(0.0)
                 end
 
-                if temp[month] > T(0.0)
+                if tas[month] > T(0.0)
                     rad0 += daysinmonth[month] * sun[month] * T(1e-9) * T(0.5)
                 end
             end

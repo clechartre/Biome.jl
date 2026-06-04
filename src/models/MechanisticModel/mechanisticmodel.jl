@@ -40,7 +40,7 @@ function runmodel(
 )
     # Initialize environmental variables from the input
     env_variables = initialize_environmental_variables(vars_in)
-    @unpack temp, clt, prec, mclou, mprec, mtemp, tprec, dtemp, 
+    @unpack tas, clt, pr, mclou, mpr, mtas, tpr, dtas, 
              dprecin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
              tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dprec, 
              dmelt, maxdepth, co2, lat, lon, p = env_variables
@@ -60,12 +60,12 @@ function runmodel(
         if pftstates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
-                dphen = phenology(dphen, dtemp, temp, tcm, tmin, pft, ddayl)
+                dphen = phenology(dphen, dtas, tas, tcm, tmin, pft, ddayl)
             end
             
             # Optimize NPP and LAI for this PFT
             pftlist.pft_list[iv], optlai, optnpp, pftstates[pft] = findnpp(
-                pft, tprec, dtemp, sun, temp, dprec, dmelt, dpet, dayl,
+                pft, tpr, dtas, sun, tas, dprec, dmelt, dpet, dayl,
                 k, dphen, co2, p, tsoil, pftstates[pft]
             )
 
@@ -77,7 +77,7 @@ function runmodel(
 
     # Determine winning biome through PFT competition
     biome, optpft, npp = competition(
-        m, tmin, tprec, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment, env_variables
+        m, tmin, tpr, numofpfts, gdd0, gdd5, tcm, pftlist, pftstates, biome_assignment, env_variables
     )
 
     # Prepare output vector
@@ -101,9 +101,9 @@ Clean and complete a NamedTuple of input variables, replacing missing or invalid
 and filling in defaults for essential variables if they are missing.
 """
 function unpack_namedtuple_with_defaults(nt::NamedTuple)
-    # Determine numeric type based on temp if present
-    if haskey(nt, :temp)
-        T = nonmissingtype(eltype(nt.temp))
+    # Determine numeric type based on tas if present
+    if haskey(nt, :tas)
+        T = nonmissingtype(eltype(nt.tas))
     else 
         T = Float64
     end
@@ -168,28 +168,28 @@ function unpack_namedtuple_with_defaults(nt::NamedTuple)
 
     end
 
-    # :temp => length 12, default missval
-    if !haskey(cleaned, :temp)
-        @warn "Missing key 'temp'. Using default."
-        cleaned[:temp] = _default_array(T, 12, missval)
-    elseif cleaned[:temp] isa AbstractArray && any(ismissing, cleaned[:temp])
-        @warn "Key 'temp' contains missing values. Using default."
-        cleaned[:temp] = _default_array(T, 12, missval)
-    elseif cleaned[:temp] === missval
-        @warn "Key 'temp' has missing scalar. Using default."
-        cleaned[:temp] = _default_array(T, 12, missval)
+    # :tas => length 12, default missval
+    if !haskey(cleaned, :tas)
+        @warn "Missing key 'tas'. Using default."
+        cleaned[:tas] = _default_array(T, 12, missval)
+    elseif cleaned[:tas] isa AbstractArray && any(ismissing, cleaned[:tas])
+        @warn "Key 'tas' contains missing values. Using default."
+        cleaned[:tas] = _default_array(T, 12, missval)
+    elseif cleaned[:tas] === missval
+        @warn "Key 'tas' has missing scalar. Using default."
+        cleaned[:tas] = _default_array(T, 12, missval)
     end
 
-    # :prec => length 12, default missval
-    if !haskey(cleaned, :prec)
-        @warn "Missing key 'prec'. Using default."
-        cleaned[:prec] = _default_array(T, 12, missval)
-    elseif cleaned[:prec] isa AbstractArray && any(ismissing, cleaned[:prec])
-        @warn "Key 'prec' contains missing values. Using default."
-        cleaned[:prec] = _default_array(T, 12, missval)
-    elseif cleaned[:prec] === missval
-        @warn "Key 'prec' has missing scalar. Using default."
-        cleaned[:prec] = _default_array(T, 12, missval)
+    # :pr => length 12, default missval
+    if !haskey(cleaned, :pr)
+        @warn "Missing key 'pr'. Using default."
+        cleaned[:pr] = _default_array(T, 12, missval)
+    elseif cleaned[:pr] isa AbstractArray && any(ismissing, cleaned[:pr])
+        @warn "Key 'pr' contains missing values. Using default."
+        cleaned[:pr] = _default_array(T, 12, missval)
+    elseif cleaned[:pr] === missval
+        @warn "Key 'pr' has missing scalar. Using default."
+        cleaned[:pr] = _default_array(T, 12, missval)
     end
 
     # :clt => length 12, default missval
@@ -250,8 +250,8 @@ from the input NamedTuple, cleaning missing values and adding climate indices.
 function initialize_environmental_variables(input_variables::NamedTuple)
     cleaned = unpack_namedtuple_with_defaults(input_variables)
 
-    temp = cleaned.temp
-    prec = cleaned.prec
+    tas = cleaned.tas
+    pr = cleaned.pr
     clt  = cleaned.clt
     co2  = cleaned.co2
     lat  = cleaned.lat
@@ -261,30 +261,30 @@ function initialize_environmental_variables(input_variables::NamedTuple)
     whc  = cleaned.whc
     ksat = cleaned.ksat
 
-    if haskey(input_variables, :temp)
-        T = nonmissingtype(eltype(input_variables.temp))
+    if haskey(input_variables, :tas)
+        T = nonmissingtype(eltype(input_variables.tas))
     else
         T = Float64
     end
 
     # Derived climate means and interpolations
-    mtemp = mean(temp)
-    tsoil = soiltemp(temp)
-    mprec   = mean(prec)
-    tprec   = sum(prec)
+    mtas = mean(tas)
+    tsoil = soiltemp(tas)
+    mpr   = mean(pr)
+    tpr   = sum(pr)
     mclou = mean(clt)
 
-    dtemp   = similar(temp, T, 365)
-    dprecin = similar(temp, T, 365)
-    dclou   = similar(temp, T, 365)
+    dtas   = similar(tas, T, 365)
+    dprecin = similar(tas, T, 365)
+    dclou   = similar(tas, T, 365)
 
-    daily_interp!(dtemp, temp)
-    daily_interp!(dprecin, prec)
+    daily_interp!(dtas, tas)
+    daily_interp!(dprecin, pr)
     daily_interp!(dclou, clt)
 
 
     missval = T(-9999.0)
-    tcm = isempty(temp) ? missval : minimum(temp)
+    tcm = isempty(tas) ? missval : minimum(tas)
 
     # Frost delay adjustment
     tminin = tcm != missval ? T(0.006)*tcm^2 + T(1.316)*tcm - T(21.9) : missval
@@ -308,12 +308,12 @@ function initialize_environmental_variables(input_variables::NamedTuple)
     dphen .= T(1.0)
 
     # Derived indices
-    tcm, gdd5, gdd0, twm = climdata(temp, prec, dtemp, cleaned)
-    dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, temp, cleaned)
-    dprec, dmelt, maxdepth = snow(dtemp, dprecin, cleaned)
+    tcm, gdd5, gdd0, twm = climdata(tas, pr, dtas, cleaned)
+    dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtas, dclou, tas, cleaned)
+    dprec, dmelt, maxdepth = snow(dtas, dprecin, cleaned)
 
     # Return merged NamedTuple: all cleaned input + derived fields
-    return merge(cleaned, (; mclou, mprec, mtemp, tprec, dtemp, 
+    return merge(cleaned, (; mclou, mpr, mtas, tpr, dtas, 
                             dprecin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
                             tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dprec, 
                             dmelt, maxdepth))
@@ -321,7 +321,7 @@ end
 
 
 """
-    initialize_pftstates(pftlist::AbstractPFTList, mclou::Real, mprec::Real, mtemp::Real)
+    initialize_pftstates(pftlist::AbstractPFTList, mclou::Real, mprec::Real, mtas::Real)
 
 Create and initialize the state for each Plant Functional Type (PFT), 
 including default and placeholder types.

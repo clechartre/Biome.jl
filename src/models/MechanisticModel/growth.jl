@@ -12,7 +12,7 @@ and carbon cycling processes.
 using Statistics: mean
 
 """
-    growth(maxlai, annp, sun, temp, dprec, dmelt, dpet, k, pft, dayl, dtemp, dphen, co2, p, tsoil, mnpp, c4mnpp)
+    growth(maxlai, annp, sun, tas, dprec, dmelt, dpet, k, pft, dayl, dtas, dphen, co2, p, tsoil, mnpp, c4mnpp)
 Calculate net primary productivity and carbon fluxes for a plant functional type.
 This is the main growth function that integrates photosynthesis, respiration,
 hydrology, and carbon cycling to determine NPP and related carbon fluxes.
@@ -22,14 +22,14 @@ iterative optimization for photosynthesis-conductance coupling.
 - `maxlai`: Maximum leaf area index
 - `annp`: Annual precipitation (mm)
 - `sun`: Monthly solar radiation (12 elements, MJ/m²/day)
-- `temp`: Monthly temperature (12 elements, °C)
+- `tas`: Monthly temperature (12 elements, °C)
 - `dprec`: Daily precipitation (365 elements, mm)
 - `dmelt`: Daily snowmelt (365 elements, mm)
 - `dpet`: Daily potential evapotranspiration (365 elements, mm)
 - `k`: Soil and canopy parameter array
 - `pft`: Plant functional type
 - `dayl`: Monthly day length (12 elements, hours)
-- `dtemp`: Daily temperature (365 elements, °C)
+- `dtas`: Daily temperature (365 elements, °C)
 - `dphen`: Daily phenology array (365x2 matrix)
 - `co2`: Atmospheric CO2 concentration (ppm)
 - `p`: Atmospheric pressure (kPa)
@@ -51,14 +51,14 @@ function growth(
     maxlai::T,
     annp::T,
     sun::AbstractArray{T},
-    temp::AbstractArray{T},
+    tas::AbstractArray{T},
     dprec::AbstractArray{T},
     dmelt::AbstractArray{T},
     dpet::AbstractArray{T},
     k::AbstractArray{T},
     pft::AbstractPFT,
     dayl::AbstractArray{T},
-    dtemp::AbstractArray{T},
+    dtas::AbstractArray{T},
     dphen::AbstractArray{T},
     co2::T,
     p::T,
@@ -141,10 +141,10 @@ function growth(
 
             if c4
                 alllresp, pgphot, aday = c4photo(optratio, sun[m], dayl[m],
-                                                 temp[m], age, fpar, p, ca, pft)
+                                                 tas[m], age, fpar, p, ca, pft)
             else
                 alllresp, pgphot, aday = photosynthesis(optratio, sun[m], dayl[m],
-                                                        temp[m], age, fpar, p, ca, pft)
+                                                        tas[m], age, fpar, p, ca, pft)
             end
 
             lresp[m] = alllresp
@@ -163,7 +163,7 @@ function growth(
         sumoff, greendays, runnoff, wilt =
             hydrology(
                 dprec, dmelt, dpet, root, k, maxfvc, pft, phentype,
-                wst, doptgc, mgmin, dphen, dtemp, sapwood, emax
+                wst, doptgc, mgmin, dphen, dtas, sapwood, emax
             )
 
         pftstates.greendays = greendays
@@ -201,10 +201,10 @@ function growth(
 
                     if c4
                         leafresp, igphot, aday = c4photo(xmid, sun[m], dayl[m],
-                                                         temp[m], age, fpar, p, ca, pft)
+                                                         tas[m], age, fpar, p, ca, pft)
                     else
                         leafresp, igphot, aday = photosynthesis(xmid, sun[m], dayl[m],
-                                                                temp[m], age, fpar, p, ca, pft)
+                                                                tas[m], age, fpar, p, ca, pft)
                     end
 
                     gt = T(3600) * dayl[m] * meangc[m]
@@ -244,7 +244,7 @@ function growth(
 
         # Respiration and annual NPP
         npp, stemresp, percentcost, mstemresp, mrootresp, backleafresp =
-            respiration(gpp, alresp, temp, sapwood, maxlai, monthlyfpar, pft)
+            respiration(gpp, alresp, tas, sapwood, maxlai, monthlyfpar, pft)
 
         if wilt
             npp = T(-9999)
@@ -306,7 +306,7 @@ function growth(
                 phi = calcphi(mgpp)
 
                 meanC3, meanC4, C3DA, C4DA =
-                    isotope(CCratio, ca, temp, isoresp, c4month, mgpp, phi, gpp)
+                    isotope(CCratio, ca, tas, isoresp, c4month, mgpp, phi, gpp)
             end
         end
 

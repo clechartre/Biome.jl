@@ -9,7 +9,7 @@ using Biome: ppeett, safe_exp
         lat = 45.0
         
         # Realistic seasonal temperature pattern (°C)
-        dtemp = vcat(
+        dtas = vcat(
             fill(-5.0, 31),   # January
             fill(-2.0, 28),   # February
             fill(5.0, 31),    # March
@@ -33,9 +33,9 @@ using Biome: ppeett, safe_exp
         )
         
         # Monthly temperatures
-        temp = [-5.0, -2.0, 5.0, 12.0, 18.0, 22.0, 25.0, 23.0, 18.0, 12.0, 5.0, -2.0]
+        tas = [-5.0, -2.0, 5.0, 12.0, 18.0, 22.0, 25.0, 23.0, 18.0, 12.0, 5.0, -2.0]
         
-        dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, temp)
+        dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtas, dclou, tas)
         
         # Check output dimensions
         @test length(dpet) == 365
@@ -84,11 +84,11 @@ using Biome: ppeett, safe_exp
         lat = 0.0
         
         # Tropical temperature pattern (minimal seasonal variation)
-        dtemp = fill(26.0, 365)
+        dtas = fill(26.0, 365)
         dclou = fill(60.0, 365)  # Moderate cloud cover
-        temp = fill(26.0, 12)
+        tas = fill(26.0, 12)
         
-        dpet_eq, dayl_eq, sun_eq, rad0_eq, ddayl_eq = ppeett(lat, dtemp, dclou, temp)
+        dpet_eq, dayl_eq, sun_eq, rad0_eq, ddayl_eq = ppeett(lat, dtas, dclou, tas)
         
         # Check output validity
         @test all(isfinite.(dpet_eq))
@@ -109,7 +109,7 @@ using Biome: ppeett, safe_exp
         
         # Compare with temperate latitude
         lat_temp = 45.0
-        dpet_temp, dayl_temp, sun_temp, rad0_temp, ddayl_temp = ppeett(lat_temp, dtemp, dclou, temp)
+        dpet_temp, dayl_temp, sun_temp, rad0_temp, ddayl_temp = ppeett(lat_temp, dtas, dclou, tas)
         
         # Temperate should have more seasonal variation
         temp_sun_variation = maximum(sun_temp) - minimum(sun_temp)
@@ -125,16 +125,16 @@ using Biome: ppeett, safe_exp
         lat = 70.0
         
         # Arctic temperature pattern
-        dtemp = vcat(
+        dtas = vcat(
             fill(-25.0, 90),  # Winter - very cold
             fill(-5.0, 90),   # Spring - cold
             fill(10.0, 92),   # Summer - mild
             fill(-10.0, 93)   # Fall - cold
         )
         dclou = fill(50.0, 365)
-        temp = [-25.0, -20.0, -10.0, -2.0, 5.0, 12.0, 15.0, 10.0, 2.0, -5.0, -15.0, -22.0]
+        tas = [-25.0, -20.0, -10.0, -2.0, 5.0, 12.0, 15.0, 10.0, 2.0, -5.0, -15.0, -22.0]
         
-        dpet_polar, dayl_polar, sun_polar, rad0_polar, ddayl_polar = ppeett(lat, dtemp, dclou, temp)
+        dpet_polar, dayl_polar, sun_polar, rad0_polar, ddayl_polar = ppeett(lat, dtas, dclou, tas)
         
         # Check output validity
         @test all(isfinite.(dpet_polar))
@@ -164,16 +164,16 @@ using Biome: ppeett, safe_exp
     
     @testset "Cloud Cover Effects Tests" begin
         lat = 35.0
-        dtemp = fill(20.0, 365)  # Constant temperature
-        temp = fill(20.0, 12)
+        dtas = fill(20.0, 365)  # Constant temperature
+        tas = fill(20.0, 12)
         
         # Test with no clouds
         dclou_clear = fill(0.0, 365)
-        dpet_clear, dayl_clear, sun_clear, rad0_clear, ddayl_clear = ppeett(lat, dtemp, dclou_clear, temp)
+        dpet_clear, dayl_clear, sun_clear, rad0_clear, ddayl_clear = ppeett(lat, dtas, dclou_clear, tas)
         
         # Test with full cloud cover
         dclou_cloudy = fill(100.0, 365)
-        dpet_cloudy, dayl_cloudy, sun_cloudy, rad0_cloudy, ddayl_cloudy = ppeett(lat, dtemp, dclou_cloudy, temp)
+        dpet_cloudy, dayl_cloudy, sun_cloudy, rad0_cloudy, ddayl_cloudy = ppeett(lat, dtas, dclou_cloudy, tas)
         
         # Both should be valid
         @test all(isfinite.(dpet_clear))
@@ -192,16 +192,16 @@ using Biome: ppeett, safe_exp
         dclou = fill(50.0, 365)  # Moderate cloud cover
         
         # Test with cold temperatures
-        dtemp_cold = fill(-10.0, 365)
-        temp_cold = fill(-10.0, 12)
+        dtas_cold = fill(-10.0, 365)
+        tas_cold = fill(-10.0, 12)
         
-        dpet_cold, dayl_cold, sun_cold, rad0_cold, ddayl_cold = ppeett(lat, dtemp_cold, dclou, temp_cold)
+        dpet_cold, dayl_cold, sun_cold, rad0_cold, ddayl_cold = ppeett(lat, dtas_cold, dclou, tas_cold)
         
         # Test with hot temperatures
-        dtemp_hot = fill(35.0, 365)
-        temp_hot = fill(35.0, 12)
+        dtas_hot = fill(35.0, 365)
+        tas_hot = fill(35.0, 12)
         
-        dpet_hot, dayl_hot, sun_hot, rad0_hot, ddayl_hot = ppeett(lat, dtemp_hot, dclou, temp_hot)
+        dpet_hot, dayl_hot, sun_hot, rad0_hot, ddayl_hot = ppeett(lat, dtas_hot, dclou, tas_hot)
         
         # Both should be valid
         @test all(isfinite.(dpet_cold))
@@ -222,13 +222,13 @@ using Biome: ppeett, safe_exp
     end
     
     @testset "Extreme Latitude Tests" begin
-        dtemp = fill(15.0, 365)
+        dtas = fill(15.0, 365)
         dclou = fill(50.0, 365)
-        temp = fill(15.0, 12)
+        tas = fill(15.0, 12)
         
         # Test extreme northern latitude
         lat_north = 85.0
-        dpet_north, dayl_north, sun_north, rad0_north, ddayl_north = ppeett(lat_north, dtemp, dclou, temp)
+        dpet_north, dayl_north, sun_north, rad0_north, ddayl_north = ppeett(lat_north, dtas, dclou, tas)
         
         @test all(isfinite.(dpet_north))
         @test all(isfinite.(dayl_north))
@@ -241,7 +241,7 @@ using Biome: ppeett, safe_exp
         
         # Test extreme southern latitude
         lat_south = -85.0
-        dpet_south, dayl_south, sun_south, rad0_south, ddayl_south = ppeett(lat_south, dtemp, dclou, temp)
+        dpet_south, dayl_south, sun_south, rad0_south, ddayl_south = ppeett(lat_south, dtas, dclou, tas)
         
         @test all(isfinite.(dpet_south))
         @test all(isfinite.(dayl_south))
@@ -261,11 +261,11 @@ using Biome: ppeett, safe_exp
     
     @testset "Type Consistency Tests" begin
         lat_f32 = Float32(45.0)
-        dtemp_f32 = Float32.(fill(20.0, 365))
+        dtas_f32 = Float32.(fill(20.0, 365))
         dclou_f32 = Float32.(fill(60.0, 365))
-        temp_f32 = Float32.(fill(20.0, 12))
+        tas_f32 = Float32.(fill(20.0, 12))
         
-        dpet_f32, dayl_f32, sun_f32, rad0_f32, ddayl_f32 = ppeett(lat_f32, dtemp_f32, dclou_f32, temp_f32)
+        dpet_f32, dayl_f32, sun_f32, rad0_f32, ddayl_f32 = ppeett(lat_f32, dtas_f32, dclou_f32, tas_f32)
         
         # Check type preservation
         @test eltype(dpet_f32) == Float32
@@ -296,15 +296,15 @@ using Biome: ppeett, safe_exp
     
     @testset "Array Length Validation" begin
         lat = 50.0
-        temp_valid = fill(15.0, 12)
+        tas_valid = fill(15.0, 12)
         
-        # Test with wrong dtemp array length
-        @test_throws BoundsError ppeett(lat, fill(15.0, 300), fill(50.0, 365), temp_valid)
+        # Test with wrong dtas array length
+        @test_throws BoundsError ppeett(lat, fill(15.0, 300), fill(50.0, 365), tas_valid)
         
         # Test with wrong dclou array length
-        @test_throws BoundsError ppeett(lat, fill(15.0, 365), fill(50.0, 300), temp_valid)
+        @test_throws BoundsError ppeett(lat, fill(15.0, 365), fill(50.0, 300), tas_valid)
         
-        # Test with wrong temp array length
+        # Test with wrong tas array length
         @test_throws BoundsError ppeett(lat, fill(15.0, 365), fill(50.0, 365), fill(15.0, 10))
     end
     
@@ -327,7 +327,7 @@ using Biome: ppeett, safe_exp
         lat = 45.0
         
         # Create realistic annual cycle
-        dtemp = vcat(
+        dtas = vcat(
             [i * 0.5 - 10.0 for i in 1:90],   # Winter to spring
             [10.0 + i * 0.2 for i in 1:92],   # Spring to summer
             [28.0 - i * 0.2 for i in 1:92],   # Summer to fall
@@ -335,9 +335,9 @@ using Biome: ppeett, safe_exp
         )
         dclou = 50.0 .+ 20.0 .* sin.(2π .* (1:365) ./ 365.0)  # Sinusoidal cloud pattern
         daysinmonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        temp = [mean(dtemp[sum(daysinmonth[1:i-1])+1:sum(daysinmonth[1:i])]) for i in 1:12]
+        tas = [mean(dtas[sum(daysinmonth[1:i-1])+1:sum(daysinmonth[1:i])]) for i in 1:12]
         
-        dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtemp, dclou, temp)
+        dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtas, dclou, tas)
         
         # Physical consistency checks
         
@@ -347,7 +347,7 @@ using Biome: ppeett, safe_exp
         
         # 2. PET should correlate with temperature and solar radiation
         monthly_dpet = [mean(dpet[sum(daysinmonth[1:i-1])+1:sum(daysinmonth[1:i])]) for i in 1:12]
-        correlation_pet_temp = cor(monthly_dpet, temp)
+        correlation_pet_temp = cor(monthly_dpet, tas)
         correlation_pet_sun = cor(monthly_dpet, sun)
         
         @test correlation_pet_temp > 0.3  # Should be positively correlated with temperature
@@ -370,11 +370,11 @@ using Biome: ppeett, safe_exp
     
     @testset "Edge Case - Zero Inputs" begin
         lat = 0.0
-        dtemp_zero = fill(0.0, 365)
+        dtas_zero = fill(0.0, 365)
         dclou_zero = fill(0.0, 365)
-        temp_zero = fill(0.0, 12)
+        tas_zero = fill(0.0, 12)
         
-        dpet_zero, dayl_zero, sun_zero, rad0_zero, ddayl_zero = ppeett(lat, dtemp_zero, dclou_zero, temp_zero)
+        dpet_zero, dayl_zero, sun_zero, rad0_zero, ddayl_zero = ppeett(lat, dtas_zero, dclou_zero, tas_zero)
         
         # Should handle zero inputs gracefully
         @test all(isfinite.(dpet_zero))
@@ -389,7 +389,7 @@ using Biome: ppeett, safe_exp
         @test rad0_zero >= 0.0
         @test all(ddayl_zero .>= 0.0)
         
-        # At equator with zero temperature, rad0 should be zero
+        # At equator with zero tas, rad0 should be zero
         @test rad0_zero == 0.0
         
         # Daylength at equator should still be ~12 hours
