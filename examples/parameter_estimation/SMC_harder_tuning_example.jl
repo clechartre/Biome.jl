@@ -161,17 +161,11 @@ function runmodel_pixel(tas, pr, clt, ksat, whc,
         ksat=ksat_r, whc=whc_r,
         co2=373.8, pftlist=PFTList)
 
-    # Write output to a unique file to avoid collisions between runs.
-    uuid = string(uuid4())
-    outfile = "output_$(uuid).nc"
-
     # Run the model.
-    # coordstring="alldata" likely controls metadata naming for the output.
-    output = execute(setup; coordstring="alldata", outfile=outfile)
+    output = execute(setup; pft_parametrization = true)
 
     # Extract the biome field from output.
-    # NOTE: biome_val may be an array/raster-like object; downstream you compare `pred == 1`.
-    biome_val = output[:biome]
+    biome_val = output[:pft_present][1] # In this case we only have 1 PFT, else choose the focal PFT 
     return biome_val
 end
 

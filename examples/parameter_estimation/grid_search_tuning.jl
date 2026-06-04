@@ -222,8 +222,7 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
         temp=temp_r, prec=prec_r, clt=clt_r, ksat=ksat_r, whc=whc_r,
         co2=373.8, pftlist=PFTList)
 
-    output = execute(setup;
-                     pft_parametrization=true)
+    output = execute(setup; pft_parametrization=true)
 
     return Bool(output[:pft_present][BOREAL_EVERGREEN_PFT_IDX])
 end

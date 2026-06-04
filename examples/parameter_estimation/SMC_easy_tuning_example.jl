@@ -94,9 +94,13 @@ function runmodel_pixel(tas, prec, clt, ksat, whc,
         ksat=ksat_r, whc=whc_r,
         co2=373.8, pftlist=PFTList)
 
-    outfile = "output_$(uuid4()).nc"
-    output = execute(setup; coordstring="alldata", outfile=outfile)
-    return output[:biome]
+    # Run the model.
+    output = execute(setup; pft_parametrization = true)
+
+    # Extract the biome field from output.
+    biome_val = output[:pft_present][1] # In this case we only have 1 PFT, else choose the focal PFT 
+    return biome_val
+    
 end
 
 # -------------------- Turing model
