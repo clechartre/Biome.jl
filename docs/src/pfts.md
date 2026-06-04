@@ -69,7 +69,7 @@ The model is based on a series traits used to compute the growth of each PFT thr
 | `gdd0`    | GDD for growth initiation above 0 °C                | 500 | 10000 | Hallgren & Pitman (2001)             |
 | `twm`     | Temperature for water limitation growth cutoff (°C) | 0   | +Inf   | Hallgren & Pitman (2001)             |
 | `snow`    | Snow depth required for growth (cm)                 | 0   | 100  | Hallgren & Pitman (2001)             |
-| `swb`     | Site water balance (mm)                             | 0   | 2000 | Added in this iteration of the model |
+| `swb`     | Site water balance in percentage of field capacity                             | 0   | 100 | Added in this iteration of the model |
 
 ## Defining your own PFTs
 
@@ -124,10 +124,8 @@ function WoodyDesert()
                 gdd0=[-Inf, +Inf],
                 twm=[10.0, +Inf],
                 snow=[-Inf, +Inf],
-                swb=[-Inf,500]
+                swb=[-Inf,50]
             ),
-            (clt=9.2, prec=2.5, temp=23.9),
-            (clt=2.2, prec=2.8, temp=2.7))
         ).
         dominance_factor = 5,
         minimum_lai = 1

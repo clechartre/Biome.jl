@@ -59,19 +59,19 @@ You can call this model using:
 using Biome
 using Rasters
 
-# Minimal inputs (Troll–Paffen uses temp & precip in the driver)
-tempfile = "/path/to/temp.nc"   # monthly mean temperature (stacked in 3rd dim)
-precfile = "/path/to/prec.nc"   # monthly precipitation (same grid/stacking)
+# Minimal inputs (Troll–Paffen uses tas & pr in the driver)
+tasfile = "/path/to/tas.nc"   # monthly mean temperature (stacked in 3rd dim)
+prfile = "/path/to/pr.nc"   # monthly precipitation (same grid/stacking)
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile,  name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile,  name="pr")
 
 setup = ModelSetup(TrollPfaffenModel();
-                   temp=temp_raster,
-                   prec=prec_raster)
+                   tas=tas_raster,
+                   pr=pr_raster)
 
 # Process full grid (or pass "lonmin/lonmax/latmin/latmax")
-run!(setup; coordstring="alldata", outfile="output_TrollPfaffen.nc")
+execute(setup; outfile="output_TrollPfaffen.nc")
 ```
 
 
