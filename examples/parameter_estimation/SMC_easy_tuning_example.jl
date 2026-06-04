@@ -23,8 +23,8 @@ using MCMCChains, Plots
 using Random, Statistics
 Random.seed!(957) # Fix RNG seed so sampling/repro steps are reproducible
 
-# -------------------- Paths (edit these)
-groundtruthpath = "path/to/ground_truth"  # or .nc etc
+# -------------------- Paths
+groundtruthpath = "path/to/ground_truth"
 tas_path  = "path/to/tas.nc"
 prec_path  = "path/to/prec.nc"
 clt_path   = "path/to/clt.nc"
@@ -100,7 +100,7 @@ function runmodel_pixel(tas, prec, clt, ksat, whc,
     # Extract the biome field from output.
     biome_val = output[:pft_present][1] # In this case we only have 1 PFT, else choose the focal PFT 
     return biome_val
-    
+
 end
 
 # -------------------- Turing model
