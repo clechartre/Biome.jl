@@ -13,11 +13,11 @@ using Biome
 using Rasters
 
 # Load rasters
-temp_r = Raster("/path/to/temp.nc", name="temp")
-prec_r = Raster("/path/to/prec.nc", name="prec")
+tas_r = Raster("/path/to/tas.nc", name="tas")
+pr_r = Raster("/path/to/pr.nc", name="pr")
 
 # Minimal example (Köppen model)
-setup = ModelSetup(KoppenModel(); temp=temp_r, prec=prec_r)
+setup = ModelSetup(KoppenModel(); tas=tas_r, pr=pr_r)
 execute!(setup; outfile="output_Koppen.nc")
 ```
 
@@ -28,7 +28,7 @@ execute!(setup; outfile="output_Koppen.nc")
 `ModelSetup` holds everything needed to run a model on a grid:
 
 * `model::BiomeModel` — which model you want to run (e.g., `BaseModel()`, `BIOMEDominanceModel()`, `KoppenModel()`)
-* `lon, lat` — coordinates auto-extracted from your **temp** raster
+* `lon, lat` — coordinates auto-extracted from your **tas** raster
 * `co2::Real` — atmospheric CO₂ (optional, only used in the mechanistic models; defaults to 378.0)
 * `rasters::NamedTuple` — your environmental inputs (any keyword set to a `Raster`)
 * `pftlist` — a `PFTClassification` or `BIOME4.PFTClassification` (optional, only used in the mechanistic models; default depends on model)
@@ -50,8 +50,8 @@ All rasters must share **the same grid, ordering, and resolution**. Missing valu
 
 **Required:**
 
-* `temp` (`Raster`) — temperature climatology (time or monthly band last dim)
-* `prec` (`Raster`) — precipitation climatology
+* `tas` (`Raster`) — temperature climatology (time or monthly band last dim)
+* `pr` (`Raster`) — precipitation climatology
 
 **Common optional (model- or PFT-dependent):**
 
@@ -66,7 +66,7 @@ All rasters must share **the same grid, ordering, and resolution**. Missing valu
 ```julia
 # Example: scale precipitation ×10, invert sunshine to cloudiness
 # In this example, we make sure we do not transform the NoValueData -9999
-prec_r .= ifelse.(coalesce.(prec_r, -9999) .!= -9999, 10 .* coalesce.(prec_r, -9999), -9999)
+pr_r .= ifelse.(coalesce.(pr_r, -9999) .!= -9999, 10 .* coalesce.(pr_r, -9999), -9999)
 cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9999), -9999)
 ```
 
@@ -92,8 +92,8 @@ cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9
 
 **Required:**
 
-* `temp` (`Raster`)
-* `prec` (`Raster`)
+* `tas` (`Raster`)
+* `pr` (`Raster`)
 
 **Outputs:**
 
@@ -108,7 +108,7 @@ cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9
 
 * Require climatologies for environmental inputs. The inputs should be of dimensions `[X, Y, 12]`.
 * Dimensions are taken from the **`temp`** raster to build `lon` and `lat`; all rasters must align exactly.
-* Use `name="varname"` when loading to set the key (e.g., `name="temp"`).
+* Use `name="varname"` when loading to set the key (e.g., `name="tas"`).
 
 * Missing values: Anything `missing` is converted to `-9999.0`.
 
@@ -133,14 +133,14 @@ run!(setup; bounds = alldata, outfile = "subset.nc")
 using Biome, Rasters
 
 # Load
-temp_r = Raster(".../temp_1981-2010.nc", name="temp")
-prec_r = Raster(".../prec_1981-2010.nc", name="prec")
+tas_r = Raster(".../tas_1981-2010.nc", name="tas")
+pr_r = Raster(".../pr_1981-2010.nc", name="pr")
 clt_r  = Raster(".../sun_1981-2010.nc",  name="sun")
 ksat_r = Raster(".../soils_55km.nc",      name="Ksat")
 whc_r  = Raster(".../soils_55km.nc",      name="whc")
 
 # Optional extra covariate
-test_r = Raster(".../temp_1981-2010.nc", name="temp")[:, :, 1]  # single-band example
+test_r = Raster(".../tas_1981-2010.nc", name="tas")[:, :, 1]  # single-band example
 
 # Define PFT list and constraints
 pfts = PFTClassification([
@@ -163,7 +163,7 @@ function my_biome_assign(pft::AbstractPFT; subpft, wdom, gdd0, gdd5, tcm, tmin, 
 end
 
 setup = ModelSetup(BaseModel();
-    temp=temp_r, prec=prec_r, clt=clt_r, ksat=ksat_r, whc=whc_r,
+    tas=tas_r, pr=pr_r, clt=clt_r, ksat=ksat_r, whc=whc_r,
     test=test_r, co2=373.8, pftlist=pfts, biome_assignment=my_biome_assign)
 
 run!(setup; outfile="output_BaseModel.nc")

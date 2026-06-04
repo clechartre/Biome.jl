@@ -1,7 +1,7 @@
 using Base.Math: exp
 
 """
-    c4photo(ratio, dsun, daytime, temp, age, fpar, p, ca, pft)::Tuple{T,T,T} 
+    c4photo(ratio, dsun, daytime, tas, age, fpar, p, ca, pft)::Tuple{T,T,T} 
 
 Calculate C4 photosynthesis based on environmental and plant functional type (PFT) parameters.
 
@@ -9,7 +9,7 @@ Calculate C4 photosynthesis based on environmental and plant functional type (PF
 - `ratio`: The ratio of intercellular to ambient CO2 concentration.
 - `dsun`: Daily solar radiation (MJ/m²/day).
 - `daytime`: Length of the day (hours).
-- `temp`: Air temperature (°C).
+- `tas`: Air temperature (°C).
 - `age`: Leaf age (months).
 - `fpar`: Fraction of photosynthetically active radiation absorbed by the canopy.
 - `p`: Atmospheric pressure (kPa).
@@ -25,7 +25,7 @@ function c4photo(
     ratio::T,
     dsun::T,
     daytime::T,
-    temp::T,
+    tas::T,
     age::T,
     fpar::T,
     p::T,
@@ -52,16 +52,16 @@ function c4photo(
     daytime = max(daytime, T(4.0))
 
     # Temperature stress calculation
-    mintemp = t0
-    tstress = if mintemp + T(1) < temp < MAXTEMP
-        exp(-T(10.0) / (temp - mintemp))
+    mintas = t0
+    tstress = if mintas + T(1) < tas < MAXTEMP
+        exp(-T(10.0) / (tas - mintas))
     else
         T(0.0)
     end
     tstress = min(tstress, T(1.0))
 
     # Temperature adjusted values
-    tao = TAO25 * (TAOQ10^((temp - T(25.0)) / T(10.0)))
+    tao = TAO25 * (TAOQ10^((tas - T(25.0)) / T(10.0)))
 
     s = DRESPC4 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
@@ -112,7 +112,7 @@ function c4photo(
     adayc4 = if grossphotc4 == T(0.0) && vmaxc4 == T(0.0)
         T(0.0)
     else
-        (adaygcc4 / CMASS) * (T(8.314) * (temp + T(273.3)) / p) * T(1000.0)
+        (adaygcc4 / CMASS) * (T(8.314) * (tas + T(273.3)) / p) * T(1000.0)
     end
 
     return T(leafrespc4), T(grossphotc4), T(adayc4)

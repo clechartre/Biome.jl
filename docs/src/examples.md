@@ -8,15 +8,15 @@ Here is some basic examples on how to run the package for different model types.
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile, name="pr")
 
 setup = ModelSetup(KoppenModel();
-                   temp=temp_raster,
-                   prec=prec_raster)
+                   tas=tas_raster,
+                   pr=pr_raster)
 
 run!(setup; outfile="output_Koppen.nc")
 
@@ -59,13 +59,13 @@ here is how you set up an entire run of BIOME4 with you own environmental input 
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 cltfile = ""
 soilfile = ""
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile, name="pr")
 clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
@@ -73,8 +73,8 @@ whc_raster = Raster(soilfile, name="whc")
 PFTList = BIOME4.PFTClassification()
 
 setup = ModelSetup(BIOME4Model();
-                   temp=temp_raster,
-                   prec=prec_raster,
+                   tas=tas_raster,
+                   pr=pr_raster,
                    sun=clt_raster,
                    ksat=ksat_raster,
                    whc=whc_raster,
@@ -100,13 +100,13 @@ Without customization, the model looks as such.
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 cltfile = ""
 soilfile = ""
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile, name="pr")
 clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
@@ -120,8 +120,8 @@ pftlist = PFTClassification([
     ]
 )
 setup = ModelSetup(BaseModel;
-                   temp=temp_raster,
-                   prec=prec_raster,
+                   tas=tas_raster,
+                   pr=pr_raster,
                    sun= clt_raster,
                    ksat=ksat_raster,
                    whc= whc_raster,
@@ -140,13 +140,13 @@ Creating 3 new PFTs and their associated biomes
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 cltfile = ""
 soilfile = ""
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile, name="pr")
 clt_raster = Raster(cltfile, name="sun")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")

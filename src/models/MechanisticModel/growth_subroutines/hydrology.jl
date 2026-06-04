@@ -1,5 +1,5 @@
 """
-    hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtemp, sapwood, emax) :: HydrologyResults
+    hydrology(dprec, dmelt, deq, root, k, maxfvc, pft, phentype, wst, gcopt, mgmin, dphen, dtas, sapwood, emax) :: HydrologyResults
 
 Calculate the actual values of canopy conductance (gc), soil moisture, and other
 hydrological variables.
@@ -17,7 +17,7 @@ hydrological variables.
 - `gcopt`: Optimal canopy conductance (365-element vector).
 - `mgmin`: Minimum canopy conductance modifier (scalar).
 - `dphen`: Phenology data (365x2 matrix).
-- `dtemp`: Daily temperature (365-element vector).
+- `dtas`: Daily temperature (365-element vector).
 - `sapwood`: Presence of sapwood respiration.
 - `emax`: Maximum evapotranspiration efficiency (scalar).
 
@@ -48,7 +48,7 @@ function hydrology(
     gcopt::AbstractArray{T},
     mgmin::T,
     dphen::AbstractArray{T},
-    dtemp::AbstractArray{T},
+    dtas::AbstractArray{T},
     sapwood::U,
     emax::T
 )::Tuple{
@@ -151,7 +151,7 @@ function hydrology(
                     greendays += 1
                 end
 
-                if dtemp[d] <= T(-10.0)
+                if dtas[d] <= T(-10.0)
                     gc   = T(0.0)
                     aet  = T(0.0)
                     perc = T(0.0)

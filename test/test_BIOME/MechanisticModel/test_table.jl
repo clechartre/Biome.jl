@@ -18,8 +18,8 @@ using Test
             (45.0, 67.8, 2.394)
         ]
         
-        for (temp, expected_gamma, expected_lambda) in expected_results
-            gamma, lambda_val = table(temp)
+        for (tas, expected_gamma, expected_lambda) in expected_results
+            gamma, lambda_val = table(tas)
             
             @test gamma ≈ expected_gamma atol=1e-10
             @test lambda_val ≈ expected_lambda atol=1e-10
@@ -60,10 +60,10 @@ using Test
     
     @testset "Below Minimum Temperature" begin
         # Test temperatures below the minimum table value (-5°C)
-        test_temps = [-10.0, -20.0, -100.0]
+        test_tass = [-10.0, -20.0, -100.0]
         
-        for temp in test_temps
-            gamma, lambda_val = table(temp)
+        for tas in test_tass
+            gamma, lambda_val = table(tas)
             
             # Should use the -5°C values (first entry)
             @test gamma ≈ 64.6
@@ -75,10 +75,10 @@ using Test
     
     @testset "Above Maximum Temperature" begin
         # Test temperatures above the maximum table value (45°C)
-        test_temps = [50.0, 100.0, 1000.0]
+        test_tass = [50.0, 100.0, 1000.0]
         
-        for temp in test_temps
-            gamma, lambda_val = table(temp)
+        for tas in test_tass
+            gamma, lambda_val = table(tas)
             
             # Should use the 45°C values (last entry)
             @test gamma ≈ 67.8
@@ -114,8 +114,8 @@ using Test
     
     @testset "Type Consistency Tests" begin
         # Test with Float32 input
-        temp_f32 = Float32(15.0)
-        gamma_f32, lambda_f32 = table(temp_f32)
+        tas_f32 = Float32(15.0)
+        gamma_f32, lambda_f32 = table(tas_f32)
         
         @test typeof(gamma_f32) == Float32
         @test typeof(lambda_f32) == Float32
@@ -123,12 +123,12 @@ using Test
         @test lambda_f32 ≈ Float32(2.465)
         
         # Test with Integer input - should throw InexactError
-        temp_int = Int(20)
-        @test_throws InexactError table(temp_int)
+        tas_int = Int(20)
+        @test_throws InexactError table(tas_int)
         
         # Test with Float64 (default)
-        temp_f64 = 25.0
-        gamma_f64, lambda_f64 = table(temp_f64)
+        tas_f64 = 25.0
+        gamma_f64, lambda_f64 = table(tas_f64)
         
         @test typeof(gamma_f64) == Float64
         @test typeof(lambda_f64) == Float64
@@ -138,12 +138,12 @@ using Test
     
     @testset "Gamma and Lambda Relationship Tests" begin
         # Test that gamma generally increases with temperature
-        temps = [-5.0, 0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0]
+        tass = [-5.0, 0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0]
         gammas = Float64[]
         lambdas = Float64[]
         
-        for temp in temps
-            gamma, lambda_val = table(temp)
+        for tas in tass
+            gamma, lambda_val = table(tas)
             push!(gammas, gamma)
             push!(lambdas, lambda_val)
         end
@@ -227,8 +227,8 @@ using Test
             (45.000001, 67.8, 2.394)  # Just above maximum (should use 45°C)
         ]
         
-        for (temp, expected_gamma, expected_lambda) in test_cases
-            gamma, lambda_val = table(temp)
+        for (tas, expected_gamma, expected_lambda) in test_cases
+            gamma, lambda_val = table(tas)
             @test gamma ≈ expected_gamma atol=1e-10
             @test lambda_val ≈ expected_lambda atol=1e-10
         end
@@ -236,10 +236,10 @@ using Test
     
     @testset "Return Value Validation" begin
         # Test that return values are always valid (not nothing)
-        test_temps = [-100.0, -5.0, 0.0, 22.5, 45.0, 100.0]
+        test_tass = [-100.0, -5.0, 0.0, 22.5, 45.0, 100.0]
         
-        for temp in test_temps
-            gamma, lambda_val = table(temp)
+        for tas in test_tass
+            gamma, lambda_val = table(tas)
             
             @test gamma !== nothing
             @test lambda_val !== nothing
@@ -255,20 +255,20 @@ using Test
         # The function should NOT interpolate between table points
         
         # Test a range of temperatures between two table points
-        temps_between = [5.1, 6.0, 7.5, 9.0, 9.9]  # Between 5°C and 10°C
+        tass_between = [5.1, 6.0, 7.5, 9.0, 9.9]  # Between 5°C and 10°C
         
-        for temp in temps_between
-            gamma, lambda_val = table(temp)
+        for tas in tass_between
+            gamma, lambda_val = table(tas)
             # All should use the 10°C table entry (next higher)
             @test gamma ≈ 65.6
             @test lambda_val ≈ 2.477
         end
         
         # Test another range
-        temps_between_2 = [25.1, 27.0, 29.9]  # Between 25°C and 30°C
+        tass_between_2 = [25.1, 27.0, 29.9]  # Between 25°C and 30°C
         
-        for temp in temps_between_2
-            gamma, lambda_val = table(temp)
+        for tas in tass_between_2
+            gamma, lambda_val = table(tas)
             # All should use the 30°C table entry
             @test gamma ≈ 66.8
             @test lambda_val ≈ 2.430
@@ -277,9 +277,9 @@ using Test
     
     @testset "Performance and Consistency Tests" begin
         # Test that the function is consistent across multiple calls
-        test_temp = 12.5
+        test_tas = 12.5
         
-        results = [table(test_temp) for _ in 1:100]
+        results = [table(test_tas) for _ in 1:100]
         
         # All results should be identical
         first_result = results[1]
@@ -289,13 +289,13 @@ using Test
         end
         
         # Test with a range of inputs for consistency
-        temps = [-10.0, 0.0, 15.0, 30.0, 50.0]
+        tass = [-10.0, 0.0, 15.0, 30.0, 50.0]
         
-        for temp in temps
+        for tas in tass
             # Call multiple times
-            result1 = table(temp)
-            result2 = table(temp)
-            result3 = table(temp)
+            result1 = table(tas)
+            result2 = table(tas)
+            result3 = table(tas)
             
             @test result1 == result2 == result3
         end
@@ -305,10 +305,10 @@ using Test
         # Test that the table covers expected range and has expected properties
         
         # Get all table values
-        table_temps = [-5.0, 0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0]
+        table_tass = [-5.0, 0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0]
         
-        gammas = [table(temp)[1] for temp in table_temps]
-        lambdas = [table(temp)[2] for temp in table_temps]
+        gammas = [table(tas)[1] for tas in table_tass]
+        lambdas = [table(tas)[2] for tas in table_tass]
         
         # Check that we have 11 points (as expected from the table)
         @test length(gammas) == 11

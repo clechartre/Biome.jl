@@ -1,5 +1,5 @@
 """
-    respiration(gpp, alresp, temp, sapwood, lai, monthlyfpar, pft)
+    respiration(gpp, alresp, tas, sapwood, lai, monthlyfpar, pft)
 
 Calculate plant respiration components and net primary productivity (NPP) from 
 gross primary productivity (GPP).
@@ -11,7 +11,7 @@ the net primary productivity of a plant functional type.
 # Arguments
 - `gpp`: Gross primary productivity (carbon gained through photosynthesis)
 - `alresp`: Autotrophic leaf respiration
-- `temp`: Monthly temperature array (12 elements)
+- `tas`: Monthly temperature array (12 elements)
 - `sapwood`: sapwood indicator (2 = sapwood, other = woody)
 - `lai`: Leaf area index
 - `monthlyfpar`: Monthly fraction of photosynthetically active radiation 
@@ -39,7 +39,7 @@ A tuple containing:
 function respiration(
     gpp::T,
     alresp::T,
-    temp::AbstractArray{T},
+    tas::AbstractArray{T},
     sapwood::Int,
     lai::T,
     monthlyfpar::AbstractArray{T},
@@ -55,15 +55,15 @@ function respiration(
     stemresp = T(0.0)
     mstemresp = zeros(T, 12)
     for m in 1:12
-        if temp[m] <= -46.02
+        if tas[m] <= -46.02
             mstemresp[m] = T(0.0)
         else
-            temp_factor = exp(
+            tas_factor = exp(
                 E0 * (
-                    T(1.0) / (TREF + TEMP0) - T(1.0) / (temp[m] + TEMP0)
+                    T(1.0) / (TREF + TEMP0) - T(1.0) / (tas[m] + TEMP0)
                 )
             )
-            mstemresp[m] = lai * STEMCARBON * respfact * temp_factor
+            mstemresp[m] = lai * STEMCARBON * respfact * tas_factor
         end
         stemresp += mstemresp[m]
     end

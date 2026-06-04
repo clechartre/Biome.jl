@@ -74,69 +74,69 @@ function runmodel(m::TrollPaffenModel, input_variables::NamedTuple, args...; kwa
     @unpack_namedtuple_climate input_variables
 
     # Handle Missing data 
-    if any(ismissing, temp) || any(ismissing, prec)
+    if any(ismissing, tas) || any(ismissing, pr)
         return (troll_zone = TROLL[:NA],)
     end
 
     # Calculate statistics
-    temp_max = maximum(temp)
-    temp_min = minimum(temp)
-    temp_mean = mean(temp)
-    temp_range = temp_max - temp_min
-    prec_sum = sum(prec)
+    tas_max = maximum(tas)
+    tas_min = minimum(tas)
+    tas_mean = mean(tas)
+    tas_range = tas_max - tas_min
+    pr_sum = sum(pr)
 
     # Calculate Growing Degree Days
-    nVegDays = get_growing_degree_days(temp, 5.0)
+    nVegDays = get_growing_degree_days(tas, 5.0)
 
     # Calculate Humid Months
-    nHumid = get_humid_months(temp, prec)
+    nHumid = get_humid_months(tas, pr)
 
     # Determine if in northern hemisphere
-    bNorth = sum(temp[4:9]) > sum(temp[10:12]) + sum(temp[1:2])
+    bNorth = sum(tas[4:9]) > sum(tas[10:12]) + sum(tas[1:2])
 
     # Determine classification
     zone =
-        if temp_max < 0
+        if tas_max < 0
             TROLL[:TP_I_1]
-        elseif temp_max < 6
+        elseif tas_max < 6
             TROLL[:TP_I_2]
-        elseif temp_max < 12 && temp_min < -8
+        elseif tas_max < 12 && tas_min < -8
             TROLL[:TP_I_3]
-        elseif temp_max < 12 && temp_min >= -8 && temp_range < 13
+        elseif tas_max < 12 && tas_min >= -8 && tas_range < 13
             TROLL[:TP_I_4]
 
-        elseif temp_max < 15 && temp_min >= -3 && temp_min < 2 && is_between(nVegDays, 120, 180)
+        elseif tas_max < 15 && tas_min >= -3 && tas_min < 2 && is_between(nVegDays, 120, 180)
             TROLL[:TP_II_1]
-        elseif temp_max < 20 && temp_range < 40 && is_between(nVegDays, 100, 150)
+        elseif tas_max < 20 && tas_range < 40 && is_between(nVegDays, 100, 150)
             TROLL[:TP_II_2]
-        elseif temp_max < 20 && temp_range >= 40
+        elseif tas_max < 20 && tas_range >= 40
             TROLL[:TP_II_3]
 
-        elseif temp_min >= -3 && temp_min < 2 && nVegDays >= 200
+        elseif tas_min >= -3 && tas_min < 2 && nVegDays >= 200
             TROLL[:TP_III_3]
-        elseif temp_max < 15 && is_between(temp_min, 2, 10) && temp_range < 10
+        elseif tas_max < 15 && is_between(tas_min, 2, 10) && tas_range < 10
             TROLL[:TP_III_1]
-        elseif temp_max < 20 && temp_min >= 2 && temp_range < 16
+        elseif tas_max < 20 && tas_min >= 2 && tas_range < 16
             TROLL[:TP_III_2]
-        elseif temp_max < 20 && is_between(temp_range, 20, 30) && is_between(nVegDays, 160, 210)
+        elseif tas_max < 20 && is_between(tas_range, 20, 30) && is_between(nVegDays, 160, 210)
             TROLL[:TP_III_4]
-        elseif temp_max < 20 && is_between(temp_min, -20, -10) && is_between(temp_range, 30, 40) && is_between(nVegDays, 150, 180)
+        elseif tas_max < 20 && is_between(tas_min, -20, -10) && is_between(tas_range, 30, 40) && is_between(nVegDays, 150, 180)
             TROLL[:TP_III_5]
-        elseif temp_max >= 20 && is_between(temp_min, -30, -10) && temp_range > 40
+        elseif tas_max >= 20 && is_between(tas_min, -30, -10) && tas_range > 40
             TROLL[:TP_III_6]
 
-        elseif temp_min < 0
+        elseif tas_min < 0
             if nHumid >= 6
                 TROLL[:TP_III_9]
-            elseif prec[3] + prec[4] + prec[5] < prec[6] + prec[7] + prec[8]
+            elseif pr[3] + pr[4] + pr[5] < pr[6] + pr[7] + pr[8]
                 TROLL[:TP_III_10]
             else
                 TROLL[:TP_III_9a]
             end
-        elseif temp_min < 6
+        elseif tas_min < 6
             TROLL[:TP_III_12a]
 
-        elseif temp_min > 0 && temp_mean > 18.3
+        elseif tas_min > 0 && tas_mean > 18.3
             if nHumid > 9.5
                 TROLL[:TP_V_1]
             elseif nHumid > 7
@@ -160,14 +160,14 @@ function is_between(x, low, high)
     return low <= x <= high
 end
 
-function get_growing_degree_days(temp::Vector{Union{Missing, T}}, base_temp::T) where T<:Real
-    return sum(max(t - base_temp, 0.0) for t in temp)
+function get_growing_degree_days(tas::Vector{Union{Missing, T}}, base_temp::T) where T<:Real
+    return sum(max(t - base_temp, 0.0) for t in tas)
 end
 
-function get_humid_months(temp::Vector{Union{Missing, T}}, prec::Vector{Union{Missing, T}}) where T<:Real
-    temp_daily = daily_interp(temp)
-    prec_daily = daily_interp(prec)
-    humid_days = sum(prec_daily[i] > 2 * temp_daily[i] for i in 1:365)
+function get_humid_months(tas::Vector{Union{Missing, T}}, pr::Vector{Union{Missing, T}}) where T<:Real
+    tas_daily = daily_interp(tas)
+    pr_daily = daily_interp(pr)
+    humid_days = sum(pr_daily[i] > 2 * tas_daily[i] for i in 1:365)
     return humid_days * 12.0 / 365.0
 end
 
