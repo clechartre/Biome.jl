@@ -69,7 +69,7 @@ function snow(
     # Use env data if available, otherwise use calculated values
     if env !== nothing
         return (
-            get(env, :dprec, dprec),
+            get(env, :dpr, dprec),
             get(env, :dmelt, dmelt),
             get(env, :maxdepth, maxdepth)
         )

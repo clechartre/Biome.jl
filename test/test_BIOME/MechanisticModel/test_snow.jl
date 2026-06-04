@@ -14,36 +14,36 @@ using Biome: snow
             fill(0.0, 91)     # Fall - cooling
         )
         
-        # Realistic precipitation pattern (mm/day equivalent)
-        dprecin = vcat(
+        # Realistic pripitation pattern (mm/day equivalent)
+        dprin = vcat(
             fill(2.0, 90),    # Winter precipitation
             fill(3.0, 92),    # Spring precipitation
             fill(1.0, 92),    # Summer precipitation (less)
             fill(2.5, 91)     # Fall precipitation
         )
         
-        dprec, dmelt, maxdepth = snow(dtas, dprecin)
+        dpr, dmelt, maxdepth = snow(dtas, dprin)
         
         # Check output dimensions
-        @test length(dprec) == 365
+        @test length(dpr) == 365
         @test length(dmelt) == 365
         @test typeof(maxdepth) <: Real
         
         # Check that all values are finite and non-negative
-        @test all(isfinite.(dprec))
+        @test all(isfinite.(dpr))
         @test all(isfinite.(dmelt))
         @test isfinite(maxdepth)
-        @test all(dprec .>= 0.0)
+        @test all(dpr .>= 0.0)
         @test all(dmelt .>= 0.0)
         @test maxdepth >= 0.0
         
         # During winter (cold period), should have snow accumulation
         winter_period = 1:90
         winter_melt = sum(dmelt[winter_period])
-        winter_precip = sum(dprec[winter_period])
+        winter_prip = sum(dpr[winter_period])
         
         # Most winter precipitation should become snow (low melt)
-        @test winter_melt <= winter_precip
+        @test winter_melt <= winter_prip
         
         # During summer (warm period), should have no new snow, potential melting
         summer_period = 153:244  # Roughly summer
@@ -116,8 +116,8 @@ using Biome: snow
         
         # All precipitation should go directly to runoff
         drain_factor = 365.0 / 12.0
-        expected_daily_precip = dprin_uniform ./ drain_factor
-        @test all(abs.(dpr_warm .- expected_daily_precip) .< 1e-10)
+        expected_daily_pr = dprin_uniform ./ drain_factor
+        @test all(abs.(dpr_warm .- expected_daily_pr) .< 1e-10)
         
         # Mass balance check
         total_input_warm = sum(dprin_uniform) / drain_factor
@@ -148,8 +148,8 @@ using Biome: snow
         
         # All precipitation should go to runoff
         drain_factor = 365.0 / 12.0
-        expected_precip = dprin_test ./ drain_factor
-        @test all(abs.(dpr_thresh .- expected_precip) .< 1e-10)
+        expected_pr = dprin_test ./ drain_factor
+        @test all(abs.(dpr_thresh .- expected_pr) .< 1e-10)
     end
     
     @testset "Snow Melting Rate Tests" begin
@@ -232,10 +232,10 @@ using Biome: snow
     
     @testset "Zero Precipitation Tests" begin
         # Test with no precipitation
-        dtas_noprecip = vcat(fill(-5.0, 180), fill(5.0, 185))
+        dtas_nopr = vcat(fill(-5.0, 180), fill(5.0, 185))
         dprin_zero = fill(0.0, 365)
         
-        dpr_zero, dmelt_zero, maxdepth_zero = snow(dtas_noprecip, dprin_zero)
+        dpr_zero, dmelt_zero, maxdepth_zero = snow(dtas_nopr, dprin_zero)
         
         # Check validity
         @test all(isfinite.(dpr_zero))
@@ -268,7 +268,7 @@ using Biome: snow
         @test typeof(maxdepth_f32) == Float32
         
         # Check dimensions
-        @test length(dprec_f32) == 365
+        @test length(dpr_f32) == 365
         @test length(dmelt_f32) == 365
         
         # Values should be finite and non-negative
@@ -400,8 +400,8 @@ using Biome: snow
         
         # Mass balance should be exact after iterations
         drain_factor = 365.0 / 12.0
-        total_input_iter = sum(dprecin_iter) / drain_factor
-        total_output_iter = sum(dprec_iter) + sum(dmelt_iter)
+        total_input_iter = sum(dprin_iter) / drain_factor
+        total_output_iter = sum(dpr_iter) + sum(dmelt_iter)
         @test abs(total_output_iter - total_input_iter) < 1e-12
         
         # Should have accumulated some snow and then melted some
@@ -529,14 +529,14 @@ using Biome: snow
             maxdepth = 25.0
         )
         
-        dprec_cold_env, dmelt_cold_env, maxdepth_cold_env = snow(dtemp_extreme_cold, dprecin_uniform, env_override)
+        dpr_cold_env, dmelt_cold_env, maxdepth_cold_env = snow(dtas_extreme_cold, dprin_uniform, env_override)
         
-        @test all(dprec_cold_env .≈ 1.0)
+        @test all(dpr_cold_env .≈ 1.0)
         @test all(dmelt_cold_env .≈ 4.0)
         @test maxdepth_cold_env ≈ 25.0
         
         # Should be different from calculated values
-        @test !(all(dprec_cold_env .≈ dprec_cold_calc))
+        @test !(all(dpr_cold_env .≈ dpr_cold_calc))
         @test !(all(dmelt_cold_env .≈ dmelt_cold_calc))
         @test maxdepth_cold_env != maxdepth_cold_calc
     end

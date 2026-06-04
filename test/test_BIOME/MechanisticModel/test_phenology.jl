@@ -94,7 +94,7 @@ using Statistics
         
         # Test with warm spring (early leaf-out)
         dtas_warm = vcat(fill(0.0, 60), fill(10.0, 90), fill(25.0, 90), fill(5.0, 125))
-        temp_warm = [2.0, 4.0, 8.0, 15.0, 20.0, 25.0, 28.0, 26.0, 20.0, 12.0, 6.0, 3.0]
+        tas_warm = [2.0, 4.0, 8.0, 15.0, 20.0, 25.0, 28.0, 26.0, 20.0, 12.0, 6.0, 3.0]
         tcm_warm = 2.0
         tmin_warm = 0.0
         
@@ -158,7 +158,7 @@ using Statistics
         
         # Test with always cold conditions
         dtas_always_cold = fill(-20.0, 365)
-        temp_always_cold = fill(-15.0, 12)
+        tas_always_cold = fill(-15.0, 12)
         tcm_always_cold = -15.0
         tmin_always_cold = -20.0
         
@@ -173,7 +173,7 @@ using Statistics
         
         # Test with always warm conditions
         dtas_always_warm = fill(25.0, 365)
-        temp_always_warm = fill(20.0, 12)
+        tas_always_warm = fill(20.0, 12)
         tcm_always_warm = 20.0
         tmin_always_warm = 25.0
         
@@ -246,7 +246,7 @@ using Statistics
         # Test with Float32
         dphen_input_f32 = ones(Float32, 365, 2)
         dtas_f32 = Float32.(vcat(fill(-2.0, 90), fill(8.0, 90), fill(15.0, 90), fill(0.0, 95)))
-        temp_f32 = Float32[0.0, 2.0, 5.0, 10.0, 14.0, 18.0, 20.0, 17.0, 12.0, 6.0, 2.0, 0.0]
+        tas_f32 = Float32[0.0, 2.0, 5.0, 10.0, 14.0, 18.0, 20.0, 17.0, 12.0, 6.0, 2.0, 0.0]
         tcm_f32 = Float32(0.0)
         tmin_f32 = Float32(-2.0)
         ddayl_f32 = Float32.(vcat(fill(8.0, 90), fill(14.0, 90), fill(16.0, 90), fill(10.0, 95)))
@@ -282,10 +282,10 @@ using Statistics
         @test_throws BoundsError phenology(dphen_valid, dtas_valid, fill(18.0, 10), tcm_valid, tmin_valid, valid_pft, ddayl_valid)
         
         # Test with wrong ddayl array length
-        @test_throws BoundsError phenology(dphen_valid, dtemp_valid, temp_valid, tcm_valid, tmin_valid, valid_pft, fill(12.0, 300))
+        @test_throws BoundsError phenology(dphen_valid, dtas_valid, tas_valid, tcm_valid, tmin_valid, valid_pft, fill(12.0, 300))
         
         # Test with wrong dphen dimensions
-        @test_throws BoundsError phenology(ones(300, 1), dtemp_valid, temp_valid, tcm_valid, tmin_valid, valid_pft, ddayl_valid)
+        @test_throws BoundsError phenology(ones(300, 1), dtas_valid, tas_valid, tcm_valid, tmin_valid, valid_pft, ddayl_valid)
     end
     
     @testset "PFT Characteristic Tests" begin
@@ -330,7 +330,7 @@ using Statistics
         dphen_input = ones(365, 2)
         # Completely flat temperature profile
         dtas_flat = fill(15.0, 365)
-        temp_flat = fill(15.0, 12)
+        tas_flat = fill(15.0, 12)
         tcm_flat = 15.0
         tmin_flat = 15.0
         ddayl_flat = fill(12.0, 365)
