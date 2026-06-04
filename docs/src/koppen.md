@@ -54,24 +54,23 @@ using Biome
 using Rasters
 
 # Minimal inputs
-tempfile = "/path/to/temp.nc"   # monthly mean temperature (stacked in 3rd dim)
-precfile = "/path/to/prec.nc"   # monthly precipitation (same grid/stacking)
+tasfile = "/path/to/tas.nc"   # monthly mean temperature (stacked in 3rd dim)
+prfile = "/path/to/pr.nc"   # monthly precipitation (same grid/stacking)
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile,  name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile,  name="pr")
 
 setup = ModelSetup(KoppenModel();
-                   temp=temp_raster,
-                   prec=prec_raster)
+                   tas=tas_raster,
+                   pr=pr_raster)
 
-# Process full grid (or pass "lonmin/lonmax/latmin/latmax")
-run!(setup; coordstring="alldata", outfile="output_Koppen.nc")
+execute(setup; coordstring="alldata", outfile="output_Koppen.nc")
 
 `````
 
 ## Tips for tidy outputs
 
-* Ensure `temp` and `prec` share identical grid, resolution, and ordering (lat can be asc/desc; the driver handles both).
+* Ensure `tas` and `pr` share identical grid, resolution, and ordering (lat can be asc/desc; the driver handles both).
 
     * Units: temperature in °C; precipitation in mm per month (match what your decision tree expects).
 

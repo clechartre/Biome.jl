@@ -68,13 +68,13 @@ To run Biome.jl using Julia, you need to set up the required environment by inst
 
 ### 1. Climate Envelope Models
 Simpler models requiring only basic climate data:
-- **Temperature**: Monthly mean temperature (°C) 
-- **Precipitation**: Monthly total precipitation (mm)
+- **Temperature** (`tas`): Monthly mean temperature (°C) 
+- **Precipitation** (`pr`): Monthly total precipitation (mm)
 
 ### 2. Mechanistic Models
 More complex models that simulate plant physiology and require:
-- **Temperature**: Monthly mean temperature (°C) -- Climatology
-- **Precipitation**: Monthly total precipitation (mm) -- Climatology
+- **Temperature** (`tas`): Monthly mean temperature (°C) -- Climatology
+- **Precipitation** (`pr`): Monthly total precipitation (mm) -- Climatology
 - **Cloud cover**: Monthly mean cloud cover (%) -- Climatology
 - **Soil properties**: Water holding capacity (mm/mm) and hydraulic conductivity (mm/h) -- For multiple soil depths
 - **CO2 concentration**: Atmospheric CO2 (ppm) -- Single value

@@ -62,25 +62,25 @@ function runmodel(m::KoppenModel, input_variables::NamedTuple, args...; kwargs..
     @unpack_namedtuple_climate input_variables
 
     # Initialize intermediate variables
-    temp_min = minimum(temp)
-    temp_max = maximum(temp)
-    temp_mean = mean(temp)
+    tas_min = minimum(tas)
+    tas_max = maximum(tas)
+    tas_mean = mean(tas)
 
-    precip_sum = sum(prec)
-    precip_min = minimum(prec)
+    pr_sum = sum(pr)
+    pr_min = minimum(pr)
 
     # Calculate seasonal precipitation sums
-    winter_precip = sum(prec[10:12]) + sum(prec[1:2])
-    summer_precip = sum(prec[3:9])
+    winter_pr = sum(pr[10:12]) + sum(pr[1:2])
+    summer_pr = sum(pr[3:9])
 
     # Determine hemisphere
-    is_northern_hemisphere = sum(temp[3:9]) > sum(temp[10:12]) + sum(temp[1:2])
+    is_northern_hemisphere = sum(tas[3:9]) > sum(tas[10:12]) + sum(tas[1:2])
     if !is_northern_hemisphere
-        winter_precip, summer_precip = summer_precip, winter_precip
+        winter_pr, summer_pr = summer_pr, winter_pr
     end
 
     # Classification logic
-    biome = classify_kg(temp, temp_min, temp_max, temp_mean, precip_sum, precip_min, winter_precip, summer_precip, KG)
+    biome = classify_kg(tas, tas_min, tas_max, tas_mean, pr_sum, pr_min, winter_pr, summer_pr, KG)
 
     # Write results to the output
     output = (koppen_class = biome, lon = lon, lat = lat)
@@ -89,66 +89,66 @@ function runmodel(m::KoppenModel, input_variables::NamedTuple, args...; kwargs..
 end
 
 # Helper function for classification logic
-function classify_kg(temp, temp_min, temp_max, temp_mean, precip_sum, precip_min, winter_precip, summer_precip, KG)
+function classify_kg(tas, tas_min, tas_max, tas_mean, pr_sum, pr_min, winter_pr, summer_pr, KG)
     # Polar climates
-    if temp_max < 0
+    if tas_max < 0
         return KG[:EF]  # Polar frost
-    elseif temp_max < 10
+    elseif tas_max < 10
         return KG[:ET]  # Polar tundra
     end
 
     # Arid climates
-    threshold = if winter_precip >= 0.7 * precip_sum # Not sure about this
-        temp_mean + 0
-    elseif summer_precip >= 0.7 * precip_sum
-        temp_mean + 14
+    threshold = if winter_pr >= 0.7 * pr_sum # Not sure about this
+        tas_mean + 0
+    elseif summer_pr >= 0.7 * pr_sum
+        tas_mean + 14
     else
-        temp_mean + 7
+        tas_mean + 7
     end
 
-    if precip_sum < 10 * threshold
-        return temp_mean < 18 ? KG[:BWk] : KG[:BWh]  # Desert
-    elseif precip_sum < 20 * threshold
-        return temp_mean < 18 ? KG[:BSk] : KG[:BSh]  # Steppe
+    if pr_sum < 10 * threshold
+        return tas_mean < 18 ? KG[:BWk] : KG[:BWh]  # Desert
+    elseif pr_sum < 20 * threshold
+        return tas_mean < 18 ? KG[:BSk] : KG[:BSh]  # Steppe
     end
 
     # Tropical climates
-    if temp_min >= 18
-        if precip_min >= 60
+    if tas_min >= 18
+        if pr_min >= 60
             return KG[:Af]
-        elseif precip_sum >= 25 * (100 - precip_min)
+        elseif pr_sum >= 25 * (100 - pr_min)
             return KG[:Am]
         else
-            return winter_precip < 60 ? KG[:Aw] : KG[:As]
+            return winter_pr < 60 ? KG[:Aw] : KG[:As]
         end
     end
 
     # Temperate climates
-    dry_winter = summer_precip >= 10 * winter_precip
-    dry_summer = winter_precip >= 3 * summer_precip && summer_precip < 30
+    dry_winter = summer_pr >= 10 * winter_pr
+    dry_summer = winter_pr >= 3 * summer_pr && summer_pr < 30
 
     if dry_winter && dry_summer
-        dry_winter = winter_precip > summer_precip
+        dry_winter = winter_pr > summer_pr
         dry_summer = !dry_winter
     end
 
-    if temp_min >= 0
+    if tas_min >= 0
         if dry_winter
-            return temp_max > 22 ? KG[:Cwa] : (count(x -> x > 10, temp) >= 4 ? KG[:Cwb] : KG[:Cwc])
+            return tas_max > 22 ? KG[:Cwa] : (count(x -> x > 10, tas) >= 4 ? KG[:Cwb] : KG[:Cwc])
         elseif dry_summer
-            return temp_max > 22 ? KG[:Csa] : (count(x -> x > 10, temp) >= 4 ? KG[:Csb] : KG[:Csc])
+            return tas_max > 22 ? KG[:Csa] : (count(x -> x > 10, tas) >= 4 ? KG[:Csb] : KG[:Csc])
         else
-            return temp_max > 22 ? KG[:Cfa] : (count(x -> x > 10, temp) >= 4 ? KG[:Cfb] : KG[:Cfc])
+            return tas_max > 22 ? KG[:Cfa] : (count(x -> x > 10, tas) >= 4 ? KG[:Cfb] : KG[:Cfc])
         end
     end
 
     # Snow climates
     if dry_winter
-        return temp_max > 22 ? KG[:Dwa] : (count(x -> x > 10, temp) >= 4 ? KG[:Dwb] : (temp_min > -38 ? KG[:Dwc] : KG[:Dwd]))
+        return tas_max > 22 ? KG[:Dwa] : (count(x -> x > 10, tas) >= 4 ? KG[:Dwb] : (tas_min > -38 ? KG[:Dwc] : KG[:Dwd]))
     elseif dry_summer
-        return temp_max > 22 ? KG[:Dsa] : (count(x -> x > 10, temp) >= 4 ? KG[:Dsb] : (temp_min > -38 ? KG[:Dsc] : KG[:Dsd]))
+        return tas_max > 22 ? KG[:Dsa] : (count(x -> x > 10, tas) >= 4 ? KG[:Dsb] : (tas_min > -38 ? KG[:Dsc] : KG[:Dsd]))
     else
-        return temp_max > 22 ? KG[:Dfa] : (count(x -> x > 10, temp) >= 4 ? KG[:Dfb] : (temp_min > -38 ? KG[:Dfc] : KG[:Dfd]))
+        return tas_max > 22 ? KG[:Dfa] : (count(x -> x > 10, tas) >= 4 ? KG[:Dfb] : (tas_min > -38 ? KG[:Dfc] : KG[:Dfd]))
     end
 
     # Default to undefined

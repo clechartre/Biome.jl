@@ -1,5 +1,5 @@
 """
-    photosynthesis(ratio, dsun, daytime, temp, age, fpar, p, ca, pft)
+    photosynthesis(ratio, dsun, daytime, tas, age, fpar, p, ca, pft)
 
 Calculate C3 photosynthesis based on environmental and plant functional type (PFT) parameters.
 
@@ -7,7 +7,7 @@ Calculate C3 photosynthesis based on environmental and plant functional type (PF
 - `ratio`: The ratio of intercellular to ambient CO2 concentration.
 - `dsun`: Daily solar radiation (MJ/m²/day).
 - `daytime`: Length of the day (hours).
-- `temp`: Air temperature (°C).
+- `tas`: Air temperature (°C).
 - `age`: Leaf age (months).
 - `fpar`: Fraction of photosynthetically active radiation absorbed by the canopy.
 - `p`: Atmospheric pressure (kPa).
@@ -23,7 +23,7 @@ function photosynthesis(
     ratio::T,
     dsun::T,
     daytime::T,
-    temp::T,
+    tas::T,
     age::T,
     fpar::T,
     p::T,
@@ -43,17 +43,17 @@ function photosynthesis(
     end
 
     # Temperature stress calculation
-    mintemp = t0
-    tstress = if temp > mintemp + T(1.0)
-        tcurve * (T(2.71828)^(-T(10.0) / (temp - mintemp)))
+    mintas = t0
+    tstress = if tas > mintas + T(1.0)
+        tcurve * (T(2.71828)^(-T(10.0) / (tas - mintas)))
     else
         T(0.0)
     end
 
     # Temperature adjusted values
-    ko = KO25 * (KOQ10^((temp - T(25.0)) / T(10.0)))
-    kc = KC25 * (KCQ10^((temp - T(25.0)) / T(10.0)))
-    tao = TAO25 * (TAOQ10^((temp - T(25.0)) / T(10.0)))
+    ko = KO25 * (KOQ10^((tas - T(25.0)) / T(10.0)))
+    kc = KC25 * (KCQ10^((tas - T(25.0)) / T(10.0)))
+    tao = TAO25 * (TAOQ10^((tas - T(25.0)) / T(10.0)))
 
     s = DRESPC3 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
@@ -127,7 +127,7 @@ function photosynthesis(
     aday = if adaygc == T(0.0)
         T(0.0)
     else
-        (adaygc / CMASS) * (T(8.314) * (temp + T(273.3)) / p) * T(1000.0)
+        (adaygc / CMASS) * (T(8.314) * (tas + T(273.3)) / p) * T(1000.0)
     end
 
     return T(leafresp), T(grossphot), T(aday)

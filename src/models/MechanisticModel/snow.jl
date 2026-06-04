@@ -1,14 +1,14 @@
 using Dates
 
 """
-    snow(dtemp, dprecin)
+    snow(dtas, dprecin)
 
 Calculate daily precipitation and snowmelt from daily temperature and 
 precipitation input. Snow accumulates when temperature is below
 the snow threshold and melts when temperature is above it.
 
 # Arguments
-- `dtemp`: Daily temperature array (365 elements, °C)
+- `dtas`: Daily temperature array (365 elements, °C)
 - `dprecin`: Daily precipitation input array (365 elements, mm)
 
 # Returns
@@ -23,7 +23,7 @@ A tuple containing:
 - Function runs twice to ensure equilibrium
 """
 function snow(
-    dtemp::AbstractArray{T}, 
+    dtas::AbstractArray{T}, 
     dprecin::AbstractArray{T},
     env::Union{NamedTuple,Nothing}=nothing
 )::Tuple{AbstractArray{T},AbstractArray{T},T} where {T<:Real}
@@ -43,12 +43,12 @@ function snow(
         for day in 1:365
             drain = dprecin[day] / drain_factor
 
-            if dtemp[day] < tsnow
+            if dtas[day] < tsnow
                 newsnow = drain
                 snowmelt = T(0.0)
             else
                 newsnow = T(0.0)
-                snowmelt = km * (dtemp[day] - tsnow)
+                snowmelt = km * (dtas[day] - tsnow)
             end
 
             if snowmelt > snowpack
@@ -69,7 +69,7 @@ function snow(
     # Use env data if available, otherwise use calculated values
     if env !== nothing
         return (
-            get(env, :dprec, dprec),
+            get(env, :dpr, dprec),
             get(env, :dmelt, dmelt),
             get(env, :maxdepth, maxdepth)
         )

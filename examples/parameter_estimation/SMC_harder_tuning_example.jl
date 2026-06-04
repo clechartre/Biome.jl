@@ -64,8 +64,8 @@ n = length(y)
 # This reduces overhead by not having to load the rasters all the time 
 # Those should be in the format of the inputs to Biome.jl
 struct BiomeInputs
-    temp::Raster   # temperature (12-month climatology)
-    prec::Raster   # precipitation (12-month climatology)
+    tas::Raster   # temperature (12-month climatology)
+    pr::Raster   # precipitation (12-month climatology)
     clt::Raster    # cloudiness (here: converted to "sun")
     ksat::Raster   # saturated hydraulic conductivity
     whc::Raster    # water holding capacity
@@ -74,8 +74,8 @@ end
 # Function that loads all needed inputs and returns them grouped in BiomeInputs.
 function load_inputs()::BiomeInputs
     return BiomeInputs(
-        Raster("path/to/temp.nc", name="temp"),
-        Raster("path/to/prec.nc", name="prec"),
+        Raster("path/to/tas.nc", name="tas"),
+        Raster("path/to/pr.nc", name="pr"),
         Raster("path/to/clt.nc", name="clt"),
         Raster("path/to//soils.nc", name="Ksat"),
         Raster("path/to//soils.nc", name="whc"),
@@ -85,9 +85,9 @@ end
 inputs = load_inputs()  # Load them once and then keep on using
 
 # -------------------- Extract valid pixel timeseries
-# Grab the lon/lat dimensions from the temperature raster (NOTE: all inputs have the same shared grid).
-dims_lon = dims(inputs.temp, X)
-dims_lat = dims(inputs.temp, Y)
+# Grab the lon/lat dimensions from the taserature raster (NOTE: all inputs have the same shared grid).
+dims_lon = dims(inputs.tas, X)
+dims_lat = dims(inputs.tas, Y)
 nlon, nlat = length(dims_lon), length(dims_lat)
 
 # Iterate over all (i, j) pairs on the 2D grid.
@@ -106,9 +106,9 @@ function extract_pixel_timeseries(r::Raster, i::Int, j::Int)
 end
 
 # For each valid (i, j), build a vector of 1×1×T arrays.
-# Each element temp_vec[k] corresponds to the k-th valid pixel.
-temp_vec = [extract_pixel_timeseries(inputs.temp, i, j) for (i, j) in valid_pairs]
-prec_vec = [extract_pixel_timeseries(inputs.prec, i, j) for (i, j) in valid_pairs]
+# Each element tas_vec[k] corresponds to the k-th valid pixel.
+tas_vec = [extract_pixel_timeseries(inputs.tas, i, j) for (i, j) in valid_pairs]
+pr_vec = [extract_pixel_timeseries(inputs.pr, i, j) for (i, j) in valid_pairs]
 clt_vec  = [extract_pixel_timeseries(inputs.clt,  i, j) for (i, j) in valid_pairs]
 ksat_vec = [extract_pixel_timeseries(inputs.ksat, i, j) for (i, j) in valid_pairs]
 whc_vec  = [extract_pixel_timeseries(inputs.whc,  i, j) for (i, j) in valid_pairs]
@@ -117,7 +117,7 @@ whc_vec  = [extract_pixel_timeseries(inputs.whc,  i, j) for (i, j) in valid_pair
 # -------------------- Run Model for a Single Pixel
 # Core forward model: given climate time series + threshold parameters,
 # run Biome.jl on a 1×1 cell and return the predicted biome value.
-function runmodel_pixel(temp, prec, clt, ksat, whc,
+function runmodel_pixel(tas, pr, clt, ksat, whc,
                         gdd5_low, gdd5_high,
                         swb_low, swb_high,
                         tcm_low, tcm_high,
@@ -147,8 +147,8 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
 
     # Wrap raw arrays into Raster objects with explicit dimensions:
     # dims = (X, Y, Ti) where Ti is a simple 1:T index.
-    temp_r = Raster(temp, dims=(X(lon), Y(lat), Ti(1:size(temp, 3))), name="temp")
-    prec_r = Raster(prec, dims=(X(lon), Y(lat), Ti(1:size(prec, 3))), name="prec")
+    tas_r = Raster(tas, dims=(X(lon), Y(lat), Ti(1:size(tas, 3))), name="tas")
+    pr_r = Raster(pr, dims=(X(lon), Y(lat), Ti(1:size(pr, 3))), name="pr")
     clt_r  = Raster(clt,  dims=(X(lon), Y(lat), Ti(1:size(clt, 3))), name="sun")
     ksat_r = Raster(ksat, dims=(X(lon), Y(lat), Ti(1:size(ksat, 3))), name="Ksat")
     whc_r  = Raster(whc,  dims=(X(lon), Y(lat), Ti(1:size(whc, 3))), name="whc")
@@ -157,7 +157,7 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
     # - BaseModel() is the model template. You can also use BIOME4Model or BiomeDominance
     # - provide climate rasters, soil rasters, CO2, and the customized pftlist
     setup = ModelSetup(BaseModel();
-        temp=temp_r, prec=prec_r, clt=clt_r,
+        tas=tas_r, pr=pr_r, clt=clt_r,
         ksat=ksat_r, whc=whc_r,
         co2=373.8, pftlist=PFTList)
 
@@ -180,9 +180,9 @@ end
 # This defines the probabilistic model that Turing will sample from.
 # Inputs:
 # - y: observed binary labels (0/1) for n pixels
-# - temp, prec, ...: vectors of 1×1×T climate arrays for each pixel
+# - tas, pr, ...: vectors of 1×1×T climate arrays for each pixel
 # - n: number of pixels / observations (matches length(y))
-@model function param_estimation(y, temp, prec, clt, ksat, whc, n)
+@model function param_estimation(y, tas, pr, clt, ksat, whc, n)
 
     # -------- Priors for threshold parameters --------
     # For each "low/high" bound, you sample:
@@ -224,12 +224,12 @@ end
     # - map prediction to a Bernoulli probability
     # - observe y[i] from that Bernoulli
     for i in 1:n
-        if any(ismissing, temp[i][1,1,:])
+        if any(ismissing, tas[i][1,1,:])
             unused += 1
             continue
         end
 
-        pred = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i],
+        pred = runmodel_pixel(tas[i], pr[i], clt[i], ksat[i], whc[i],
                               gdd5_low, gdd5_high,
                               swb_low, swb_high,
                               tcm_low, tcm_high,
@@ -251,7 +251,7 @@ end
 end
 
 # Instantiate the Turing model with data
-model = param_estimation(y, temp_vec, prec_vec, clt_vec, ksat_vec, whc_vec, n)
+model = param_estimation(y, tas_vec, pr_vec, clt_vec, ksat_vec, whc_vec, n)
 
 
 # -------------------- Sampling

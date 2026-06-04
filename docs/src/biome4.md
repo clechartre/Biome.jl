@@ -4,7 +4,7 @@
 
 **Figure.** Example BIOME4-famil| Step | Original BIOME4 | Dominance-mode (Biome.jl) |
 |---|---|---|
-| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT's optima for `clt/temp/prec`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |utput. The NetCDF typically contains `biome` (class id), `optpft` (dominant PFT id), and `npp` (per-PFT) on the model grid.
+| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT's optima for `clt/pr/pr`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |utput. The NetCDF typically contains `biome` (class id), `optpft` (dominant PFT id), and `npp` (per-PFT) on the model grid.
 
 We offer two ways to run the BIOME4 logic:
 
@@ -16,8 +16,8 @@ This path follows an exact translation of the original BIOME core (Haxeltine & P
 
 ### Inputs (climatologies; aligned grids)
 
-- **Temperature (`temp`)**: °C, monthly means (stacked in the 3rd dimension)  
-- **Precipitation (`prec`)**: mm month⁻¹, monthly sums/means (consistent with your decision tree)  
+- **Temperature (`pr`)**: °C, monthly means (stacked in the 3rd dimension)  
+- **Precipitation (`pr`)**: mm month⁻¹, monthly sums/means (consistent with your decision tree)  
 - **Sun/Cloud (`sun` or `clt`)**: % (sunshine or cloudiness surrogate)  
 - **Soils (`Ksat`, `whc`)**: saturated conductivity (mm h⁻¹) and water-holding capacity (mm cm⁻¹)  
 - **CO₂**: a single ppm value representative of the climatology period  
@@ -31,7 +31,7 @@ This path follows an exact translation of the original BIOME core (Haxeltine & P
 
 **Notes**
 - Ensure all rasters share the same grid/extent and monthly stacking.  
-- Units: temp = °C; prec = mm month⁻¹; sun/clt = %; Ksat = mm h⁻¹; WHC = mm cm⁻¹.  
+- Units: pr = °C; pr = mm month⁻¹; sun/clt = %; Ksat = mm h⁻¹; WHC = mm cm⁻¹.  
 - CO₂ should match the climatology-period mean.
 
 ---
@@ -101,7 +101,7 @@ This preserves BIOME4’s physiology and the environmental sieve, while replacin
 
 ## Inputs — recap (mechanistic modes)
 
-- **Required rasters**: `temp`, `prec` (monthly stacks); typically also `clt/sun`, `Ksat`, `whc`.  
+- **Required rasters**: `pr`, `pr` (monthly stacks); typically also `clt/sun`, `Ksat`, `whc`.  
 - **CO₂**: single ppm value representative of your climatology period.  
 - **PFT list**: defaults to `BIOME4.PFTClassification()`; parameters/constraints can be customized.
 

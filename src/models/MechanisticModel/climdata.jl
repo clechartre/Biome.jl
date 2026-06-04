@@ -1,5 +1,5 @@
 """
-    climdata(temp, prec, dtemp, env=nothing)
+    climdata(tas, pr, dtas, env=nothing)
 
 Calculate growing degree days (GDD), temperature extremes, and precipitation.
 
@@ -9,9 +9,9 @@ and total annual precipitation. If environment data is provided, it will be used
 to override the calculated values.
 
 # Arguments
-- `temp`: Monthly temperature array (12 elements, °C)
-- `prec`: Monthly precipitation array (12 elements, mm)
-- `dtemp`: Daily temperature array (365 elements, °C)
+- `tas`: Monthly temperature array (12 elements, °C)
+- `pr`: Monthly precipitation array (12 elements, mm)
+- `dtas`: Daily temperature array (365 elements, °C)
 - `env`: Optional NamedTuple with pre-calculated values (:tcm, :gdd5, :gdd0, :twm)
 
 # Returns
@@ -28,9 +28,9 @@ A tuple containing:
 - If env data is provided, those values take precedence over calculated ones
 """
 function climdata(
-    temp::AbstractArray{T},
-    prec::AbstractArray{T},
-    dtemp::AbstractArray{T},
+    tas::AbstractArray{T},
+    pr::AbstractArray{T},
+    dtas::AbstractArray{T},
     env::Union{NamedTuple,Nothing}=nothing
 )::Tuple{T,T,T,T} where {T<:Real}
 
@@ -41,13 +41,13 @@ function climdata(
 
     # Find coldest and warmest months, sum precipitation
     for m in 1:12
-        if temp[m] < tcm
-            tcm = temp[m]
+        if tas[m] < tcm
+            tcm = tas[m]
         end
-        if temp[m] > twm
-            twm = temp[m]
+        if tas[m] > twm
+            twm = tas[m]
         end
-        annual_precip += prec[m]
+        annual_precip += pr[m]
     end
 
     # Initialize growing degree day accumulators
@@ -58,9 +58,9 @@ function climdata(
     # Calculate growing degree days for each day of year
     for day in 1:365
         # Calculate temperature differences above thresholds
-        above_10 = max(dtemp[day] - T(10.0), T(0.0))
-        above_5 = max(dtemp[day] - T(5.0), T(0.0))
-        above_0 = max(dtemp[day], T(0.0))
+        above_10 = max(dtas[day] - T(10.0), T(0.0))
+        above_5 = max(dtas[day] - T(5.0), T(0.0))
+        above_0 = max(dtas[day], T(0.0))
         
         # Accumulate growing degree days
         gdd10 += above_10

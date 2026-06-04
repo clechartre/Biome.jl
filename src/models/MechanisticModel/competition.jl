@@ -12,7 +12,7 @@ using Printf: @sprintf
 function competition(
     m::Union{BIOME4Model, BIOMEDominanceModel, BaseModel},
     tmin::T,
-    tprec::T,
+    tpr::T,
     numofpfts::U,
     gdd0::T,
     gdd5::T,
@@ -84,7 +84,7 @@ function competition(
         tmin=tmin,
         gdd5=gdd5,
         tcm=tcm,
-        tprec=tprec
+        tpr=tpr
     )
 
     # Format values for output
@@ -197,8 +197,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
             valid = true
             cons = get_characteristic(pft, :constraints)[:swb]
             lower, upper = cons[1], cons[2]
-            if !((lower == -Inf || wetness[i]*10 ≥ lower) &&
-                (upper == Inf  || wetness[i]*10  < upper) )
+            if !((lower == -Inf || wetness[i] ≥ lower) &&
+                (upper == Inf  || wetness[i]  < upper) )
                 valid = false
             end
             # write into the runtime-state
@@ -306,7 +306,7 @@ function determine_optimal_pft(
     tmin::T,
     gdd5::T,
     tcm::T,
-    tprec::T,
+    tpr::T,
 ) where {T <: Real} # ::Tuple{Union{AbstractPFT, Nothing}, T, T, U, T, T, Union{AbstractPFT, Nothing}, Union{AbstractPFT, Nothing}}
     flop = false
 
@@ -381,7 +381,7 @@ function determine_optimal_pft(
                 optpft = grasspft
             elseif isa(grasspft, BIOME4.C4TropicalGrass) && woodylai < T(3.6)
                 optpft = DEFAULT_INSTANCE # Mixed woody/grass (equivalent to index 14)
-            elseif greendays < (270) && tcm > T(21.0) && tprec < T(1700.0)
+            elseif greendays < (270) && tcm > T(21.0) && tpr < T(1700.0)
                 optpft = DEFAULT_INSTANCE # Mixed woody/grass
             else
                 optpft = wdom

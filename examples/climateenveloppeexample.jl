@@ -5,14 +5,14 @@ Example of running a climate enveloppe model.
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile, name="pr")
 
 setup = ModelSetup(KoppenModel();
-                   temp = temp_raster,
-                   prec = prec_raster)
+                   tas = tas_raster,
+                   pr = pr_raster)
 
 execute(setup; outfile = "output_Koppen.nc")

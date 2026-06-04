@@ -8,13 +8,13 @@ Values are not ecologically relevant but only serve illustration.
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 cltfile = ""
 soilfile = ""
 
-temp_raster = Raster(tempfile, name="temp")
-prec_raster = Raster(precfile, name="prec")
+tas_raster = Raster(tasfile, name="tas")
+pr_raster = Raster(prfile, name="pr")
 clt_raster = Raster(cltfile, name="clt")
 ksat_raster = Raster(soilfile, name="Ksat")
 whc_raster = Raster(soilfile, name="whc")
@@ -117,8 +117,8 @@ PFTList = PFTClassification([
 )
 
 setup = ModelSetup(BaseModel();
-                   temp = temp_raster,
-                   prec = prec_raster,
+                   tas = tas_raster,
+                   pr = pr_raster,
                    clt = clt_raster,
                    ksat = ksat_raster,
                    whc = whc_raster,

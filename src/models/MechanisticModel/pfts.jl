@@ -88,7 +88,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 gdd0  = [-Inf, +Inf],
                 twm   = [-Inf, +Inf],
                 maxdepth  = [-Inf, +Inf],
-                swb   = [400.0, +Inf]
+                swb   = [40.0, +Inf]
             ),
             dominance_factor = 3,
             minimum_lai = 0
@@ -115,7 +115,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 gdd0  = [-Inf, +Inf],
                 twm   = [10.0, +Inf],
                 maxdepth  = [-Inf, +Inf],
-                swb   = [400.0, +Inf]
+                swb   = [40.0, +Inf]
             ),
             dominance_factor = 2,
             minimum_lai = 2.5
@@ -148,7 +148,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 gdd0 = [-Inf, +Inf],
                 twm  = [-Inf, 21.0],
                 maxdepth = [-Inf, +Inf],
-                swb  = [400.0, +Inf]
+                swb  = [40.0, +Inf]
             ),
             dominance_factor = 3,
             minimum_lai = 0
@@ -176,7 +176,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             gdd0  = [-Inf,+Inf],
             twm   = [-Inf,+Inf],
             maxdepth  = [-Inf,+Inf],
-            swb   = [400.0,+Inf]
+            swb   = [40.0,+Inf]
         ),
         dominance_factor = 3,
         minimum_lai = 1.5
@@ -206,7 +206,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             gdd0 = [-Inf, Inf],
             twm  = [-Inf, Inf],
             maxdepth = [-Inf, Inf],
-            swb  = [100.0, Inf]
+            swb  = [10.0, Inf]
         ),
         dominance_factor = 5,
         minimum_lai = 0.4
@@ -237,7 +237,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             gdd0 = [-Inf, Inf],
             twm  = [10.0, Inf],
             maxdepth = [-Inf, Inf],
-            swb  = [100.0, Inf]
+            swb  = [10.0, Inf]
         ),
         dominance_factor = 5,
         minimum_lai = 0.4

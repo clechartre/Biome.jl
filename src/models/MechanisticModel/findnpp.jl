@@ -9,7 +9,7 @@ functional types through iterative optimization of leaf area index.
 using LinearAlgebra
 
 """
-    findnpp(pft, annp, dtemp, sun, temp, dprec, dmelt, dpet, dayl, k, dphen, co2, p, tsoil)
+    findnpp(pft, annp, dtas, sun, tas, dprec, dmelt, dpet, dayl, k, dphen, co2, p, tsoil)
 
 Find optimal Net Primary Productivity (NPP) for a plant functional type.
 
@@ -20,9 +20,9 @@ NPP. Uses a binary search approach to converge on the optimal LAI.
 # Arguments
 - `pft`: Plant Functional Type to optimize
 - `annp`: Annual precipitation (mm)
-- `dtemp`: Daily temperature array (365 elements, °C)
+- `dtas`: Daily temperature array (365 elements, °C)
 - `sun`: Monthly solar radiation array (12 elements, MJ/m²/day)
-- `temp`: Monthly temperature array (12 elements, °C)
+- `tas`: Monthly temperature array (12 elements, °C)
 - `dprec`: Daily precipitation array (365 elements, mm)
 - `dmelt`: Daily snowmelt array (365 elements, mm)
 - `dpet`: Daily potential evapotranspiration array (365 elements, mm)
@@ -49,9 +49,9 @@ A tuple containing:
 function findnpp(
     pft::AbstractPFT,
     annp::T,
-    dtemp::AbstractVector{T},
+    dtas::AbstractVector{T},
     sun::AbstractVector{T},
-    temp::AbstractVector{T},
+    tas::AbstractVector{T},
     dprec::AbstractVector{T},
     dmelt::AbstractVector{T},
     dpet::AbstractVector{T},
@@ -93,14 +93,14 @@ function findnpp(
             alai[1],
             annp,
             sun,
-            temp,
+            tas,
             dprec,
             dmelt,
             dpet,
             k,
             pft,
             dayl,
-            dtemp,
+            dtas,
             dphen,
             co2,
             p,
@@ -120,14 +120,14 @@ function findnpp(
             alai[2],
             annp,
             sun,
-            temp,
+            tas,
             dprec,
             dmelt,
             dpet,
             k,
             pft,
             dayl,
-            dtemp,
+            dtas,
             dphen,
             co2,
             p,

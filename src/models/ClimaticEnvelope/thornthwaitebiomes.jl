@@ -55,7 +55,7 @@ function runmodel(m::ThornthwaiteModel, input_variables::NamedTuple, args...; kw
     @unpack_namedtuple_climate input_variables
 
     # Validate input
-    if length(temp) != 12 || length(prec) != 12
+    if length(tas) != 12 || length(pr) != 12
         error("Temperature and precipitation arrays must have 12 values each (monthly data).")
     end
 
@@ -65,8 +65,8 @@ function runmodel(m::ThornthwaiteModel, input_variables::NamedTuple, args...; kw
 
     # Calculate PE and TE
     for i in 1:12
-        t = temp[i]
-        p = prec[i]
+        t = tas[i]
+        p = pr[i]
 
         # Avoid division by zero or negative temperatures
         if t > 0
