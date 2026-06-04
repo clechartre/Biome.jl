@@ -41,8 +41,8 @@ function runmodel(
     # Initialize environmental variables from the input
     env_variables = initialize_environmental_variables(vars_in)
     @unpack tas, clt, pr, mclou, mpr, mtas, tpr, dtas, 
-             dprecin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
-             tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dprec, 
+             dprin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
+             tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dpr, 
              dmelt, maxdepth, co2, lat, lon, p = env_variables
 
     # Unpack the PFT list and initialize PFT states
@@ -65,7 +65,7 @@ function runmodel(
             
             # Optimize NPP and LAI for this PFT
             pftlist.pft_list[iv], optlai, optnpp, pftstates[pft] = findnpp(
-                pft, tpr, dtas, sun, tas, dprec, dmelt, dpet, dayl,
+                pft, tpr, dtas, sun, tas, dpr, dmelt, dpet, dayl,
                 k, dphen, co2, p, tsoil, pftstates[pft]
             )
 
@@ -275,11 +275,11 @@ function initialize_environmental_variables(input_variables::NamedTuple)
     mclou = mean(clt)
 
     dtas   = similar(tas, T, 365)
-    dprecin = similar(tas, T, 365)
+    dprin = similar(tas, T, 365)
     dclou   = similar(tas, T, 365)
 
     daily_interp!(dtas, tas)
-    daily_interp!(dprecin, pr)
+    daily_interp!(dprin, pr)
     daily_interp!(dclou, clt)
 
 
@@ -310,12 +310,12 @@ function initialize_environmental_variables(input_variables::NamedTuple)
     # Derived indices
     tcm, gdd5, gdd0, twm = climdata(tas, pr, dtas, cleaned)
     dpet, dayl, sun, rad0, ddayl = ppeett(lat, dtas, dclou, tas, cleaned)
-    dprec, dmelt, maxdepth = snow(dtas, dprecin, cleaned)
+    dpr, dmelt, maxdepth = snow(dtas, dprin, cleaned)
 
     # Return merged NamedTuple: all cleaned input + derived fields
     return merge(cleaned, (; mclou, mpr, mtas, tpr, dtas, 
-                            dprecin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
-                            tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dprec, 
+                            dprin, dclou, tcm, gdd5, gdd0, twm, tminin, tmin, k, 
+                            tsoil, dphen, dpet, dayl, sun, rad0, ddayl, dpr, 
                             dmelt, maxdepth))
 end
 

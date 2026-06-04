@@ -142,11 +142,11 @@ function _simulate!(
 
     # Cut the input rasters to bounds
     env_raster = isnothing(bounds) ? env_raster :
-    (ref = env_raster[:temp][bounds...];
+    (ref = env_raster[:tas][bounds...];
      map(r -> crop(r; to=ref, dims=(X, Y)), env_raster))
 
     # reference grid (after subsetting)
-    ref = env_raster[:temp]
+    ref = env_raster[:tas]
 
     lon = collect(lookup(ref, X))
     lat = collect(lookup(ref, Y))
@@ -592,11 +592,11 @@ function parse_command_line()
         arg_type = Real
         default = 400.0
 
-        "--tempfile"
+        "--tasfile"
         help = "Path to the temperature file"
         arg_type = String
 
-        "--precfile"
+        "--prfile"
         help = "Path to the precipitation file"
         arg_type = String
 
@@ -630,8 +630,8 @@ function main()
 
     execute!(
         args["co2"],
-        args["tempfile"],
-        args["precfile"],
+        args["tasfile"],
+        args["prfile"],
         args["sunfile"],
         args["soilfile"],
         args["year"],
