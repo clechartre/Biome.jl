@@ -5,13 +5,13 @@ Example of how to run the BIOME4 model.
 using Biome
 using Rasters
 
-tempfile = ""
-precfile = ""
+tasfile = ""
+prfile = ""
 cltfile = ""
 soilfile = ""
 
-temp_raster =  Raster(tempfile, name="tas")
-prec_raster =  Raster(precfile, name="pr")
+tas_raster =  Raster(tasfile, name="tas")
+pr_raster =  Raster(prfile, name="pr")
 clt_raster =  Raster(cltfile, name="clt")
 ksat_raster =  Raster(soilfile, name="Ksat")
 whc_raster =  Raster(soilfile, name="whc")
@@ -19,8 +19,8 @@ whc_raster =  Raster(soilfile, name="whc")
 PFTList = BIOME4.PFTClassification()
 
 setup = ModelSetup(BIOME4Model();
-                   temp = temp_raster,
-                   prec = prec_raster,
+                   tas = tas_raster,
+                   pr = pr_raster,
                    clt = clt_raster,
                    ksat = ksat_raster,
                    whc = whc_raster,

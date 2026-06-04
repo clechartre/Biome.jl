@@ -25,7 +25,7 @@ Random.seed!(957) # Fix RNG seed so sampling/repro steps are reproducible
 
 # -------------------- Paths (edit these)
 groundtruthpath = "path/to/ground_truth"  # or .nc etc
-temp_path  = "path/to/temp.nc"
+tas_path  = "path/to/tas.nc"
 prec_path  = "path/to/prec.nc"
 clt_path   = "path/to/clt.nc"
 soils_path = "path/to/soils.nc"
@@ -49,7 +49,7 @@ y = Int[groundtruth[i, j] for (i, j) in valid_pairs]
 n = length(y)
 
 # -------------------- Load climate inputs (shared grid)
-temp_raster = Raster(temp_path,  name="temp")
+tas_raster = Raster(tas_path,  name="tas")
 prec_raster = Raster(prec_path,  name="prec")
 clt_raster  = Raster(clt_path,   name="clt")
 ksat_raster = Raster(soils_path, name="Ksat")
@@ -60,14 +60,14 @@ function extract_pixel_timeseries(r::Raster, i::Int, j::Int)
     reshape(data, 1, 1, :)
 end
 
-temp_vec = [extract_pixel_timeseries(temp_raster, i, j) for (i, j) in valid_pairs]
+tas_vec = [extract_pixel_timeseries(tas_raster, i, j) for (i, j) in valid_pairs]
 prec_vec = [extract_pixel_timeseries(prec_raster, i, j) for (i, j) in valid_pairs]
 clt_vec  = [extract_pixel_timeseries(clt_raster,  i, j) for (i, j) in valid_pairs]
 ksat_vec = [extract_pixel_timeseries(ksat_raster, i, j) for (i, j) in valid_pairs]
 whc_vec  = [extract_pixel_timeseries(whc_raster,  i, j) for (i, j) in valid_pairs]
 
 # -------------------- Forward model: run Biome.jl on one pixel (1×1×T)
-function runmodel_pixel(temp, prec, clt, ksat, whc,
+function runmodel_pixel(tas, prec, clt, ksat, whc,
                         gdd5_low, gdd5_high,
                         swb_low, swb_high,
                         tcm_low, tcm_high,
@@ -83,14 +83,14 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
     set_characteristic!(PFTList, "NeedleleafDeciduousBase", :tmin, [tmin_low, Inf])
 
     lon = [0.0]; lat = [0.0]
-    temp_r = Raster(temp, dims=(X(lon), Y(lat), Ti(1:size(temp, 3))), name="temp")
+    tas_r = Raster(tas, dims=(X(lon), Y(lat), Ti(1:size(tas, 3))), name="tas")
     prec_r = Raster(prec, dims=(X(lon), Y(lat), Ti(1:size(prec, 3))), name="prec")
     clt_r  = Raster(clt,  dims=(X(lon), Y(lat), Ti(1:size(clt, 3))), name="clt")
     ksat_r = Raster(ksat, dims=(X(lon), Y(lat), Ti(1:size(ksat, 3))), name="Ksat")
     whc_r  = Raster(whc,  dims=(X(lon), Y(lat), Ti(1:size(whc, 3))), name="whc")
 
     setup = ModelSetup(BaseModel();
-        temp=temp_r, prec=prec_r, clt=clt_r,
+        tas=tas_r, prec=prec_r, clt=clt_r,
         ksat=ksat_r, whc=whc_r,
         co2=373.8, pftlist=PFTList)
 
@@ -100,7 +100,7 @@ function runmodel_pixel(temp, prec, clt, ksat, whc,
 end
 
 # -------------------- Turing model
-@model function param_estimation(y, temp, prec, clt, ksat, whc, n)
+@model function param_estimation(y, tas, prec, clt, ksat, whc, n)
     gdd5_low ~ Uniform(300, 1800);  Δgdd5 ~ Uniform(50, 500);  gdd5_high = gdd5_low + Δgdd5
     swb_low  ~ Uniform(0, 500);     Δswb  ~ Uniform(10, 600);  swb_high  = swb_low  + Δswb
     tcm_low  ~ Uniform(-40, 5);     Δtcm  ~ Uniform(1, 20);    tcm_high  = tcm_low  + Δtcm
@@ -108,12 +108,12 @@ end
     tmin_low ~ Uniform(-90, 0)
 
     for i in 1:n
-        # optional skip if missing temp
-        if any(ismissing, temp[i][1,1,:])
+        # optional skip if missing tas
+        if any(ismissing, tas[i][1,1,:])
             continue
         end
 
-        pred = runmodel_pixel(temp[i], prec[i], clt[i], ksat[i], whc[i],
+        pred = runmodel_pixel(tas[i], prec[i], clt[i], ksat[i], whc[i],
                               gdd5_low, gdd5_high,
                               swb_low, swb_high,
                               tcm_low, tcm_high,
@@ -126,7 +126,7 @@ end
     end
 end
 
-model = param_estimation(y, temp_vec, prec_vec, clt_vec, ksat_vec, whc_vec, n)
+model = param_estimation(y, tas_vec, prec_vec, clt_vec, ksat_vec, whc_vec, n)
 
 # -------------------- Sample (single run) + quick output
 # We don't recommend running a single chain, I'd go for maybe 4. 
