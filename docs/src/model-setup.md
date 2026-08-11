@@ -4,6 +4,8 @@ This guide shows how to configure and run **BiomeDriver.ModelSetup** for differe
 
 > Works with: `Biome` (models + PFTs) and `Rasters` (IO & grids)
 
+Here is a [link to the Rasters.jl documentation](https://rafaqz.github.io/Rasters.jl/dev/)
+
 ---
 
 ## 1) Quick start
@@ -18,7 +20,7 @@ pr_r = Raster("/path/to/pr.nc", name="pr")
 
 # Minimal example (Köppen model)
 setup = ModelSetup(KoppenModel(); tas=tas_r, pr=pr_r)
-execute!(setup; outfile="output_Koppen.nc")
+execute(setup; outfile="output_Koppen.nc")
 ```
 
 ---
@@ -31,11 +33,11 @@ execute!(setup; outfile="output_Koppen.nc")
 * `lon, lat` — coordinates auto-extracted from your **tas** raster
 * `co2::Real` — atmospheric CO₂ (optional, only used in the mechanistic models; defaults to 378.0)
 * `rasters::NamedTuple` — your environmental inputs (any keyword set to a `Raster`)
-* `pftlist` — a `PFTClassification` or `BIOME4.PFTClassification` (optional, only used in the mechanistic models; default depends on model)
+* `pftlist` — a `PFTClassification` or `BIOME4.PFTClassification` (optional, only used in the mechanistic models; default depends on model), this holds the PFTs you want to pass to the model
 * `biome_assignment::Function` — override biome mapping (optional)
 * `int_type`, `float_type` — numeric types (optional)
 
-The driver slices the domain (using `boundsg`), processes in chunks, resumes from an existing NetCDF if found, and writes outputs per model schema.
+The driver slices the domain (using `bounds` in the `execute()` function), processes in chunks, resumes from an existing NetCDF if found, and writes outputs per model schema.
 * Provide coordstring in a Rasters.jl compatible syntax such as ` X(-180 .. 180), Y(-90 .. 90)`
 
 ---
@@ -128,6 +130,7 @@ run!(setup; bounds = alldata, outfile = "subset.nc")
 ---
 
 ## 6) Examples Base model with custom PFT constraints and biome assignment
+See the section on PFTs to get more info on how to modify existing PFTs and add constraints. 
 
 ```julia
 using Biome, Rasters
@@ -166,6 +169,6 @@ setup = ModelSetup(BaseModel();
     tas=tas_r, pr=pr_r, clt=clt_r, ksat=ksat_r, whc=whc_r,
     test=test_r, co2=373.8, pftlist=pfts, biome_assignment=my_biome_assign)
 
-run!(setup; outfile="output_BaseModel.nc")
+execute(setup; outfile="output_BaseModel.nc")
 ```
 
