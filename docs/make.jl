@@ -62,11 +62,12 @@ makedocs(
         "Climate Models"  => Any[
             "Koppen-Geiger" => "koppen.md",
             "Thornthwaite" => "thornthwaite.md",
-            "Troll-Pfaffen" => "trollpaffen.md",
+            "Troll-Paffen" => "trollpaffen.md",
             "Wissmann" => "wissmann.md",
             ],
         "Mechanistic Model" => Any[
-            "BIOME4" => "biome4.md",]
+            "BIOME4" => "biome4.md",
+            "Custom setup" => "custom_mechanistic_setup.md",
         ],
         "Examples" => "examples.md",
         "API" => "api.md",

@@ -124,7 +124,7 @@ cloud_r .= ifelse.(coalesce.(sun_r, -9999) .!= -9999, 100 .- coalesce!(sun_r, -9
 
 ```julia
 alldata = X(-180 .. 180, Y(-90 .. 90))
-run!(setup; bounds = alldata, outfile = "subset.nc")
+execute(setup; bounds = alldata, outfile = "subset.nc")
 ```
 
 ---
