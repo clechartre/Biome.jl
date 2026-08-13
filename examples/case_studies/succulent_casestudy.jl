@@ -54,7 +54,7 @@ SucculentPFT = BroadleafDeciduousPFT(
             swb=[5, 44],
             tpr = [0, 1200]
     ),
-    dominance_factor = 3,
+    dominance_factor = 2,
     minimum_lai = 2.0 # dominated by small-leaved often spinescent trees
 )
  
@@ -86,45 +86,7 @@ function my_biome_assign(pft::AbstractPFT;
     )
  
     if get_characteristic(pft, :name) == "Succulent"
-        if pftstates[pft].npp > 100 #&& pftstates[wdom].firedays < 150.0
             return SucculentBiome()
-        elseif pftstates[pft].npp <= 100 && pftstates[wdom].firedays >= 130.0
-            return BIOME4.Desert()
-        elseif pftstates[pft].npp < 100 && pftstates[wdom].firedays <= 130.0
-                # Copied the assign biomefunction from BIOME4 for default
-                if wdom === nothing || isa(wdom, BIOME4.TropicalEvergreen) || isa(wdom, BIOME4.TropicalDroughtDeciduous)
-                    if wdom !== nothing && pftstates[wdom].lai > 4.0
-                        return BIOME4.TropicalSavanna()
-                    else
-                        return BIOME4.TropicalXerophyticShrubland()
-                    end
-                elseif isa(wdom, BIOME4.TemperateBroadleavedEvergreen)
-                    return BIOME4.TemperateSclerophyllWoodland()
-                elseif isa(wdom, BIOME4.TemperateDeciduous)
-                    return BIOME4.TemperateBroadleavedSavanna()
-                elseif isa(wdom, BIOME4.CoolConifer)
-                    return BIOME4.OpenConiferWoodland()
-                elseif isa(wdom, BIOME4.BorealEvergreen) || isa(wdom, BIOME4.BorealDeciduous)
-                    return BIOME4.BorealParkland()
-                elseif isa(wdom, BIOME4.WoodyDesert)
-                    if pftstates[wdom].npp > 100.0
-                        if pftstates[gdom].lai > 1.0
-                            return tmin >= 0.0 ? BIOME4.TropicalXerophyticShrubland() :
-                                BIOME4.TemperateXerophyticShrubland()
-                        else
-                            return BIOME4.Desert()
-                        end
-                    else
-                        return BIOME4.Desert()
-                    end
-                else
-                    return BIOME4.Barren()
-                end
-        elseif pftstates[wdom].firedays > 110.0
-            return BIOME4.TropicalSavanna()
-        else
-            return SucculentBiome()
-        end
     else
         return BIOME4.assign_biome(pft;
             subpft=subpft,
