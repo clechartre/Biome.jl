@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Custom setup · Biome.jl</title><meta name="title" content="Custom setup · Biome.jl"/><meta property="og:title" content="Custom setup · Biome.jl"/><meta property="twitter:title" content="Custom setup · Biome.jl"/><meta name="description" content="Documentation for Biome.jl."/><meta property="og:description" content="Documentation for Biome.jl."/><meta property="twitter:description" content="Documentation for Biome.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/pfts/pfts.css" rel="stylesheet" type="text/css"/><script src="../assets/pfts/pfts.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.svg" alt="Biome.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Biome.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User Guide</span><ul><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox"/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Getting Started</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../model-setup/">Model Setup — BiomeDriver</a></li><li><a class="tocitem" href="../data/">Data</a></li></ul></li><li><a class="tocitem" href="../pfts/">Plant Functional Types</a></li><li><a class="tocitem" href="../pft_database/">PFT Database</a></li><li><a class="tocitem" href="../biomes/">Biomes</a></li><li><input class="collapse-toggle" id="menuitem-2-5" type="checkbox"/><label class="tocitem" for="menuitem-2-5"><span class="docs-label">Climate Models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../koppen/">Koppen-Geiger</a></li><li><a class="tocitem" href="../thornthwaite/">Thornthwaite</a></li><li><a class="tocitem" href="../trollpaffen/">Troll-Paffen</a></li><li><a class="tocitem" href="../wissmann/">Wissmann</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-6" type="checkbox" checked/><label class="tocitem" for="menuitem-2-6"><span class="docs-label">Mechanistic Model</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../biome4/">BIOME4</a></li><li class="is-active"><a class="tocitem" href>Custom setup</a><ul class="internal"><li><a class="tocitem" href="#1)-Defining-your-own-PFTs"><span>1) Defining your own PFTs</span></a></li><li><a class="tocitem" href="#2)-Custom-biome-assignment"><span>2) Custom biome assignment</span></a></li><li><a class="tocitem" href="#3)-Defining-a-custom-competition-routine"><span>3) Defining a custom competition routine</span></a></li><li><a class="tocitem" href="#4)-Running-the-custom-model"><span>4) Running the custom model</span></a></li><li><a class="tocitem" href="#5)-Practical-advice"><span>5) Practical advice</span></a></li><li><a class="tocitem" href="#7)-Summary"><span>7) Summary</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../examples/">Examples</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li><a class="is-disabled">Mechanistic Model</a></li><li class="is-active"><a href>Custom setup</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Custom setup</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/clechartre/Biome.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/clechartre/Biome.jl/blob/master/docs/src/custom_mechanistic_setup.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Custom-mechanistic-model-setup"><a class="docs-heading-anchor" href="#Custom-mechanistic-model-setup">Custom mechanistic model setup</a><a id="Custom-mechanistic-model-setup-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-mechanistic-model-setup" title="Permalink"></a></h1><p>If you want to build your own mechanistic vegetation model, the package is designed to let you replace the PFT set and the competition logic without rewriting the whole BIOME-style pipeline.</p><p>The workflow is:</p><ol><li>Build a <code>PFTClassification</code> with your own PFTs.</li><li>Add and tighten constraints for each PFT with <code>add_constraint!</code> and <code>set_characteristic!</code>.</li><li>Define a custom model subtype <code>MyModel &lt;: MechanisticModel</code>.</li><li>Define a custom <code>competition</code> method and, if needed, a custom <code>runmodel</code> method for that model.<ul><li>If you want to only add PFTs but fallback to the model&#39;s original competition module, don&#39;t forget to add the <code>else return Biome.assign_biome ...</code> (see below)</li></ul></li><li>Pass your custom PFT list to <code>ModelSetup</code> and run <code>execute</code>.</li></ol><p>This gives you a clean way to test a new vegetation scheme while reusing the climate preprocessing, phenology, growth, and biome assignment infrastructure already in the package.</p><hr/><h2 id="1)-Defining-your-own-PFTs"><a class="docs-heading-anchor" href="#1)-Defining-your-own-PFTs">1) Defining your own PFTs</a><a id="1)-Defining-your-own-PFTs-1"></a><a class="docs-heading-anchor-permalink" href="#1)-Defining-your-own-PFTs" title="Permalink"></a></h2><p>The foundation is a PFT list. You can start from the generic built-ins and then customize them in place.</p><pre><code class="language-julia hljs">using Biome
+using Rasters
+
+pfts = PFTClassification([
+    BroadleafEvergreenPFT(
+        name = &quot;TropicalEvergreen&quot;,
+        c4 = false,
+        phenological_type = 1,
+        constraints = (
+            tcm = [-Inf, +Inf],
+            tmin = [8.0, +Inf],
+            gdd5 = [1500.0, +Inf],
+            gdd0 = [600.0, +Inf],
+            twm = [12.0, +Inf],
+            maxdepth = [-Inf, +Inf],
+            swb = [0.0, 100.0]
+        ),
+        dominance_factor = 2,
+        minimum_lai = 1.0
+    ),
+    C4GrassPFT(
+        name = &quot;DryC4Grass&quot;,
+        c4 = true,
+        phenological_type = 3,
+        constraints = (
+            tcm = [-Inf, +Inf],
+            tmin = [0.0, +Inf],
+            gdd5 = [400.0, +Inf],
+            gdd0 = [0.0, +Inf],
+            twm = [10.0, +Inf],
+            maxdepth = [-Inf, +Inf],
+            swb = [0.0, 55.0]
+        ),
+        dominance_factor = 3,
+        minimum_lai = 0.5
+    )
+])</code></pre><p>You can also modify an existing PFT after construction:</p><pre><code class="language-julia hljs">set_characteristic!(pfts, &quot;DryC4Grass&quot;, :Emax, 12.0)
+set_characteristic!(pfts, &quot;TropicalEvergreen&quot;, :gdd5, [1800.0, Inf])</code></pre><p>And you can add new environmental filters to a PFT:</p><pre><code class="language-julia hljs">add_constraint!(pfts, &quot;TropicalEvergreen&quot;, :sand_content, (0.0, 60.0))</code></pre><p>This is useful when your model includes a custom variable such as a soil sand content, or anything you can pass as an additional raster.</p><hr/><h2 id="2)-Custom-biome-assignment"><a class="docs-heading-anchor" href="#2)-Custom-biome-assignment">2) Custom biome assignment</a><a id="2)-Custom-biome-assignment-1"></a><a class="docs-heading-anchor-permalink" href="#2)-Custom-biome-assignment" title="Permalink"></a></h2><p>The standard <code>ModelSetup</code> workflow accepts a custom <code>biome_assignment</code> callback. This is the easiest way to map your own winning PFT to a new biome class. Give your biome a numerical value for mapping later. You&#39;ll get a raster of integers you can map to a key. </p><pre><code class="language-julia hljs">using Biome
+
+# Biome definition - add a biome that includes this PFT
+struct SavannaBiome  &lt;: AbstractBiome
+    value::Int
+    SucculentBiome() = new(1000)
+end
+
+struct TropicalForestBiome &lt;: AbstractBiome
+    value::Int
+    SucculentBiome() = new(1001)
+end
+
+function my_biome_assign(pft::AbstractPFT;
+    subpft,
+    wdom,
+    gdd0,
+    gdd5,
+    tcm,
+    tmin,
+    pftlist,
+    pftstates,
+    gdom,
+    env_variables)
+
+    name = get_characteristic(pft, :name)
+
+    if name == &quot;TropicalEvergreen&quot;
+        return TropicalForestBiome()
+    elseif name == &quot;DryC4Grass&quot;
+        return SavannaBiome()
+    else
+        return Biome.assign_biome(
+            pft;
+            subpft=subpft,
+            wdom=wdom,
+            gdd0=gdd0,
+            gdd5=gdd5,
+            tcm=tcm,
+            tmin=tmin,
+            pftlist=pftlist,
+            pftstates=pftstates,
+            gdom=gdom,
+            env_variables=env_variables
+        )
+    end
+end</code></pre><p>This allows your custom PFT list to produce its own biome identities without altering the rest of the mechanistic model machinery.</p><hr/><h2 id="3)-Defining-a-custom-competition-routine"><a class="docs-heading-anchor" href="#3)-Defining-a-custom-competition-routine">3) Defining a custom competition routine</a><a id="3)-Defining-a-custom-competition-routine-1"></a><a class="docs-heading-anchor-permalink" href="#3)-Defining-a-custom-competition-routine" title="Permalink"></a></h2><p>The built-in competition step is implemented as a function called <code>competition</code> and is dispatched on the model type. To replace the default ranking logic, define a new model subtype and a custom method for <code>competition</code>.</p><pre><code class="language-julia hljs">using Biome
+import Biome: competition
+
+struct MyMechanisticModel &lt;: MechanisticModel end
+
+function competition(
+    m::MyMechanisticModel,
+    tmin::T,
+    tpr::T,
+    numofpfts::U,
+    gdd0::T,
+    gdd5::T,
+    tcm::T,
+    pftlist::AbstractPFTList,
+    pftstates::Dict{AbstractPFT,PFTState},
+    biome_assignment::Function,
+    env_variables::NamedTuple
+) where {T&lt;:Real, U&lt;:Int}
+
+    winner = nothing
+    best_score = -Inf
+
+    for pft in pftlist.pft_list
+        if !pftstates[pft].present || pftstates[pft].npp &lt;= 0
+            continue
+        end
+
+        score = pftstates[pft].npp * pftstates[pft].fitness / get_characteristic(pft, :dominance_factor)
+
+        if score &gt; best_score
+            best_score = score
+            winner = pft
+        end
+    end
+
+    if winner === nothing
+        return Biome.assign_biome(
+            Default();
+            subpft=NONE_INSTANCE,
+            wdom=NONE_INSTANCE,
+            gdd0=gdd0,
+            gdd5=gdd5,
+            tcm=tcm,
+            tmin=tmin,
+            pftlist=pftlist,
+            pftstates=pftstates,
+            gdom=DEFAULT_INSTANCE,
+            env_variables=env_variables
+        ), DEFAULT_INSTANCE, zero(T)
+    end
+
+    return biome_assignment(
+        winner;
+        subpft=NONE_INSTANCE,
+        wdom=winner,
+        gdom=DEFAULT_INSTANCE,
+        gdd0=gdd0,
+        gdd5=gdd5,
+        tcm=tcm,
+        tmin=tmin,
+        pftlist=pftlist,
+        pftstates=pftstates,
+        env_variables=env_variables
+    ), winner, best_score
+end</code></pre><p>This custom routine keeps the same overall model flow but changes the selection rule from the default BIOME-style logic to a simple weighted score based on NPP and fitness.</p><hr/><h2 id="4)-Running-the-custom-model"><a class="docs-heading-anchor" href="#4)-Running-the-custom-model">4) Running the custom model</a><a id="4)-Running-the-custom-model-1"></a><a class="docs-heading-anchor-permalink" href="#4)-Running-the-custom-model" title="Permalink"></a></h2><p>Once the custom model and PFTs are defined, you can run them with the regular driver interface.</p><pre><code class="language-julia hljs">using Biome
+using Rasters
+
+# Example climate inputs
+# tas_r  = Raster(&quot;tas.nc&quot;, name=&quot;tas&quot;)
+# pr_r   = Raster(&quot;pr.nc&quot;, name=&quot;pr&quot;)
+# clt_r  = Raster(&quot;clt.nc&quot;, name=&quot;clt&quot;)
+# ksat_r = Raster(&quot;ksat.nc&quot;, name=&quot;Ksat&quot;)
+# whc_r  = Raster(&quot;whc.nc&quot;, name=&quot;whc&quot;)
+
+setup = ModelSetup(
+    MyMechanisticModel();
+    tas=tas_r,
+    pr=pr_r,
+    clt=clt_r,
+    ksat=ksat_r,
+    whc=whc_r,
+    co2=378.0,
+    pftlist=pfts,
+    biome_assignment=my_biome_assign
+)
+
+execute(setup; outfile=&quot;output_custom_mechanistic.nc&quot;)</code></pre><p>This is the same pattern used by the built-in mechanistic models, but with your own PFT definitions, fitness rules, and winner selection logic.</p><hr/><h2 id="5)-Practical-advice"><a class="docs-heading-anchor" href="#5)-Practical-advice">5) Practical advice</a><a id="5)-Practical-advice-1"></a><a class="docs-heading-anchor-permalink" href="#5)-Practical-advice" title="Permalink"></a></h2><ul><li>Start from a minimal PFT set and a single custom rule.</li><li>Keep <code>constraints</code> physically interpretable: temperature, growing degree days, soil moisture, and snow limits are easier to diagnose than a large opaque score.</li><li>When building a custom competition function, log the best and second-best PFTs for a few test pixels to make sure your model behaves sensibly.</li><li>If you are tuning the competition routine, keep the PFT-level productivity calculations unchanged and vary only the decision rule first; this isolates the effect of the competition step.</li></ul><p>The package is intentionally modular here: the PFT list defines what can grow, while the competition routine defines who wins.</p><hr/><h2 id="7)-Summary"><a class="docs-heading-anchor" href="#7)-Summary">7) Summary</a><a id="7)-Summary-1"></a><a class="docs-heading-anchor-permalink" href="#7)-Summary" title="Permalink"></a></h2><p>To set up your own mechanistic model:</p><ul><li>define a custom <code>PFTClassification</code>,</li><li>modify PFT characteristics and constraints with <code>set_characteristic!</code> and <code>add_constraint!</code>,</li><li>define a custom <code>biome_assignment</code>,</li><li>add a <code>MyModel &lt;: MechanisticModel</code> with custom <code>competition</code> and/or <code>runmodel</code> methods,</li><li>then run it through <code>ModelSetup</code> and <code>execute</code>.</li></ul><p>This is the recommended route when you want to explore a new ecological scheme without rewriting the climate and growth engine.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../biome4/">« BIOME4</a><a class="docs-footer-nextpage" href="../examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 13 August 2026 12:53">Thursday 13 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
