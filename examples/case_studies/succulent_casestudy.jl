@@ -9,13 +9,17 @@ tempfile = ""
 precfile = ""
 cltfile = ""
 soilfile = ""
+tminfile = ""
 
 temp_raster =  Raster(tempfile, name="temp")
-prec_raster =  Raster(precfile, name="prec")
-clt_raster =  Raster(cltfile, name="clt")
+prec_raster = Raster(precfile, name="prec")
+# prec_raster.= ifelse.(coalesce.(prec_raster, -9999) .!= -9999, 10 .* coalesce.(prec_raster, -9999), -9999)
+clt_raster = Raster(cltfile, name="sun")
+sun_raster = copy(clt_raster)
+sun_raster .= ifelse.(coalesce.(clt_raster, -9999) .!= -9999, 100 .- coalesce.(clt_raster, -9999), -9999)
 ksat_raster =  Raster(soilfile, name="Ksat")
 whc_raster =  Raster(soilfile, name="whc")
- 
+tmin_raster = Raster(tminfile, name = "tmin")
 
 # Add a PFT to the list:
 SucculentPFT = BroadleafDeciduousPFT(
@@ -41,14 +45,14 @@ SucculentPFT = BroadleafDeciduousPFT(
     allocfact                   = 1.0,
     grass                       = false,
     constraints = (
-            tcm=[10, +Inf],
+            tcm=[5, +Inf],
             tmin=[-5, +Inf],
             gdd5=[-Inf, +Inf],
             gdd0=[-Inf, 10000],
             twm=[-Inf, +Inf],
             maxdepth=[-Inf, +Inf],
-            swb=[50, 600],
-            tprec = [-Inf, 1200]
+            swb=[5, 44],
+            tpr = [0, 1200]
     ),
     dominance_factor = 3,
     minimum_lai = 2.0 # dominated by small-leaved often spinescent trees
@@ -136,15 +140,16 @@ function my_biome_assign(pft::AbstractPFT;
 end
  
 setup = ModelSetup(BIOMEDominanceModel();
-                   temp=temp_raster,
-                   prec=prec_raster,
+                   tas=temp_raster,
+                   pr=prec_raster,
                    clt=sun_raster,
                    ksat=ksat_raster,
                    whc=whc_raster,
+                   tmin=tmin_raster,
                    co2=Float64.(373.0),
                    pftlist = PFTList,
                    biome_assignment = my_biome_assign)
  
 # Run the model
-execute(setup; outfile="output_succulent_biome.nc")
+execute(setup; outfile="output_succulent.nc")
  
