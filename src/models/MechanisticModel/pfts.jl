@@ -1,5 +1,4 @@
 using Distributions
-using Parameters: @kwdef
 
 abstract type AbstractEvergreenPFT  <: AbstractPFT end
 abstract type AbstractNeedleleafEvergreenPFT  <: AbstractEvergreenPFT end

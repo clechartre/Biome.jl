@@ -5,7 +5,6 @@ using ..Biome: AbstractPFT, PFTCharacteristics, PFTClassification,
 abstract type AbstractBIOME4PFT <: AbstractPFT end
 
 using Distributions
-using Parameters: @kwdef
 
 # 1) WoodyDesert
 struct WoodyDesert{T<:Real,U<:Int} <: AbstractPFT

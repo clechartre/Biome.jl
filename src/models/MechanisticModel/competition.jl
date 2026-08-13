@@ -2,9 +2,7 @@
 include("./assignbiome.jl")
 export mock_assign_biome, assign_biome
 
-using LinearAlgebra: norm
 using Statistics: mean
-using Printf: @sprintf
 
 """
     BIOME4/BIOMEDominance Competition function.

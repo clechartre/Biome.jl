@@ -1,9 +1,7 @@
 module BiomeDriver
 
 using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPaffenModel,
-        BIOME4, ClimateModel, MechanisticModel, GrowthWorkspace,
-        AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT,
-        AbstractBiomeCharacteristics, AbstractBiome, PFTClassification,
+        BIOME4, AbstractPFTList, PFTClassification,
         P0, G, CP, T0, M, R0,
         runmodel, change_type, assign_biome as base_assign_biome
 using ..Biome.BIOME4: assign_biome as biome4_assign_biome
@@ -18,7 +16,6 @@ using ArgParse
 using NCDatasets
 import ArchGDAL
 using Rasters
-using DataStructures: OrderedDict
 using DimensionalData
 
 export ModelSetup, execute
