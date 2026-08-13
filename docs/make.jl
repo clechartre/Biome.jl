@@ -72,7 +72,7 @@ makedocs(
         "Examples" => "examples.md",
         "API" => "api.md",
         "Contributing" => "contributing.md",
-        
+          ],
     ]
 )
 
