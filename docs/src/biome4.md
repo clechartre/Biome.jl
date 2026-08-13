@@ -99,16 +99,6 @@ This preserves BIOME4’s physiology and the environmental sieve, while replacin
 
 ---
 
-## Inputs — recap (mechanistic modes)
-
-- **Required rasters**: `pr`, `pr` (monthly stacks); typically also `clt/sun`, `Ksat`, `whc`.  
-- **CO₂**: single ppm value representative of your climatology period.  
-- **PFT list**: defaults to `BIOME4.PFTClassification()`; parameters/constraints can be customized.
-
-**Grid alignment is critical**: all rasters must share the same `X/Y` grid and time stacking. Missing values are normalized internally to `-9999.0`.
-
----
-
 ## Output variables (NetCDF)
 
 - Coordinates: `lon`, `lat`  
@@ -116,8 +106,8 @@ This preserves BIOME4’s physiology and the environmental sieve, while replacin
   - `biome :: Int16` — BIOME4 biome id  
   - `optpft :: Int16` — dominant PFT id  
   - `npp :: Float64` — shape `(lon, lat, pft)`; includes `num_pfts + 1` slots (default/mixed)
-
-Keep a sidecar legend for **PFT id → name** and **biome id → label** used in your plots.
+- **Mechanistic scheme: tuning**
+  - If you put the model in pft_parametrization mode with `execute(...: pft_parametrization = true)`then the model will skip most ocmputation and return PFT presence right after computing the PFTs climatic enveloppe. Therefore there, the output is `pft_present :: Vector{Int16}`. This will be a binary vector of 1 or 0 representing presence absence.
 
 ---
 

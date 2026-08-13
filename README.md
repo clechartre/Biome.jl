@@ -77,7 +77,7 @@ More complex models that simulate plant physiology and require:
 - **Precipitation** (`pr`): Monthly total precipitation (mm) -- Climatology
 - **Cloud cover**: Monthly mean cloud cover (%) -- Climatology
 - **Soil properties**: Water holding capacity (mm/mm) and hydraulic conductivity (mm/h) -- For multiple soil depths
-- **CO₂ concentration**: Atmospheric CO₂ (ppm) -- Single value
+- **CO2 concentration**: Atmospheric CO2 (ppm) -- Single value
 
 ## Input Data Format
 All spatial data should be provided as rasters to the `ModelSetup` class intentiation with:
@@ -177,6 +177,12 @@ custom_pft = BroadleafEvergreenPFT(
 )
 pftlist = PFTClassification([custom_pft, ...])
 ```
+
+## Parametrization
+We are providing you with examples of how to set up a tuning workflow in the `examples/parameter_estimation` folder. 
+Standard outputs of the model are :biome, :npp, and :optpft (winning pft), if you want to tune your parameters based on these outputs, you can run the model as is. 
+If you'd rather tune your model based on PFT presence, you can run the model in with the kwarg `pft_parametrization=true`. This will return :pft_presence rather than standard outputs (and it will also run much faster).
+
 
 ### Model Parameters
 Modify BIOME4 PFT parameters:
