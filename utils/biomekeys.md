@@ -111,7 +111,7 @@ This document maps the integer **codes stored in the NetCDF variables** to the *
 | 30 | Arid / Frost |
 ---
 
-## 3) Troll–Pfaffen (`troll_zone`)
+## 3) Troll–Paffen (`troll_zone`)
 
 **NetCDF variable:** `troll_zone`  
 **Biome codes:** `1–37`  
@@ -251,7 +251,7 @@ This document maps the integer **codes stored in the NetCDF variables** to the *
 |---|---|
 | Köppen–Geiger | `koppen_class` |
 | Thornthwaite | `moisture_zone`, `temperature_zone` *(combined in plotting)* |
-| Troll–Pfaffen | `troll_zone` |
+| Troll–Paffen | `troll_zone` |
 | Wissmann | `climate_zone` |
 | BIOME4 | `biome` |
 | Base | `biome`|
