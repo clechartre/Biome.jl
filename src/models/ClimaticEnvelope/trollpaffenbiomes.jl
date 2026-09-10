@@ -1,3 +1,30 @@
+# ---------------------------------------------------------------------------
+# Troll-Paffen climate classification (Julia port)
+#
+# Adapted from SAGA GIS "Climate Classification" tool
+# (climate_classification.cpp, SAGA — System for Automated Geoscientific
+# Analyses, Tool Library: climate_tools)
+#
+# Original C++ implementation:
+#   Copyright (C) 2018 Olaf Conrad
+#   Institute of Geography, University of Hamburg, Germany
+#   https://github.com/saga-gis/saga-gis
+#
+# This file is a derivative work, translated and adapted to Julia by
+# Capucine Marie Sophie Lechartre, 2026. Modifications include: restructured helper functions,
+# adapted to NamedTuple input, vectorized monthly array indexing.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details. see <https://www.gnu.org/licenses/>.
+# ---------------------------------------------------------------------------
+
 # Third-Party
 using Statistics
 
