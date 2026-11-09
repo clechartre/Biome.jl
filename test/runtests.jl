@@ -5,6 +5,7 @@ using Biome
     @testset "MechanisticModel Tests" begin
         include("test_BIOME/MechanisticModel/test_climdata.jl")
         include("test_BIOME/MechanisticModel/test_constraints.jl")
+        include("test_BIOME/MechanisticModel/test_niche_fitness.jl")
         include("test_BIOME/MechanisticModel/test_phenology.jl")
         include("test_BIOME/MechanisticModel/test_snow.jl")
         include("test_BIOME/MechanisticModel/test_soiltemp.jl")

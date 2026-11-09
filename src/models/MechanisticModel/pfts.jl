@@ -444,10 +444,11 @@ function dominance_environment_mv(pft::AbstractPFT;
         lo = T(cons[var][1])
         hi = T(cons[var][2])
 
-        d  = dist_to_interval(x, lo, hi)
-        s  = choose_softness(var, lo, hi)
-
-        d2 += (d / s)^2
+        if isfinite(lo) && isfinite(hi) && hi > lo
+            center = (lo + hi) / T(2)
+            s = choose_softness(var, lo, hi)
+            d2 += get_characteristic(pft, :dominance_factor) * ((x - center) / s)^2
+        end
     end
 
     value = exp(-T(0.5) * d2)
@@ -487,4 +488,3 @@ function change_type(x, Tnew::Type; Unew::Type=Int)
         return x
     end
 end
-

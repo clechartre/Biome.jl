@@ -211,14 +211,16 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
     # Process regular PFTs
     for pft in pftlist.pft_list
         if pftstates[pft].present
-            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness /
+                           get_characteristic(pft, :dominance_factor)
             push!(weighted_npps, weighted_npp)
             push!(pfts, pft)
         end
     end
     
     # Process DEFAULT_INSTANCE
-    default_npp = 1 * pftstates[DEFAULT_INSTANCE].fitness * (1 / get_characteristic(DEFAULT_INSTANCE, :dominance_factor))
+    default_npp = 1 * pftstates[DEFAULT_INSTANCE].fitness /
+                  get_characteristic(DEFAULT_INSTANCE, :dominance_factor)
     push!(weighted_npps, default_npp)
     push!(pfts, DEFAULT_INSTANCE)
     
@@ -247,7 +249,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
     max_woody_weighted_npp = 0.0
     for pft in pftlist.pft_list
         if pftstates[pft].present && !get_characteristic(pft, :grass)
-            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness * (1 / get_characteristic(pft, :dominance_factor))
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness /
+                           get_characteristic(pft, :dominance_factor)
             if  weighted_npp > default_npp
                 if weighted_npp > max_woody_weighted_npp
                     max_woody_weighted_npp = weighted_npp
@@ -261,7 +264,8 @@ function determine_subdominant_pft(pftmaxnpp::Union{AbstractPFT,Nothing}, pftlis
     max_grass_weighted_npp = 0.0
     for pft in pftlist.pft_list
         if pftstates[pft].present && get_characteristic(pft, :grass)
-            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness  * (1 / get_characteristic(pft, :dominance_factor))
+            weighted_npp = pftstates[pft].npp * pftstates[pft].fitness /
+                           get_characteristic(pft, :dominance_factor)
             if  weighted_npp > default_npp
                 if weighted_npp > max_grass_weighted_npp
                     max_grass_weighted_npp = weighted_npp
@@ -581,4 +585,3 @@ function calculate_vegetation_dominance(
 
     return dom, npp, lai, grasslai, optpft
 end
-
