@@ -14,6 +14,11 @@
 
 If you are looking for an R package with the same functionalities, please check out our [R wrapper](https://github.com/clechartre/biomeR.git). This will allow running the model from Julia in R, and keep the speed of execution. 
 
+This work is available as a pre-print by the way:
+
+[Lechartre, C. M. S., Boussange, V., Karger, D. N., Kaplan, J. O., Brun, P., and Zimmermann, N. E.: Biome.jl v0.1.0: a modular platform for mechanistic biome modeling and hypothesis testing, EGUsphere [preprint], https://doi.org/10.5194/egusphere-2026-4919, 2026.](https://egusphere.copernicus.org/preprints/2026/egusphere-2026-4919/)
+
+
 ## What is Biome.jl?
 
 This package offers:
