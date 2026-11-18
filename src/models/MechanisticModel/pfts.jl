@@ -1,4 +1,5 @@
 using Distributions
+using Statistics
 
 abstract type AbstractEvergreenPFT  <: AbstractPFT end
 abstract type AbstractNeedleleafEvergreenPFT  <: AbstractEvergreenPFT end
@@ -89,7 +90,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [40.0, +Inf]
             ),
-            dominance_factor = 3,
+            dominance_factor = 2,
             minimum_lai = 0
         ),
     AbstractBroadleafEvergreenPFT => (
@@ -117,7 +118,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 swb   = [40.0, +Inf]
             ),
             dominance_factor = 2,
-            minimum_lai = 2.5
+            minimum_lai = 0
         ),
     AbstractNeedleleafDeciduousPFT => (
             name                    = "NeedleleafDeciduousBase",
@@ -149,7 +150,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth = [-Inf, +Inf],
                 swb  = [40.0, +Inf]
             ),
-            dominance_factor = 3,
+            dominance_factor = 2,
             minimum_lai = 0
     ),
     AbstractBroadleafDeciduousPFT => (
@@ -416,37 +417,98 @@ end
     end
 end
 
-function choose_softness(var::Symbol, lo::T, hi::T,
-    fallback = (tcm=T(4.0), tmin=T(4.0), gdd5=T(800.0), gdd0=T(800.0), twm=T(2.5), maxdepth=T(7.5)),
-    mins     = (tcm=T(1.0), tmin=T(1.0), gdd5=T(300.0), gdd0=T(300.0), twm=T(1.0), maxdepth=T(2.0)),
-    maxs     = (tcm=T(10.0), tmin=T(10.0), gdd5=T(2000.0), gdd0=T(2000.0), twm=T(8.0), maxdepth=T(20.0)),
-    frac::T = T(0.25)
-) where {T<:Real}
-    if isfinite(lo) && isfinite(hi) && hi > lo
-        s = frac * (hi - lo)
-        return clamp(s, mins[var], maxs[var])
-    else
-        return fallback[var]
-    end
+function choose_softness(lo::T, hi::T; frac::T = T(0.25)) where {T<:Real}
+    isfinite(lo) && isfinite(hi) && hi > lo ||
+        throw(ArgumentError("softness requires a finite, non-empty interval"))
+    return frac * (hi - lo)
 end
 
-function dominance_environment_mv(pft::AbstractPFT;
-    tcm::T, tmin::T, gdd5::T, gdd0::T, twm::T, maxdepth::T,
-    minval::Union{T,Nothing} = nothing) where {T<:Real}
-    cons = get_characteristic(pft, :constraints)
-    
-    minval = isnothing(minval) ? T(0.01) : minval
-    d2 = T(0.0)
-    for (var, x) in (
-        (:tcm, tcm), (:tmin, tmin), (:gdd5, gdd5), (:gdd0, gdd0),
-        (:twm, twm), (:maxdepth, maxdepth)
+function niche_predictors(pft::AbstractPFT)
+    return Tuple(
+        key for (key, bounds) in pairs(get_characteristic(pft, :constraints))
+        if key != :swb &&
+           length(bounds) == 2 &&
+           bounds[2] > bounds[1] &&
+           isfinite(bounds[1]) &&
+           isfinite(bounds[2])
     )
+end
+
+function select_noncollinear_predictors(
+    samples::NamedTuple;
+    predictors = Tuple(keys(samples)),
+    threshold::Real = 0.7,
+    retention::Symbol = :most_informative,
+)
+    0.0 <= threshold <= 1.0 || throw(ArgumentError("threshold must be between 0 and 1"))
+    retention == :most_informative ||
+        throw(ArgumentError("retention must be :most_informative"))
+
+    selected = collect(predictors)
+    variances = Dict{Symbol,Float64}()
+    values = Dict{Symbol,Vector{Float64}}()
+    for predictor in selected
+        raw = collect(getproperty(samples, predictor))
+        finite_values = Float64[x for x in raw if isfinite(x)]
+        values[predictor] = finite_values
+        variances[predictor] = length(finite_values) > 1 ? var(finite_values) : 0.0
+    end
+
+    i = 1
+    while i < length(selected)
+        j = i + 1
+        while j <= length(selected)
+            first_predictor, second_predictor = selected[i], selected[j]
+            common = collect(zip(values[first_predictor], values[second_predictor]))
+        if length(common) < 2
+            j += 1
+            continue
+        end
+        first_values = first.(common)
+        second_values = last.(common)
+        if variances[first_predictor] == 0.0 || variances[second_predictor] == 0.0
+            j += 1
+            continue
+        end
+        if abs(cor(first_values, second_values)) >= threshold
+            drop = variances[first_predictor] >= variances[second_predictor] ?
+                   second_predictor : first_predictor
+            filter!(predictor -> predictor != drop, selected)
+            if drop == first_predictor
+                i -= 1
+                break
+            end
+        end
+            j += 1
+        end
+        i += 1
+    end
+    return Tuple(selected)
+end
+
+function dominance_environment_mv(
+    pft::AbstractPFT;
+    predictors = nothing,
+    minval = nothing,
+    kwargs...
+)
+    cons = get_characteristic(pft, :constraints)
+    isempty(kwargs) && throw(ArgumentError("at least one environmental predictor is required"))
+    selected = isnothing(predictors) ? niche_predictors(pft) : Tuple(predictors)
+    available = filter(predictor -> haskey(kwargs, predictor), selected)
+    T = isempty(available) ? Float64 : promote_type(map(predictor -> typeof(kwargs[predictor]), available)...)
+    minval = isnothing(minval) ? T(0.01) : convert(T, minval)
+    d2 = zero(T)
+    for var in selected
+        haskey(kwargs, var) || continue
+        x = convert(T, kwargs[var])
+        haskey(cons, var) || continue
         lo = T(cons[var][1])
         hi = T(cons[var][2])
 
         if isfinite(lo) && isfinite(hi) && hi > lo
             center = (lo + hi) / T(2)
-            s = choose_softness(var, lo, hi)
+            s = choose_softness(lo, hi)
             d2 += get_characteristic(pft, :dominance_factor) * ((x - center) / s)^2
         end
     end

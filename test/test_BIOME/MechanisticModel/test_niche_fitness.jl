@@ -29,6 +29,33 @@ function fitness_value(pft, value)
 end
 
 @testset "Niche fitness" begin
+    samples = (
+        tcm = collect(1.0:10.0),
+        tmin = collect(2.0:2.0:20.0),
+        gdd5 = collect(10.0:10.0:100.0),
+    )
+    @test select_noncollinear_predictors(samples; threshold=0.7) == (:gdd5,)
+
+    custom_constraints = (
+        tcm = [-Inf, Inf],
+        moisture = [0.0, 10.0],
+        gdd5 = [-Inf, Inf],
+        swb = [-Inf, Inf],
+    )
+    custom_pft = FitnessMockPFT(PFTCharacteristics(constraints = custom_constraints))
+    @test dominance_environment_mv(
+        custom_pft;
+        tcm = 0.0,
+        gdd5 = 0.0,
+        moisture = 5.0,
+    ) == 1.0
+    @test dominance_environment_mv(
+        custom_pft;
+        tcm = 0.0,
+        gdd5 = 0.0,
+        moisture = 0.0,
+    ) < 1.0
+
     finite_constraints = (
         tcm = [0.0, 10.0],
         tmin = [-Inf, Inf],

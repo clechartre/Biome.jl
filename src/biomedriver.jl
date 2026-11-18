@@ -3,7 +3,9 @@ module BiomeDriver
 using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, WissmannModel, KoppenModel, ThornthwaiteModel, TrollPaffenModel,
         BIOME4, AbstractPFTList, PFTClassification,
         P0, G, CP, T0, M, R0,
-        runmodel, change_type, assign_biome as base_assign_biome
+        runmodel, change_type, assign_biome as base_assign_biome,
+        initialize_environmental_variables, get_characteristic, niche_predictors,
+        select_noncollinear_predictors
 using ..Biome.BIOME4: assign_biome as biome4_assign_biome
 
 # Standard library
@@ -96,7 +98,14 @@ function ModelSetup(Model::BiomeModel;
     return ModelSetup(Model, lon, lat, co2, rasters, pftlist, biome_assignment, Int64, float_type)
 end
 
-function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing, outfile::Union{String, Nothing}=nothing, pft_parametrization::Bool = false)
+function execute(
+    setup::ModelSetup;
+    bounds::Union{Tuple{X,Y}, Nothing} = nothing,
+    outfile::Union{String, Nothing}=nothing,
+    pft_parametrization::Bool = false,
+    collinearity_threshold::Real = 0.7,
+    niche_predictors = nothing,
+)
     M = setup.model
     pftlist = setup.pftlist
     env_raster = setup.rasters
@@ -108,7 +117,9 @@ function execute(setup::ModelSetup; bounds::Union{Tuple{X,Y}, Nothing} = nothing
         bounds=bounds,
         outfile=outfile,
         biome_assignment=setup.biome_assignment,
-        pft_parametrization=pft_parametrization
+        pft_parametrization=pft_parametrization,
+        collinearity_threshold=collinearity_threshold,
+        niche_predictors=niche_predictors,
     )
 end
 
@@ -120,7 +131,9 @@ function _simulate!(
         bounds::Union{Tuple{X,Y}, Nothing} = nothing,
         outfile::Union{String, Nothing} = nothing,
         biome_assignment::Union{Function, Nothing} = nothing,
-        pft_parametrization::Bool = false
+        pft_parametrization::Bool = false,
+        collinearity_threshold::Real = 0.7,
+        niche_predictors = nothing,
     ) where {T<:Real}
 
     if biome_assignment === nothing
@@ -146,6 +159,15 @@ function _simulate!(
 
     # reference grid (after subsetting)
     ref = env_raster[:tas]
+
+    niche_predictors_by_pft = nothing
+    if model isa BIOMEDominanceModel
+        niche_predictors_by_pft = _screen_niche_predictors(
+            env_raster, pftlist, dz, co2;
+            threshold=collinearity_threshold,
+            predictors=niche_predictors,
+        )
+    end
 
     lon = collect(lookup(ref, X))
     lat = collect(lookup(ref, Y))
@@ -258,7 +280,8 @@ function _simulate!(
                 model,
                 pftlist,
                 biome_assignment,
-                pft_parametrization
+                pft_parametrization,
+                niche_predictors_by_pft,
             )
         end
 
@@ -343,6 +366,72 @@ function load_existing_rasterstack(dataset, model::BiomeModel, x_dim, y_dim, num
     return RasterStack(Tuple(rasters))
 end
 
+function _screen_niche_predictors(
+    env_raster::NamedTuple,
+    pftlist::AbstractPFTList,
+    dz,
+    co2;
+    threshold::Real,
+    predictors,
+)
+    predictor_order = Dict(
+        pft => isnothing(predictors) ? niche_predictors(pft) : Tuple(predictors)
+        for pft in pftlist.pft_list
+    )
+    samples = Dict(
+        pft => Dict(predictor => Float64[] for predictor in predictor_order[pft])
+        for pft in pftlist.pft_list
+    )
+    tas_raster = env_raster[:tas]
+    lon = collect(lookup(tas_raster, X))
+    lat = collect(lookup(tas_raster, Y))
+
+    for y in eachindex(lat), x in eachindex(lon)
+        env_chunks = Dict{Symbol,Any}()
+        for (var, raster) in pairs(env_raster)
+            env_chunks[var] = ndims(raster) == 2 ?
+                raster[x, y] : uniform_fill_value(Array(raster[x, y, :]))
+        end
+        input_dict = Dict{Symbol,Any}(
+            :lat => lat[y],
+            :lon => lon[x],
+            :co2 => co2,
+            :p => P0 * (one(co2) - G / (CP * T0))^(CP * M / R0),
+            :dz => dz,
+        )
+        merge!(input_dict, env_chunks)
+        env = initialize_environmental_variables((; input_dict...))
+
+        for pft in pftlist.pft_list
+            predictors_for_pft = predictor_order[pft]
+            cons = get_characteristic(pft, :constraints)
+            valid = all(
+                haskey(env, predictor) &&
+                !(getproperty(env, predictor) isa AbstractArray) &&
+                isfinite(getproperty(env, predictor)) &&
+                haskey(cons, predictor) &&
+                getproperty(env, predictor) >= cons[predictor][1] &&
+                getproperty(env, predictor) < cons[predictor][2]
+                for predictor in predictors_for_pft
+            )
+            if valid
+                for predictor in predictors_for_pft
+                    push!(samples[pft][predictor], Float64(getproperty(env, predictor)))
+                end
+            end
+        end
+    end
+
+    return Dict(
+        pft => select_noncollinear_predictors(
+            (; (predictor => values[predictor] for predictor in keys(values))...);
+            predictors=predictor_order[pft],
+            threshold=threshold,
+        )
+        for (pft, values) in samples
+    )
+end
+
 """
     process_cell(...)
 
@@ -360,7 +449,8 @@ function process_cell(
     model::BiomeModel,
     pftlist::AbstractPFTList,
     biome_assignment::Function,
-    pft_parametrization::Bool = false
+    pft_parametrization::Bool = false,
+    niche_predictors_by_pft = nothing,
 ) where {T<:Real}
 
     primary_var = get_primary_variable(model, pft_parametrization)
@@ -397,7 +487,14 @@ function process_cell(
     input_variables = (; input_dict...)
 
     # Run the model 
-    output = runmodel(model, input_variables; pftlist = pftlist, biome_assignment = biome_assignment, pft_parametrization = pft_parametrization)
+    output = runmodel(
+        model,
+        input_variables;
+        pftlist = pftlist,
+        biome_assignment = biome_assignment,
+        pft_parametrization = pft_parametrization,
+        niche_predictors_by_pft = niche_predictors_by_pft,
+    )
 
     numofpfts = length(pftlist.pft_list)
 

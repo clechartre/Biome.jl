@@ -89,6 +89,7 @@ export AbstractPFTList, AbstractPFTCharacteristics, AbstractPFT, AbstractBIOME4P
        
        # Original PFT types and functions
         PFTClassification, Default, None, get_characteristic, PFTState, dominance_environment_mv,
+        niche_predictors, select_noncollinear_predictors,
         change_type,
         AbstractEvergreenPFT, AbstractNeedleleafEvergreenPFT,  AbstractBroadleafEvergreenPFT,
         AbstractDeciduousPFT, AbstractNeedleleafDeciduousPFT, AbstractBroadleafDeciduousPFT,

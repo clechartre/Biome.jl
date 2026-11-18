@@ -40,7 +40,8 @@ function runmodel(
     vars_in::NamedTuple;
     pftlist::AbstractPFTList,
     biome_assignment::Function,
-    pft_parametrization::Bool = false
+    pft_parametrization::Bool = false,
+    niche_predictors_by_pft = nothing
 )
     # Initialize environmental variables from the input
     env_variables = initialize_environmental_variables(vars_in)
@@ -50,7 +51,12 @@ function runmodel(
              dmelt, maxdepth, co2, lat, lon, p = env_variables
 
     # Unpack the PFT list and initialize PFT states
-    pftstates, numofpfts = initialize_pftstates(pftlist, tcm, tmin, gdd5, gdd0, twm, maxdepth)
+    selected_predictors = pft -> isnothing(niche_predictors_by_pft) ? nothing :
+        get(niche_predictors_by_pft, pft, nothing)
+    pftstates, numofpfts = initialize_pftstates(
+        pftlist, tcm, tmin, gdd5, gdd0, twm, maxdepth;
+        niche_predictors_by_pft = niche_predictors_by_pft,
+    )
 
     # Apply environmental constraints to determine PFT presence
     pftstates = constraints(pftlist, pftstates, env_variables)
@@ -68,10 +74,11 @@ function runmodel(
 
     # Calculate optimal LAI and NPP for each viable PFT
     for (iv, pft) in enumerate(pftlist.pft_list)
-        pftstates[pft].fitness = dominance_environment_mv(pft; tcm = tcm, 
-                                                          tmin = tmin, gdd5 = gdd5, gdd0 = gdd0,
-                                                          twm = twm, maxdepth = maxdepth
-                                                        )
+        pftstates[pft].fitness = dominance_environment_mv(
+            pft;
+            predictors = selected_predictors(pft),
+            env_variables...,
+        )
         if pftstates[pft].present == true
             # Calculate phenology for deciduous PFTs
             if get_characteristic(pft, :phenological_type) >= 2
@@ -344,8 +351,9 @@ including default and placeholder types.
 Returns a dictionary of PFT states and the number of PFTs.
 """
 function initialize_pftstates(
-    pftlist::AbstractPFTList, tcm::T, tmin::T, gdd5::T, gdd0::T, twm::T, maxdepth::T
-)::Tuple{Dict{AbstractPFT, PFTState}, Int} where {T<:Real}
+    pftlist::AbstractPFTList, tcm::T, tmin::T, gdd5::T, gdd0::T, twm::T, maxdepth::T;
+    niche_predictors_by_pft = nothing
+)::Tuple{Dict{AbstractPFT,PFTState}, Int} where {T<:Real}
 
     numofpfts = length(pftlist.pft_list)
 
@@ -363,10 +371,17 @@ function initialize_pftstates(
     # zero-arg constructor uses default characteristic types
     pftstates[NONE_INSTANCE] = PFTStateobj()
     pftstates[DEFAULT_INSTANCE] = PFTStateobj()
-    pftstates[DEFAULT_INSTANCE].fitness = dominance_environment_mv(DEFAULT_INSTANCE,tcm = tcm, 
-                                                          tmin = tmin, gdd5 = gdd5, gdd0 = gdd0,
-                                                          twm = twm, maxdepth = maxdepth
-                                                        )
+    pftstates[DEFAULT_INSTANCE].fitness = dominance_environment_mv(
+        DEFAULT_INSTANCE;
+        predictors = isnothing(niche_predictors_by_pft) ?
+            nothing : get(niche_predictors_by_pft, DEFAULT_INSTANCE, nothing),
+        tcm = tcm,
+        tmin = tmin,
+        gdd5 = gdd5,
+        gdd0 = gdd0,
+        twm = twm,
+        maxdepth = maxdepth,
+    )
 
     return pftstates, numofpfts
 end
