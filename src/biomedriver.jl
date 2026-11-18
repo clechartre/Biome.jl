@@ -170,6 +170,14 @@ function _simulate!(
                 println("File $outfile already exists. Resuming from last processed row.")
             end
             output_dataset = NCDataset(outfile, "a")
+            stored_lon = Array(output_dataset["lon"][:])
+            stored_lat = Array(output_dataset["lat"][:])
+            if length(stored_lon) != cntx || length(stored_lat) != cnty ||
+               !all(isapprox.(stored_lon, lon)) || !all(isapprox.(stored_lat, lat))
+                close(output_dataset)
+                error("Existing output file $outfile has grid $(length(stored_lon)) x $(length(stored_lat)), " *
+                      "but this run uses $(cntx) x $(cnty). Move or remove the incompatible checkpoint before resuming.")
+            end
             output_stack = load_existing_rasterstack(output_dataset, model, x_dim, y_dim, numofpfts, pft_parametrization)
         else
             output_dataset = NCDataset(outfile, "c")
@@ -219,8 +227,9 @@ function _simulate!(
 
             for (var, raster) in pairs(env_raster)
                 if ndims(raster) == 2
-                    # 2D raster: store scalar directly
-                    env_chunks[var] = raster[x, y]
+                    # 2D raster: store scalar directly, replacing missing with the fill value
+                    # so the skip test below always evaluates to a Bool
+                    env_chunks[var] = coalesce(raster[x, y], -9999.0)
                 else
                     # 3D raster: extract the full vector at (x,y,:)
                     chunk = Array(raster[x, y, :])
@@ -229,17 +238,10 @@ function _simulate!(
             end
 
             # Skip cell if all environmental variables are missing
-            skip_cell = false
-            for val in values(env_chunks)
-                if val isa AbstractArray
-                    if all(v -> v == -9999.0, val)
-                        skip_cell = true
-                        break
-                    end
-                elseif val == -9999.0
-                    skip_cell = true
-                    break
-                end
+            core_vars = (:tas, :pr, :clt, :ksat, :whc)
+            skip_cell = any(core_vars) do var
+                val = env_chunks[var]
+                val isa AbstractArray ? all(v -> v == -9999.0, val) : val == -9999.0
             end
 
             if skip_cell

@@ -28,23 +28,25 @@
 using Statistics
 
 """
-    runmodel(m::WissmannModel, vars_in::Vector{<:Union{<:Real,<:Int}}, args...; kwargs...)
+    runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs...)
 
 Classify climate by the Wissmann scheme using 12 months of temperature and precipitation.
 
 # Arguments
-- `m::WissmannModel`  
+- `m::WissmannModel`
   Model instance (for dispatch).
-- `vars_in::Vector{Union{T,U}}`  
-  Length‑28 vector where:
-  - indices 5–16: monthly mean temperatures
-  - indices 17–28: monthly precipitation totals
-- `args..., kwargs...`  
+- `input_variables::NamedTuple`
+  Cell inputs assembled by the driver. Must contain:
+  - `tas`: length-12 vector of monthly mean temperatures (°C)
+  - `pr`: length-12 vector of monthly precipitation totals (mm)
+  Other fields (`lat`, `lon`, `co2`, `p`, `dz`, `clt`, `ksat`, `whc`, ...) are ignored.
+- `args..., kwargs...`
   Ignored extras.
 
 # Returns
-- `output::Vector{Int}` (length 1)  
-  Single-element vector holding the integer code (1–22) of the matched Wissmann zone.
+- `NamedTuple` with a single field `wissmann_climate_zone::Int` holding the integer
+  code (1–22) of the matched Wissmann zone, or -1 if classification fails.
+  The field name matches the output schema used by `BiomeDriver.process_cell_output`.
 
 # Notes
 - Computes seasonal totals, mean, min/max temperatures.
@@ -88,6 +90,8 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
     pr_sum = sum(pr)
     pr_min = minimum(pr)
 
+    # NOTE: summer spans 7 months (Mar–Sep) and winter 5 months (Oct–Feb).
+    # Verify against the original Wissmann (1939) definition before publication.
     winter_pr = sum(pr[10:12]) + sum(pr[1:2])
     summer_pr = sum(pr[3:9])
 
@@ -101,63 +105,63 @@ function runmodel(m::WissmannModel, input_variables::NamedTuple, args...; kwargs
 
     # VI - Polar frost
     if tas_max < 0
-        return (climate_zone = WI[:VI],)
+        return (wissmann_climate_zone = WI[:VI],)
     # V - Polar tundra
     elseif tas_max < 10
-        return (climate_zone = WI[:V],)
+        return (wissmann_climate_zone = WI[:V],)
     end
 
     # IV - Boreal climates
     if tas_mean < 4
         if pr_sum > 2.5 * t_threshold
-            return (climate_zone = WI[:IV_F],)
+            return (wissmann_climate_zone = WI[:IV_F],)
         elseif pr_sum > 2.0 * t_threshold
-            return (climate_zone = WI[:IV_T],)
+            return (wissmann_climate_zone = WI[:IV_T],)
         elseif pr_sum > 1.0 * t_threshold
-            return (climate_zone = WI[:IV_S],)
+            return (wissmann_climate_zone = WI[:IV_S],)
         else
-            return (climate_zone = WI[:IV_D],)
+            return (wissmann_climate_zone = WI[:IV_D],)
         end
     end
 
     # III - Cool temperate
     if tas_min < 2
         if pr_sum > 2.5 * t_threshold
-            return (climate_zone = WI[:III_F],)
+            return (wissmann_climate_zone = WI[:III_F],)
         elseif pr_sum > 2.0 * t_threshold
-            return (climate_zone = winter_pr < summer_pr ? WI[:III_Tw] : WI[:III_Ts],)
+            return (wissmann_climate_zone = winter_pr < summer_pr ? WI[:III_Tw] : WI[:III_Ts],)
         elseif pr_sum > 1.0 * t_threshold
-            return (climate_zone = WI[:III_S],)
+            return (wissmann_climate_zone = WI[:III_S],)
         else
-            return (climate_zone = WI[:III_D],)
+            return (wissmann_climate_zone = WI[:III_D],)
         end
     end
 
     # II - Warm temperate
     if tas_min < 13
         if pr_sum > 2.5 * t_threshold
-            return (climate_zone = tas_max > 23 ? WI[:II_Fa] : WI[:II_Fb],)
+            return (wissmann_climate_zone = tas_max > 23 ? WI[:II_Fa] : WI[:II_Fb],)
         elseif pr_sum > 2.0 * t_threshold
-            return (climate_zone = winter_pr < summer_pr ? WI[:II_Tw] : WI[:II_Ts],)
+            return (wissmann_climate_zone = winter_pr < summer_pr ? WI[:II_Tw] : WI[:II_Ts],)
         elseif pr_sum > 1.0 * t_threshold
-            return (climate_zone = WI[:IS],)
+            return (wissmann_climate_zone = WI[:II_S],)
         else
-            return (climate_zone = WI[:ID],)
+            return (wissmann_climate_zone = WI[:II_D],)
         end
     end
 
     # I - Tropical
     if tas_min >= 13
         if pr_min >= 60
-            return (climate_zone = WI[:IA],)
+            return (wissmann_climate_zone = WI[:IA],)
         elseif pr_sum > 2.5 * t_threshold
-            return (climate_zone = WI[:IF],)
+            return (wissmann_climate_zone = WI[:IF],)
         elseif pr_sum > 2.0 * t_threshold
-            return (climate_zone = WI[:IT],)
+            return (wissmann_climate_zone = WI[:IT],)
         elseif pr_sum > 1.0 * t_threshold
-            return (climate_zone = WI[:IS],)
+            return (wissmann_climate_zone = WI[:IS],)
         else
-            return (climate_zone = WI[:ID],)
+            return (wissmann_climate_zone = WI[:ID],)
         end
     end
 
