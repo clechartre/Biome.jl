@@ -509,7 +509,7 @@ function dominance_environment_mv(
         if isfinite(lo) && isfinite(hi) && hi > lo
             center = (lo + hi) / T(2)
             s = choose_softness(lo, hi)
-            d2 += get_characteristic(pft, :dominance_factor) * ((x - center) / s)^2
+            d2 += ((x - center) / s)^2
         end
     end
 
