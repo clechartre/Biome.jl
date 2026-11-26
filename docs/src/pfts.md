@@ -57,7 +57,7 @@ The model is based on a series traits used to compute the growth of each PFT thr
 | `tcurve`                     | General            | Temperature response curve                                         | 0.5    | 1.0    | -                                             |
 | `allocfact`                  | General            | Allocation factor for leaf vs litter mass                          | 0.5    | 1.6    | Raich & Nadelhoffer (1989)                    |
 | `grass`                      | General            | Grass flag (true = grass functional type)                          | Bool | Bool | -                                             |
-| `dominance_factor`           | General            | Capacity to dominate in harsh conditions                           | 1    | 10   | Prentice et al. (1992)                        |
+| `dominance_factor`           | General            | Dominance class (1 = most dominant); competitive score is divided by it | 1    | 10   | Prentice et al. (1992)                        |
 
 ### Climatic Constraints
 

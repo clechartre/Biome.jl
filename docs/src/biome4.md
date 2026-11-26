@@ -4,7 +4,7 @@
 
 **Figure.** Example BIOME4-famil| Step | Original BIOME4 | Dominance-mode (Biome.jl) |
 |---|---|---|
-| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT's optima for `clt/pr/pr`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |utput. The NetCDF typically contains `biome` (class id), `optpft` (dominant PFT id), and `npp` (per-PFT) on the model grid.
+| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: Gaussian fitness around each PFT's niche centre × NPP / `dominance_factor`. Highest score wins; subdominants retained for mixed states. |utput. The NetCDF typically contains `biome` (class id), `optpft` (dominant PFT id), and `npp` (per-PFT) on the model grid.
 
 We offer two ways to run the BIOME4 logic:
 
@@ -44,36 +44,45 @@ This mode keeps the BIOME4 physiology (environmental sieve → LAI & NPP per PFT
 
 We define a fundamental niche for each PFT ($p$) as a set of admissible intervals $[l_{p,j}, u_{p,j}]$ for key environmental predictors $j$, such as absolute minimum temperature ($t_{min}$), growing degree days ($gdd5, gdd0$), mean warm-month temperature ($t_{wm}$), and maximum snow depth ($maxdepth$).
 
-For a given grid cell with environmental vector $\mathbf{x}$, the distance $d_{p,j}$ of the current value $x_j$ from the PFT's interval is:
+Bounds may be open ($l_{p,j}=-\infty$ and/or $u_{p,j}=+\infty$). All bounds act as hard presence/absence constraints. Only predictors with **two finite bounds** (excluding `swb`) also contribute to the fitness, because only those define a niche centre and width. PFTs without any two-sided bound therefore have a fitness of 1 wherever they are present.
+
+For each retained predictor $j \in J_p$, the niche centre and width are:
 
 ```math
-d_{p,j}(x_j) = \begin{cases}
-  l_{p,j} - x_j & \text{if } x_j < l_{p,j} \\
-  0 & \text{if } l_{p,j} \le x_j \le u_{p,j} \\
-  x_j - u_{p,j} & \text{if } x_j > u_{p,j}
-\end{cases}
+c_{p,j} = \frac{l_{p,j} + u_{p,j}}{2}, \qquad s_{p,j} = 0.25\,(u_{p,j} - l_{p,j})
 ```
 
-This distance is normalized by a predictor-specific tolerance parameter $s_{p,j}$. We compute a total squared standardized distance $D_{p}^2(\mathbf{x})$ across all predictors:
+For a grid cell with environmental vector $\mathbf{x}$, the squared standardized distance to the niche centre is:
 
 ```math
-D_p^2(\mathbf{x}) = \sum_j \left( \frac{ d_{p,j}(x_j) }{ s_{p,j} } \right)^2
+\Delta_p^2(\mathbf{x}) = \sum_{j \in J_p} \left( \frac{x_j - c_{p,j}}{s_{p,j}} \right)^2
 ```
 
-A fitness index $S_p(\mathbf{x})$ is then derived using a Gaussian-like kernel:
+An environmental suitability index $S_p(\mathbf{x})$ is derived using a Gaussian kernel, bounded below at 0.01:
 
 ```math
-S_p(\mathbf{x}) = \exp \left( -\frac{1}{2} D_p^2(\mathbf{x}) \right)
+S_p(\mathbf{x}) = \max\left( \exp \left( -\tfrac{1}{2} \Delta_p^2(\mathbf{x}) \right),\ 0.01 \right)
 ```
 
-The final competitive ability $C(\mathbf{x})$ integrates this fitness with the PFT's potential Net Primary Production (NPP) and an inverse dominance class weight ($D$):
+$S_p = 1$ at the niche centre and $\exp(-2) \approx 0.14$ at a single bound. The kernel has the same shape for every PFT.
+
+The competitive score combines this fitness with the PFT's potential Net Primary Production (NPP), divided by its dominance class $D_p$ (1 = most dominant; values follow Prentice et al., 1992):
 
 ```math
-C(\mathbf{x}) = S_p(\mathbf{x}) \cdot \text{NPP} \cdot \frac{1}{D}
+C_p(\mathbf{x}) = \frac{\text{NPP}_p(\mathbf{x}) \cdot S_p(\mathbf{x})}{D_p}
 ```
 
+$D_p$ is used only here. A PFT of class $D_p$ needs $D_p / D_q$ times the fitness-weighted NPP of a PFT of class $D_q$ to dominate it.
 
-All PFTs present in the grid cell are ranked by this competitive score $C$, and the highest-scoring PFT is selected as the dominant type (**optpft**). Sub-dominant woody and grass types are also recorded to capture mixed ecosystem states.
+When running `BIOMEDominanceModel`, the driver screens the declared niche
+predictors separately for each PFT before calculating this score. It uses valid
+grid cells inside that PFT's constraints, treats predictors with
+`abs(Pearson r) >= 0.7` as collinear, and retains the predictor with the
+greater variance. All constraint fields except `swb` are eligible, including
+custom fields supplied in a PFT and in the environmental input.
+
+
+All PFTs present in the grid cell are ranked by this competitive score $C_p$, and the highest-scoring PFT is selected as the dominant type (**optpft**). Sub-dominant woody and grass types are also recorded to capture mixed ecosystem states.
 
 ### Outputs
 
@@ -93,7 +102,7 @@ They diverge at step (3):
 
 | Step | Original BIOME4 | Dominance-mode (Biome.jl) |
 |---|---|---|
-| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: climate-space dominance (Gaussian proximity to each PFT’s optima for `tcm/tmin/gdd5/gdd0/twm/maxdepth`) × NPP × (1 / `dominance_factor`). Highest score wins; subdominants retained for mixed states. |
+| 3. Competition | Rule-based comparisons of woody vs. grass PFTs using thresholds on LAI, NPP, fire/greendays, and hand-crafted switches (e.g., temperate evergreen vs. cool conifer; woody-desert fallback; tundra shrub vs. cold herb). | Continuous **scored ranking**: Gaussian fitness around each PFT's niche centre (two-sided bounds of `tcm/tmin/gdd5/gdd0/twm/maxdepth` and custom constraints) × NPP / `dominance_factor`. Highest score wins; subdominants retained for mixed states. |
 
 This preserves BIOME4’s physiology and the environmental sieve, while replacing the final “if/else” winner logic with a continuous dominance score—making it easier to extend to custom PFT sets without rewriting many rule branches.
 

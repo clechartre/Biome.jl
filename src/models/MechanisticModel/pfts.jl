@@ -90,7 +90,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [40.0, +Inf]
             ),
-            dominance_factor = 2,
+            dominance_factor = 3,
             minimum_lai = 0
         ),
     AbstractBroadleafEvergreenPFT => (
@@ -150,7 +150,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth = [-Inf, +Inf],
                 swb  = [40.0, +Inf]
             ),
-            dominance_factor = 2,
+            dominance_factor = 3,
             minimum_lai = 0
     ),
     AbstractBroadleafDeciduousPFT => (
