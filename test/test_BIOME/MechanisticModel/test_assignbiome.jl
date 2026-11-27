@@ -11,7 +11,20 @@ using Biome.BIOME4: TropicalEvergreenForest, TropicalSemiDeciduousForest, Tropic
 using Biome: AbstractPFT, PFTState, AbstractBiome, Default, None, get_characteristic
 
 @testset "New Assign Biome Tests" begin
-    
+
+    @testset "Dominance tundra rule" begin
+        lichen = BIOME4.LichenForb(); shrubs = BIOME4.TundraShrubs(); herb = BIOME4.ColdHerbaceous()
+        # LichenForb dominant, TundraShrubs sub-dominant: BIOME4 gdd0 classes for shrub tundra
+        @test BIOME4.assign_biome_dominance(lichen; subpft=shrubs, gdd0=300.0) isa DwarfShrubTundra
+        @test BIOME4.assign_biome_dominance(lichen; subpft=shrubs, gdd0=600.0) isa ShrubTundra
+        # Below 200 GDD0, or another sub-dominant PFT: cushion forb tundra as in BIOME4
+        @test BIOME4.assign_biome_dominance(lichen; subpft=shrubs, gdd0=150.0) isa CushionForbsLichenMoss
+        @test BIOME4.assign_biome_dominance(lichen; subpft=herb, gdd0=300.0) isa CushionForbsLichenMoss
+        # Other PFTs follow the BIOME4 rules unchanged
+        @test BIOME4.assign_biome_dominance(shrubs; subpft=lichen, gdd0=300.0) isa DwarfShrubTundra
+        @test BIOME4.assign_biome(lichen) isa CushionForbsLichenMoss
+    end
+
     @testset "Tropical Evergreen Assignment Tests" begin
         # Create test PFTs and biome classification
         tropical_evergreen = BIOME4.TropicalEvergreen()
