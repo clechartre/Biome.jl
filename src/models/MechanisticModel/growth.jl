@@ -255,7 +255,7 @@ function growth(
         @inbounds for m in 1:11
             maintresp[m] = mlresp[m] + backleafresp[m] +
                            mstemresp[m] + mrootresp[m]
-            mgrowresp[m] = max(T(0), T(0.02) * (mgpp[m+1] - maintresp[m+1]))
+            mgrowresp[m] = max(T(0), T(0.02) * (mgpp[m] - maintresp[m]))
             mnpp[m]      = mgpp[m] - (maintresp[m] + mgrowresp[m])
         end
 

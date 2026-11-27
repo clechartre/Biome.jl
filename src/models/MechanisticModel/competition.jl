@@ -56,8 +56,8 @@ function competition(
             if pftstates[pft].lai > maxlai
                 maxlai = pftstates[pft].lai
                 pftmaxlai = pft
-            elseif pftstates[pft].lai == maxlai
-                maxlai = pftstates[pft].lai
+            elseif pftstates[pft].lai == maxlai && !(pftmaxnpp isa None)
+                maxlai = pftstates[pftmaxnpp].lai
                 pftmaxlai = pftmaxnpp
             end
         end
@@ -377,73 +377,78 @@ function determine_optimal_pft(
             end
         end
 
-        # Tropical drought deciduous
-        if isa(wdom, BIOME4.TropicalDroughtDeciduous)
-            if woodylai < T(2.0)
-                optpft = grasspft
-            elseif isa(grasspft, BIOME4.C4TropicalGrass) && woodylai < T(3.6)
-                optpft = DEFAULT_INSTANCE # Mixed woody/grass (equivalent to index 14)
-            elseif greendays < (270) && tcm > T(21.0) && tpr < T(1700.0)
-                optpft = DEFAULT_INSTANCE # Mixed woody/grass
-            else
-                optpft = wdom
-            end
-        end
-
-        # Temperate broadleaved evergreen
-        if isa(wdom, BIOME4.TemperateBroadleavedEvergreen)
-            if  pftstates[wdom].npp < T(140.0)
-                optpft = grasspft
-            elseif woodylai < T(1.0)
-                optpft = grasspft
-            elseif woodylai < T(2.0)
-                optpft = DEFAULT_INSTANCE # Mixed woody/grass
-            else
-                optpft = wdom
-            end
-        end
-
-        # Temperate deciduous
-        if isa(wdom, BIOME4.TemperateDeciduous)
-            if woodylai < T(2.0)
-                optpft = grasspft
-            elseif firedays > 210 && nppdif < 0.0
-                if !flop && !(subpft isa None)
-                    wdom = subpft
-                    subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
-                    flop = true
-                    continue
-                else
+        # Grass can only be (co-)dominant if a grass PFT has positive NPP (BIOME4, Kaplan 2025)
+        if !isa(grasspft, None) && pftstates[grasspft].npp > T(0.0)
+            # Tropical drought deciduous
+            if isa(wdom, BIOME4.TropicalDroughtDeciduous)
+                if woodylai < T(2.0)
                     optpft = grasspft
+                elseif isa(grasspft, BIOME4.C4TropicalGrass) && woodylai < T(3.6)
+                    optpft = DEFAULT_INSTANCE # Mixed woody/grass (equivalent to index 14)
+                elseif greendays < (270) && tcm > T(21.0) && tpr < T(1700.0)
+                    optpft = DEFAULT_INSTANCE # Mixed woody/grass
+                else
+                    optpft = wdom
                 end
-            elseif woodylai < T(3.0) || firedays > 180
-                if nppdif < 0.0
-                    optpft = DEFAULT_INSTANCE # Mixed woody/grass - PFT 14
-                elseif !flop && !(subpft isa None)
-                    wdom = subpft
-                    subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
-                    flop = true
-                    continue
-                end
-            else
-                optpft = wdom
             end
-        end
 
-        # Cool conifer
-        if isa(wdom, BIOME4.CoolConifer)
-            temperate_evergreen = get_pft_by_type(BIOME4.TemperateBroadleavedEvergreen)
-            if temperate_evergreen !== nothing && pftstates[temperate_evergreen].present
-                wdom = temperate_evergreen
-                subpft = get_pft_by_type(BIOME4.CoolConifer)
-                continue
-            elseif  pftstates[wdom].npp < T(140.0)
-                optpft = grasspft
-            elseif woodylai < T(1.2)
-                optpft = DEFAULT_INSTANCE # Mixed woody/grass
-            else
-                optpft = wdom
+            # Temperate broadleaved evergreen
+            if isa(wdom, BIOME4.TemperateBroadleavedEvergreen)
+                if  pftstates[wdom].npp < T(140.0)
+                    optpft = grasspft
+                elseif woodylai < T(1.0)
+                    optpft = grasspft
+                elseif woodylai < T(2.0)
+                    optpft = DEFAULT_INSTANCE # Mixed woody/grass
+                else
+                    optpft = wdom
+                end
             end
+
+            # Temperate deciduous
+            if isa(wdom, BIOME4.TemperateDeciduous)
+                if woodylai < T(2.0)
+                    optpft = grasspft
+                elseif firedays > 210 && nppdif < 0.0
+                    if !flop && !(subpft isa None)
+                        wdom = subpft
+                        subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
+                        flop = true
+                        continue
+                    else
+                        optpft = grasspft
+                    end
+                elseif woodylai < T(3.0) || firedays > 180
+                    if nppdif < 0.0
+                        optpft = DEFAULT_INSTANCE # Mixed woody/grass - PFT 14
+                    elseif !flop && !(subpft isa None)
+                        wdom = subpft
+                        subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
+                        flop = true
+                        continue
+                    end
+                else
+                    optpft = wdom
+                end
+            end
+
+            # Cool conifer
+            if isa(wdom, BIOME4.CoolConifer)
+                temperate_evergreen = get_pft_by_type(BIOME4.TemperateBroadleavedEvergreen)
+                if temperate_evergreen !== nothing && pftstates[temperate_evergreen].present
+                    wdom = temperate_evergreen
+                    subpft = get_pft_by_type(BIOME4.CoolConifer)
+                    continue
+                elseif  pftstates[wdom].npp < T(140.0)
+                    optpft = grasspft
+                elseif woodylai < T(1.2)
+                    optpft = DEFAULT_INSTANCE # Mixed woody/grass
+                else
+                    optpft = wdom
+                end
+            end
+        else
+            optpft = wdom
         end
 
         # Boreal evergreen

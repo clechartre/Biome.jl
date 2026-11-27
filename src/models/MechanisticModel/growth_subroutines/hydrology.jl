@@ -115,6 +115,7 @@ function hydrology(
             meanwr[month][3]   = T(0.0)
             meanaet[month]     = T(0.0)
             runoffmonth[month] = T(0.0)
+            fvc = maxfvc  # initial fvc for each month, as in BIOME4 (Kaplan 2025)
 
             for _ in 1:days[month]
                 d += 1
@@ -159,6 +160,7 @@ function hydrology(
                 else
                     if fvc == T(0.0)
                         aet = T(0.25) * deq[d]
+                        gmin = T(0.0)
                     else
                         gmin = mgmin * fvc
                         gc   = gcopt[d] * (fvc / maxfvc)
@@ -181,11 +183,16 @@ function hydrology(
 
                     if demand > supply
                         a = T(1.0) - supply / (deq[d] * alfam)
-                        a = max(a, T(0.0))
-                        gsurf = -gm * log(a)
-                        gc    = gsurf - gmin
-                        aet   = supply
-                        if gc <= T(0.0)
+                        if a > T(0.0)
+                            gsurf = -gm * log(a)
+                            gc    = gsurf - gmin
+                            aet   = supply
+                        else
+                            gsurf = T(0.0)
+                            gc    = T(0.0)
+                            aet   = T(0.0)
+                        end
+                        if gc < T(0.0)
                             gc   = T(0.0)
                             wilt = true
                         end
@@ -229,10 +236,11 @@ function hydrology(
                         w[1] = T(1.0)
                     end
 
-                    if w[1] <= T(0.0)
+                    # set very small moisture to zero (prevents underflow)
+                    if w[1] <= T(1e-5)
                         w[1] = T(0.0)
                     end
-                    if w[2] <= T(0.0)
+                    if w[2] <= T(1e-5)
                         w[2] = T(0.0)
                     end
                 end
