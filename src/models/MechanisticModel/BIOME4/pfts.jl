@@ -313,7 +313,7 @@ function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
                 maxdepth=[-Inf, +Inf],
                 swb=[-Inf,+Inf]
             ),
-            U(3),
+            U(1),
             T(2.5)
         )
     )
@@ -775,6 +775,24 @@ function assign_biome(
     kwargs...
 )::AbstractBiome
     return CushionForbsLichenMoss()
+end
+
+"""
+    assign_biome_dominance(optpft; subpft, gdd0, kwargs...)
+
+Biome assignment used by `BIOMEDominanceModel`. Identical to the BIOME4
+`assign_biome` rules, except in the tundra: where LichenForb is dominant but
+TundraShrubs is the sub-dominant PFT and `gdd0 >= 200`, the shrub-tundra
+classes of BIOME4 are used (dwarf shrub tundra for `200 <= gdd0 < 500`, shrub
+tundra above). In the dominance competition, tundra shrubs lose suitability
+near their `gdd0` bound, so without this rule they never dominate the
+200–500 GDD0 range where BIOME4 places dwarf shrub tundra.
+"""
+function assign_biome_dominance(optpft::AbstractPFT; subpft=nothing, gdd0=nothing, kwargs...)::AbstractBiome
+    if optpft isa LichenForb && subpft isa TundraShrubs && gdd0 !== nothing && gdd0 >= 200.0
+        return assign_biome(subpft; gdd0=gdd0)
+    end
+    return assign_biome(optpft; subpft=subpft, gdd0=gdd0, kwargs...)
 end
 
 """

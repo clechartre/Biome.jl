@@ -44,18 +44,24 @@ This mode keeps the BIOME4 physiology (environmental sieve → LAI & NPP per PFT
 
 We define a fundamental niche for each PFT ($p$) as a set of admissible intervals $[l_{p,j}, u_{p,j}]$ for key environmental predictors $j$, such as absolute minimum temperature ($t_{min}$), growing degree days ($gdd5, gdd0$), mean warm-month temperature ($t_{wm}$), and maximum snow depth ($maxdepth$).
 
-Bounds may be open ($l_{p,j}=-\infty$ and/or $u_{p,j}=+\infty$). All bounds act as hard presence/absence constraints. Only predictors with **two finite bounds** (excluding `swb`) also contribute to the fitness, because only those define a niche centre and width. PFTs without any two-sided bound therefore have a fitness of 1 wherever they are present.
-
-For each retained predictor $j \in J_p$, the niche centre and width are:
+Bounds may be open ($l_{p,j}=-\infty$ and/or $u_{p,j}=+\infty$). All bounds act as hard presence/absence constraints. Every finite bound (excluding `swb`) also shapes the suitability, as a **soft edge inside the interval**: suitability is 1 in the core of the niche and declines only within a zone of width
 
 ```math
-c_{p,j} = \frac{l_{p,j} + u_{p,j}}{2}, \qquad s_{p,j} = 0.25\,(u_{p,j} - l_{p,j})
+w_{p,j} = \min\left(0.05\,(U_j - L_j),\ \tfrac{u_{p,j} - l_{p,j}}{2}\right), \qquad s_{p,j} = w_{p,j}/2
 ```
 
-For a grid cell with environmental vector $\mathbf{x}$, the squared standardized distance to the niche centre is:
+next to each finite bound, where $[L_j, U_j]$ is the predictor's natural range (`Biome.NATURAL_LIMITS`, 0.5–99.5 % quantiles over land, 1981–2010; the cap only applies to two-sided intervals). The distance to the core of the niche is
 
 ```math
-\Delta_p^2(\mathbf{x}) = \sum_{j \in J_p} \left( \frac{x_j - c_{p,j}}{s_{p,j}} \right)^2
+d_{p,j}(x_j) = \max\left(l_{p,j} + w_{p,j} - x_j,\ x_j - (u_{p,j} - w_{p,j}),\ 0\right)
+```
+
+with the term of an open bound omitted. The same rule applies to one- and two-sided intervals; for narrow intervals the two zones meet and the kernel reduces to a Gaussian centred on the interval. The zone fraction is set by `Biome.ONE_SIDED_ZONE[]` (default 0.05). Custom predictors need an entry in `NATURAL_LIMITS` to get a soft edge; otherwise their bounds are presence filters only.
+
+For a grid cell with environmental vector $\mathbf{x}$, the squared standardized distance to the core of the niche, scaled by the PFT's dominance class $D_p$, is:
+
+```math
+\Delta_p^2(\mathbf{x}) = D_p \sum_{j \in J_p} \left( \frac{d_{p,j}(x_j)}{s_{p,j}} \right)^2
 ```
 
 An environmental suitability index $S_p(\mathbf{x})$ is derived using a Gaussian kernel, bounded below at 0.01:
@@ -64,7 +70,7 @@ An environmental suitability index $S_p(\mathbf{x})$ is derived using a Gaussian
 S_p(\mathbf{x}) = \max\left( \exp \left( -\tfrac{1}{2} \Delta_p^2(\mathbf{x}) \right),\ 0.01 \right)
 ```
 
-$S_p = 1$ at the niche centre and $\exp(-2) \approx 0.14$ at a single bound. The kernel has the same shape for every PFT.
+$S_p = 1$ in the optimal part of the niche for every PFT. Towards the bounds it declines faster for larger $D_p$ (more specialised PFTs): at a single bound $S_p = \exp(-2D_p)$, i.e. 0.14 for $D_p = 1$ and 0.02 for $D_p = 2$.
 
 The competitive score combines this fitness with the PFT's potential Net Primary Production (NPP), divided by its dominance class $D_p$ (1 = most dominant; values follow Prentice et al., 1992):
 
@@ -72,7 +78,7 @@ The competitive score combines this fitness with the PFT's potential Net Primary
 C_p(\mathbf{x}) = \frac{\text{NPP}_p(\mathbf{x}) \cdot S_p(\mathbf{x})}{D_p}
 ```
 
-$D_p$ is used only here. A PFT of class $D_p$ needs $D_p / D_q$ times the fitness-weighted NPP of a PFT of class $D_q$ to dominate it.
+$D_p$ therefore enters twice: it sets how specialised a PFT is within its niche (steeper suitability decline) and its competitive weight. Only PFTs without any finite bound have $S_p = 1$ everywhere.
 
 When running `BIOMEDominanceModel`, the driver screens the declared niche
 predictors separately for each PFT before calculating this score. It uses valid

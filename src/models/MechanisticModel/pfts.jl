@@ -90,7 +90,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth  = [-Inf, +Inf],
                 swb   = [40.0, +Inf]
             ),
-            dominance_factor = 3,
+            dominance_factor = 2,
             minimum_lai = 0
         ),
     AbstractBroadleafEvergreenPFT => (
@@ -150,7 +150,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
                 maxdepth = [-Inf, +Inf],
                 swb  = [40.0, +Inf]
             ),
-            dominance_factor = 3,
+            dominance_factor = 2,
             minimum_lai = 0
     ),
     AbstractBroadleafDeciduousPFT => (
@@ -423,15 +423,90 @@ function choose_softness(lo::T, hi::T; frac::T = T(0.25)) where {T<:Real}
     return frac * (hi - lo)
 end
 
+"""
+    NATURAL_LIMITS
+
+Natural range `(lower, upper)` of each niche predictor: the 0.5 and 99.5 %
+quantiles over land cells of the 1981–2010 climatology (see
+`examples/compute_natural_limits.jl`). Used only to set the width of the
+decline zone next to one-sided bounds. Add an entry to give a custom predictor
+a one-sided decline, e.g. `Biome.NATURAL_LIMITS[:myvar] = (0.0, 100.0)`.
+"""
+const NATURAL_LIMITS = Dict{Symbol,Tuple{Float64,Float64}}(
+    :tcm      => (-38.3, 26.5),
+    :tmin     => (-63.5, 17.1),
+    :gdd5     => (0.0, 8938.9),
+    :gdd0     => (0.0, 10763.9),
+    :twm      => (-30.5, 37.3),
+    :maxdepth => (0.0, 1849.4),
+    :tpr      => (2.8, 6000.9),
+)
+
+"""
+    ONE_SIDED_ZONE
+
+Width of the decline zone next to each finite bound, as a fraction of the
+predictor's natural range (default 0.05). Suitability is 1 outside the zones
+and declines towards the bound inside them (for two-sided intervals the zone is
+capped at half the interval). Set with `Biome.ONE_SIDED_ZONE[] = 0.05`.
+"""
+const ONE_SIDED_ZONE = Ref(0.05)
+
+has_niche_shape(key::Symbol, lo, hi) =
+    hi > lo && (
+        (isfinite(lo) && isfinite(hi)) ||
+        ((isfinite(lo) || isfinite(hi)) && haskey(NATURAL_LIMITS, key))
+    )
+
 function niche_predictors(pft::AbstractPFT)
     return Tuple(
         key for (key, bounds) in pairs(get_characteristic(pft, :constraints))
         if key != :swb &&
            length(bounds) == 2 &&
-           bounds[2] > bounds[1] &&
-           isfinite(bounds[1]) &&
-           isfinite(bounds[2])
+           has_niche_shape(key, bounds[1], bounds[2])
     )
+end
+
+"""
+    niche_z2(var, x, lo, hi)
+
+Squared standardized distance of `x` to the optimal part of the niche of one
+predictor (without the dominance factor).
+
+Every finite bound gets a soft edge inside the admissible interval: a decline
+zone of width `w = ONE_SIDED_ZONE[] * natural range` next to the bound, with
+`s = w / 2` so that the bound sits 2 widths from the zone edge. Between the
+zones (or beyond the zone, on an open side) the distance is 0.
+
+- Two finite bounds: `w` is capped at half the interval, so for narrow
+  intervals the two zones meet in the middle and the kernel reduces to a
+  Gaussian centred on the interval with width `0.25 (hi - lo)`. Predictors
+  without a natural limit always use that centred form.
+- One finite bound: decline towards that bound only.
+- No finite bound: 0.
+"""
+function niche_z2(var::Symbol, x::T, lo::T, hi::T) where {T<:Real}
+    hi > lo || return zero(T)
+    if isfinite(lo) && isfinite(hi)
+        half = (hi - lo) / T(2)
+        w = haskey(NATURAL_LIMITS, var) ?
+            min(T(ONE_SIDED_ZONE[] * (NATURAL_LIMITS[var][2] - NATURAL_LIMITS[var][1])), half) : half
+        d = max(lo + w - x, x - (hi - w), zero(T))
+        return (d / (w / T(2)))^2
+    end
+    haskey(NATURAL_LIMITS, var) || return zero(T)
+    nlo, nhi = NATURAL_LIMITS[var]
+    w = T(ONE_SIDED_ZONE[] * (nhi - nlo))
+    w > zero(T) || return zero(T)
+    s = w / T(2)
+    if isfinite(lo)                     # [lo, +Inf): decline towards lo
+        d = max(lo + w - x, zero(T))
+    elseif isfinite(hi)                 # (-Inf, hi]: decline towards hi
+        d = max(x - (hi - w), zero(T))
+    else
+        return zero(T)
+    end
+    return (d / s)^2
 end
 
 function select_noncollinear_predictors(
@@ -506,11 +581,10 @@ function dominance_environment_mv(
         lo = T(cons[var][1])
         hi = T(cons[var][2])
 
-        if isfinite(lo) && isfinite(hi) && hi > lo
-            center = (lo + hi) / T(2)
-            s = choose_softness(lo, hi)
-            d2 += ((x - center) / s)^2
-        end
+        # The dominance factor sets how steeply fitness declines away from
+        # the optimal part of the niche (larger = more specialised). It also
+        # divides the competition score in competition.jl.
+        d2 += get_characteristic(pft, :dominance_factor) * niche_z2(var, x, lo, hi)
     end
 
     value = exp(-T(0.5) * d2)

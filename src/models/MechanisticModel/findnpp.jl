@@ -82,6 +82,12 @@ function findnpp(
     range_val = T(8.0)
     alai      = zeros(T, 2)
 
+    # growth() overwrites firedays/greendays/mwet on every call; keep the values
+    # of the optimal-LAI call (BIOME4 stores optdata only when NPP improves).
+    best_firedays  = pftstates.firedays
+    best_greendays = pftstates.greendays
+    best_mwet      = copy(pftstates.mwet)
+
     # Binary search optimization over 8 iterations
     for _ in 1:8
         # Test two LAI values in the current range
@@ -114,6 +120,8 @@ function findnpp(
         if npp >= optnpp
             optlai = alai[1]
             optnpp = npp
+            best_firedays, best_greendays = pftstates.firedays, pftstates.greendays
+            best_mwet = copy(pftstates.mwet)
         end
 
         npp, mnpp, c4mnpp, pftstates = growth(
@@ -141,6 +149,8 @@ function findnpp(
         if npp >= optnpp
             optlai = alai[2]
             optnpp = npp
+            best_firedays, best_greendays = pftstates.firedays, pftstates.greendays
+            best_mwet = copy(pftstates.mwet)
         end
 
         # Narrow the search range for next iteration
@@ -150,6 +160,10 @@ function findnpp(
             lowbound = T(0.01)
         end
     end
-    
+
+    pftstates.firedays  = best_firedays
+    pftstates.greendays = best_greendays
+    pftstates.mwet      = best_mwet
+
     return pft, optlai, optnpp, pftstates
 end

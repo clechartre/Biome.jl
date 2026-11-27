@@ -6,7 +6,7 @@ using ..Biome: BiomeModel, BaseModel, BIOME4Model, BIOMEDominanceModel, Wissmann
         runmodel, change_type, assign_biome as base_assign_biome,
         initialize_environmental_variables, get_characteristic, niche_predictors,
         select_noncollinear_predictors
-using ..Biome.BIOME4: assign_biome as biome4_assign_biome
+using ..Biome.BIOME4: assign_biome as biome4_assign_biome, assign_biome_dominance
 
 # Standard library
 using Statistics
@@ -88,7 +88,9 @@ function ModelSetup(Model::BiomeModel;
     lat = collect(lookup(rasters[:tas], Y))
 
     if biome_assignment === nothing
-        if Model isa BIOME4Model || Model isa BIOMEDominanceModel
+        if Model isa BIOMEDominanceModel
+            biome_assignment = assign_biome_dominance
+        elseif Model isa BIOME4Model
             biome_assignment = biome4_assign_biome
         else
             biome_assignment = base_assign_biome
@@ -137,7 +139,9 @@ function _simulate!(
     ) where {T<:Real}
 
     if biome_assignment === nothing
-        if model isa BIOME4Model || model isa BIOMEDominanceModel
+        if model isa BIOMEDominanceModel
+            biome_assignment = assign_biome_dominance
+        elseif model isa BIOME4Model
             biome_assignment = biome4_assign_biome
         else
             biome_assignment = base_assign_biome

@@ -65,7 +65,8 @@ function c4photo(
 
     s = DRESPC4 * (T(24.0) / daytime)
     ts = o2 / (T(2.0) * tao)
-    z = CMASS * JTOE * dsun * fpar * TWIGLOSS * TUNE
+    # PFT-specific `tune` (0.75 for woody desert), as in the original BIOME4 c4photo
+    z = CMASS * JTOE * dsun * fpar * TWIGLOSS * tune
 
     # Optimal pi value and non-co2-dependent parameters
     pi = OPTRATIO * ca * p
