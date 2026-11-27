@@ -313,7 +313,7 @@ function BorealEvergreen{T,U}() where {T<:Real,U<:Int}
                 maxdepth=[-Inf, +Inf],
                 swb=[-Inf,+Inf]
             ),
-            U(1),
+            U(3),
             T(2.5)
         )
     )

@@ -178,7 +178,7 @@ const BASE_DEFAULTS = Dict{DataType, NamedTuple}(
             maxdepth  = [-Inf,+Inf],
             swb   = [40.0,+Inf]
         ),
-        dominance_factor = 3,
+        dominance_factor = 2,
         minimum_lai = 1.5
     ),
     AbstractC3GrassPFT => (
