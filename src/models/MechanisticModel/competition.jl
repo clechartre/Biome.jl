@@ -408,7 +408,7 @@ function determine_optimal_pft(
             if woodylai < T(2.0)
                 optpft = grasspft
             elseif firedays > 210 && nppdif < 0.0
-                if !flop && subpft !== None
+                if !flop && !(subpft isa None)
                     wdom = subpft
                     subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
                     flop = true
@@ -419,7 +419,7 @@ function determine_optimal_pft(
             elseif woodylai < T(3.0) || firedays > 180
                 if nppdif < 0.0
                     optpft = DEFAULT_INSTANCE # Mixed woody/grass - PFT 14
-                elseif !flop && subpft !== None
+                elseif !flop && !(subpft isa None)
                     wdom = subpft
                     subpft = get_pft_by_type(BIOME4.TemperateDeciduous)
                     flop = true
@@ -451,7 +451,7 @@ function determine_optimal_pft(
             if pftstates[wdom].npp < T(140.0)
                 optpft = grasspft
             elseif firedays > 90
-                if !flop && subpft !== None
+                if !flop && !(subpft isa None)
                     wdom = subpft
                     subpft = get_pft_by_type(BIOME4.BorealEvergreen)
                     flop = true
